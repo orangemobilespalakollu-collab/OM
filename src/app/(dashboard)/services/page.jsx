@@ -39,15 +39,24 @@ export default function ServicesPage() {
   useEffect(() => {
     const action = searchParams.get('action');
     const serviceId = searchParams.get('serviceId');
+    const statusParam = searchParams.get('status'); // <-- 1. Get status from URL
 
     if (action === 'new') {
       setView('register');
-    } else if (!serviceId) {
+    } else if (serviceId) { // <-- 2. Simplified logic for details
+      setView('details');
+    } else {
       setView('list');
+      // 3. If a status is in the URL, apply it to the filter state
+      if (statusParam) {
+        setStatusFilter(statusParam);
+      } else {
+        setStatusFilter('all');
+      }
     }
 
     fetchServices(serviceId);
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   async function fetchServices(serviceId = null) {
     try {
