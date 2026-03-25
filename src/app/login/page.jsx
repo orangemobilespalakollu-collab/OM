@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { authService } from '@/services/authService';
+import { getCookie, setCookie, deleteCookie } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Smartphone, Lock, UserCircle, Users } from 'lucide-react';
 
@@ -12,10 +13,46 @@ export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [loginType, setLoginType] = useState('admin');
+  const DRAFT_COOKIE_KEY = 'loginDraft';
   const [formData, setFormData] = useState({
     mobile: '',
     password: '',
   });
+  const isReloadRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const draft = getCookie(DRAFT_COOKIE_KEY);
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        if (parsed?.formData) setFormData((prev) => ({ ...prev, ...parsed.formData }));
+      } catch (error) {
+        console.error('Error parsing login draft cookie', error);
+      }
+    }
+
+    const handleBeforeUnload = () => sessionStorage.setItem('loginIsReload', '1');
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      const isReload = sessionStorage.getItem('loginIsReload') === '1';
+      if (isReload) {
+        isReloadRef.current = true;
+        sessionStorage.removeItem('loginIsReload');
+      }
+
+      if (!isReload) {
+        deleteCookie(DRAFT_COOKIE_KEY);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    setCookie(DRAFT_COOKIE_KEY, JSON.stringify({ formData, loginType }), 7);
+  }, [formData, loginType]);
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -26,6 +63,7 @@ export default function LoginPage() {
       
       login(profile);
       toast.success('Login successful!');
+      deleteCookie(DRAFT_COOKIE_KEY);
       
       if (profile.is_first_login) {
         router.push('/account?forceChange=true');

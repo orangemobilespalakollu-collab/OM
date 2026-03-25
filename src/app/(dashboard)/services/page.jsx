@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { serviceService } from '@/services/serviceService';
 import { useAuth } from '@/components/AuthProvider';
@@ -18,7 +18,7 @@ import {
   IndianRupee,
   XCircle
 } from 'lucide-react';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency, setCookie, getCookie, deleteCookie } from '@/lib/utils';
 import { toast } from 'sonner';
 
 export default function ServicesPage() {
@@ -173,6 +173,7 @@ function StatusBadge({ status }) {
 function ServiceRegistration({ onCancel, onComplete }) {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
+  const COOKIE_KEY = 'serviceRegistrationDraft';
   const [formData, setFormData] = useState({
     customer_mobile: '',
     customer_name: '',
@@ -186,6 +187,47 @@ function ServiceRegistration({ onCancel, onComplete }) {
   });
 
   const [photos, setPhotos] = useState({});
+  const isRefreshRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const saved = getCookie(COOKIE_KEY);
+    if (saved) {
+      try {
+        const draft = JSON.parse(saved);
+        if (draft?.formData) {
+          setFormData((prev) => ({ ...prev, ...draft.formData }));
+        }
+      } catch (err) {
+        console.error('Failed to parse service draft cookie', err);
+      }
+    }
+
+    const beforeUnloadHandler = () => sessionStorage.setItem('serviceRegistrationIsReload', '1');
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+
+    return () => {
+      window.removeEventListener('beforeunload', beforeUnloadHandler);
+      const isReload = sessionStorage.getItem('serviceRegistrationIsReload') === '1';
+      if (isReload) {
+        isRefreshRef.current = true;
+        sessionStorage.removeItem('serviceRegistrationIsReload');
+      }
+
+      if (!isReload) {
+        deleteCookie(COOKIE_KEY);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    try {
+      setCookie(COOKIE_KEY, JSON.stringify({ formData }), 7);
+    } catch (err) {
+      console.error('Failed to set service draft cookie', err);
+    }
+  }, [formData]);
 
   async function handleMobileBlur() {
     if (formData.customer_mobile.length === 10) {
@@ -205,6 +247,15 @@ function ServiceRegistration({ onCancel, onComplete }) {
     }
   }
 
+  function clearDraft() {
+    deleteCookie(COOKIE_KEY);
+  }
+
+  function handleCancel() {
+    clearDraft();
+    onCancel();
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
@@ -212,6 +263,7 @@ function ServiceRegistration({ onCancel, onComplete }) {
     try {
       const service = await serviceService.registerService(formData, photos, profile?.id);
       toast.success(`Service registered! Ticket: ${service.ticket_number}`);
+      clearDraft();
       onComplete();
     } catch (err) {
       toast.error(err.message || 'Registration failed');

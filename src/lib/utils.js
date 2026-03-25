@@ -13,6 +13,22 @@ export function formatCurrency(amount) {
   }).format(amount);
 }
 
+export function setCookie(name, value, days = 7) {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+}
+
+export function getCookie(name) {
+  return document.cookie.split('; ').reduce((r, cookieString) => {
+    const [key, ...v] = cookieString.split('=');
+    return key === name ? decodeURIComponent(v.join('=')) : r;
+  }, '');
+}
+
+export function deleteCookie(name) {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+}
+
 export function generateTicketNumber(serialCount = 0) {
   const serialNumber = (serialCount + 1).toString().padStart(4, '0');
   return `OMP-${serialNumber}`;

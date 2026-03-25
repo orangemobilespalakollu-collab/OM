@@ -1,20 +1,57 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/services/authService';
+import { getCookie, setCookie, deleteCookie } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Smartphone, Lock, User, ShieldCheck } from 'lucide-react';
 
 export default function RegisterAdminPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const DRAFT_COOKIE_KEY = 'registerAdminDraft';
   const [formData, setFormData] = useState({
     name: '',
     mobile: '',
     password: '',
     confirmPassword: '',
   });
+  const isReloadRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const draft = getCookie(DRAFT_COOKIE_KEY);
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        if (parsed?.formData) setFormData((prev) => ({ ...prev, ...parsed.formData }));
+      } catch (error) {
+        console.error('Error parsing register admin draft cookie', error);
+      }
+    }
+
+    const handleBeforeUnload = () => sessionStorage.setItem('registerAdminIsReload', '1');
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      const isReload = sessionStorage.getItem('registerAdminIsReload') === '1';
+      if (isReload) {
+        isReloadRef.current = true;
+        sessionStorage.removeItem('registerAdminIsReload');
+      }
+
+      if (!isReload) {
+        deleteCookie(DRAFT_COOKIE_KEY);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    setCookie(DRAFT_COOKIE_KEY, JSON.stringify({ formData }), 7);
+  }, [formData]);
 
   async function handleRegister(e) {
     e.preventDefault();
@@ -32,6 +69,7 @@ export default function RegisterAdminPage() {
     try {
       await authService.registerAdmin(formData.mobile, formData.password, formData.name);
       toast.success('Admin registered successfully!');
+      deleteCookie(DRAFT_COOKIE_KEY);
       router.push('/login');
     } catch (err) {
       toast.error(err.message || 'Registration failed');
