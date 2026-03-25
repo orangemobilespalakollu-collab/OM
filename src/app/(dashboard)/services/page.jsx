@@ -34,15 +34,31 @@ export default function ServicesPage() {
 
   useEffect(() => {
     const action = searchParams.get('action');
-    if (action === 'new') setView('register');
-    fetchServices();
+    const serviceId = searchParams.get('serviceId');
+
+    if (action === 'new') {
+      setView('register');
+    } else if (!serviceId) {
+      setView('list');
+    }
+
+    fetchServices(serviceId);
   }, [searchParams]);
 
-  async function fetchServices() {
+  async function fetchServices(serviceId = null) {
     try {
       setLoading(true);
       const data = await serviceService.getActiveServices();
       setServices(data);
+
+      if (serviceId) {
+        const id = Number(serviceId);
+        const matched = data.find((s) => s.id === id || s.id === serviceId);
+        if (matched) {
+          setSelectedService(matched);
+          setView('details');
+        }
+      }
     } catch (err) {
       console.error('Error fetching services:', err);
     } finally {

@@ -138,26 +138,42 @@ export default function DashboardPage() {
         <section className="rounded-2xl bg-white p-6 shadow-sm">
           <div className="mb-6 flex items-center justify-between">
             <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
-            <button className="text-sm font-medium text-orange-600 hover:underline">See More</button>
+            <button
+              onClick={() => router.push('/history?tab=services')}
+              className="text-sm font-medium text-orange-600 hover:underline"
+            >
+              See More
+            </button>
           </div>
           <div className="space-y-4">
             {recentActivity.map((activity, i) => (
-              <div key={i} className="flex items-start gap-4 border-b pb-4 last:border-0">
-                <div className="rounded-full bg-gray-100 p-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
+              <button
+                key={i}
+                onClick={() => {
+                  const serviceId = activity.services?.id;
+                  if (serviceId) {
+                    router.push(`/services?serviceId=${serviceId}`);
+                  }
+                }}
+                className="w-full rounded-xl border border-gray-100 bg-white p-3 text-left hover:bg-orange-50"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="rounded-full bg-gray-100 p-2">
+                    <Clock className="h-4 w-4 text-gray-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">
+                      {activity.services?.customer_name} - {activity.services?.device_model}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Status updated to <span className="font-semibold text-orange-600">{activity.status}</span>
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-gray-400">
+                    {new Date(activity.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">
-                    {activity.services?.customer_name} - {activity.services?.device_model}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Status updated to <span className="font-semibold text-orange-600">{activity.status}</span>
-                  </p>
-                </div>
-                <span className="text-[10px] text-gray-400">
-                  {new Date(activity.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
+              </button>
             ))}
           </div>
         </section>
