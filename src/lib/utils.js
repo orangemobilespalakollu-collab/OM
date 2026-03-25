@@ -13,10 +13,7 @@ export function formatCurrency(amount) {
   }).format(amount);
 }
 
-export function generateTicketNumber() {
-  const date = new Date();
-  const year = date.getFullYear().toString().slice(-2);
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  return `SRV-${year}${month}-${random}`;
+export function generateTicketNumber(serialCount = 0) {
+  const serialNumber = (serialCount + 1).toString().padStart(4, '0');
+  return `OMP-${serialNumber}`;
 }
