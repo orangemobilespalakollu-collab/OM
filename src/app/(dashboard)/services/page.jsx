@@ -35,8 +35,6 @@ export default function ServicesPage() {
   const [brandFilter, setBrandFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const statusParam = searchParams.get('status');
-  const todayParam = searchParams.get('today');
 
   useEffect(() => {
     const action = searchParams.get('action');
@@ -51,23 +49,10 @@ export default function ServicesPage() {
     fetchServices(serviceId);
   }, [searchParams]);
 
-  useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-
-    if (statusParam) {
-      setStatusFilter(statusParam);
-    }
-
-    if (todayParam === 'true' || todayParam === 'registered') {
-      setDateFrom(today);
-      setDateTo(today);
-    }
-  }, [statusParam, todayParam]);
-
   async function fetchServices(serviceId = null) {
     try {
       setLoading(true);
-      const data = await serviceService.getAllServices();
+      const data = await serviceService.getActiveServices();
       setServices(data);
 
       if (serviceId) {
