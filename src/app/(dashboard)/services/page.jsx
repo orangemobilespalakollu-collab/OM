@@ -521,6 +521,7 @@ function ServiceDetails({ service, onBack, onUpdate }) {
   const [finalAmount, setFinalAmount] = useState(service.estimated_cost.toString());
   const [statusReason, setStatusReason] = useState('');
   const [selectedStatus, setSelectedStatus] = useState(service.status);
+  const [previewImage, setPreviewImage] = useState(null);
 
   useEffect(() => {
     fetchHistory();
@@ -684,7 +685,15 @@ function ServiceDetails({ service, onBack, onUpdate }) {
             
             <div className="mt-6 space-y-4">
               <div className="flex items-center gap-4 rounded-xl bg-gray-50 p-4">
-                {service.customer_photo_url && <img src={service.customer_photo_url} className="h-12 w-12 rounded-full object-cover" />}
+                {service.customer_photo_url && (
+                  <button
+                    type="button"
+                    onClick={() => setPreviewImage(service.customer_photo_url)}
+                    className="h-12 w-12 overflow-hidden rounded-full border border-gray-200 p-0 transition hover:shadow-lg"
+                  >
+                    <img src={service.customer_photo_url} className="h-full w-full object-cover" />
+                  </button>
+                )}
                 <div>
                   <p className="font-bold text-gray-900">{service.customer_name}</p>
                   <p className="text-xs text-gray-500">{service.device_brand} {service.device_model}</p>
@@ -721,6 +730,23 @@ function ServiceDetails({ service, onBack, onUpdate }) {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {previewImage && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4">
+          <button
+            onClick={() => setPreviewImage(null)}
+            className="absolute right-4 top-4 rounded-full bg-black/50 p-2 text-white"
+            aria-label="Close image preview"
+          >
+            ×
+          </button>
+          <img
+            src={previewImage}
+            alt="Customer Full Size"
+            className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain"
+          />
         </div>
       )}
     </div>
