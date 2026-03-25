@@ -153,7 +153,7 @@ export default function DashboardPage() {
 
       {/* Current Summary */}
       <section>
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">Today Summary</h3>
+        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">Current Summary</h3>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
           <SummaryCard 
             title="Registered" 
