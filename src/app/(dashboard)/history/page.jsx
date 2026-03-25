@@ -18,7 +18,8 @@ import { cn, formatCurrency } from '@/lib/utils';
 export default function HistoryPage() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') === 'sales' ? 'sales' : 'services';
-  
+  const todayParam = searchParams.get('today');
+
   const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [services, setServices] = useState([]);
@@ -36,6 +37,20 @@ export default function HistoryPage() {
       fetchHistory();
     }
   }, [activeTab, profile]);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+
+    if (todayParam === 'returned' && activeTab === 'services') {
+      setDateFrom(today);
+      setDateTo(today);
+    }
+
+    if (todayParam === 'true') {
+      setDateFrom(today);
+      setDateTo(today);
+    }
+  }, [todayParam, activeTab]);
 
   async function fetchHistory() {
     try {
