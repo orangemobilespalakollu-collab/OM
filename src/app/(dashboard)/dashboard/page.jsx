@@ -155,11 +155,32 @@ export default function DashboardPage() {
       <section>
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">Today Summary</h3>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-          <SummaryCard title="Registered" count={stats.registeredToday} />
-          <SummaryCard title="Completed" count={stats.completedToday} />
-          <SummaryCard title="Returned" count={stats.returnedToday} />
-          <SummaryCard title="Sales" count={stats.salesToday} />
-          <SummaryCard title="Revenue" count={formatCurrency(stats.revenueToday)} isCurrency />
+          <SummaryCard 
+            title="Registered" 
+            count={stats.registeredToday}
+            onClick={() => router.push('/services?today=registered')}
+          />
+          <SummaryCard 
+            title="Completed" 
+            count={stats.completedToday}
+            onClick={() => router.push('/services?status=Completed&today=true')}
+          />
+          <SummaryCard 
+            title="Returned" 
+            count={stats.returnedToday}
+            onClick={() => router.push('/history?tab=services&today=returned')}
+          />
+          <SummaryCard 
+            title="Sales" 
+            count={stats.salesToday}
+            onClick={() => router.push('/sales?today=true')}
+          />
+          <SummaryCard 
+            title="Revenue" 
+            count={formatCurrency(stats.revenueToday)}
+            isCurrency
+            onClick={() => router.push('/sales?today=true')}
+          />
         </div>
       </section>
 
@@ -281,12 +302,17 @@ function PriorityCard({ title, count, color, bgColor, onClick }) {
   );
 }
 
-function SummaryCard({ title, count, isCurrency }) {
+function SummaryCard({ title, count, isCurrency, onClick }) {
   return (
-    <div className="rounded-xl bg-white p-4 shadow-sm">
+    <button
+      onClick={onClick}
+      className="w-full rounded-xl bg-white p-4 text-left shadow-sm transition-transform hover:scale-[1.02] hover:bg-orange-50 active:scale-[0.98]"
+    >
       <p className="text-xs font-medium text-gray-500 uppercase">{title}</p>
-      <p className={cn("mt-1 font-bold text-gray-900", isCurrency ? "text-sm" : "text-xl")}>{count}</p>
-    </div>
+      <p className={cn("mt-1 font-bold text-gray-900", isCurrency ? "text-sm" : "text-xl")}>
+        {count}
+      </p>
+    </button>
   );
 }
 
