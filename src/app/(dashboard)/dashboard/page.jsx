@@ -30,6 +30,7 @@ export default function DashboardPage() {
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activityLimit, setActivityLimit] = useState(5);
 
   useEffect(() => {
     fetchDashboardData();
@@ -40,7 +41,7 @@ export default function DashboardPage() {
       setLoading(true);
       const [statsData, activityData] = await Promise.all([
         dashboardService.getDashboardStats(),
-        dashboardService.getRecentActivity()
+        dashboardService.getRecentActivity(5)
       ]);
 
       setStats(statsData);
@@ -49,6 +50,27 @@ export default function DashboardPage() {
       console.error('Error fetching dashboard data:', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadMoreActivities() {
+    const newLimit = activityLimit + 5;
+    setActivityLimit(newLimit);
+    try {
+      const activityData = await dashboardService.getRecentActivity(newLimit);
+      setRecentActivity(activityData);
+    } catch (err) {
+      console.error('Error loading more activities:', err);
+    }
+  }
+
+  async function showLessActivities() {
+    setActivityLimit(5);
+    try {
+      const activityData = await dashboardService.getRecentActivity(5);
+      setRecentActivity(activityData);
+    } catch (err) {
+      console.error('Error showing less activities:', err);
     }
   }
 
@@ -138,12 +160,22 @@ export default function DashboardPage() {
         <section className="rounded-2xl bg-white p-6 shadow-sm">
           <div className="mb-6 flex items-center justify-between">
             <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
-            <button
-              onClick={() => router.push('/history?tab=services')}
-              className="text-sm font-medium text-orange-600 hover:underline"
-            >
-              See More
-            </button>
+            <div className="flex gap-2">
+              {activityLimit > 5 && (
+                <button
+                  onClick={showLessActivities}
+                  className="text-sm font-medium text-gray-500 hover:underline"
+                >
+                  Show Less
+                </button>
+              )}
+              <button
+                onClick={loadMoreActivities}
+                className="text-sm font-medium text-orange-600 hover:underline"
+              >
+                See More
+              </button>
+            </div>
           </div>
           <div className="space-y-4">
             {recentActivity.map((activity, i) => (
