@@ -1,0 +1,5 @@
+{
+  "name": "Orange Mobile",
+  "description": "A production-grade shop management system for mobile services and accessory sales, featuring real-time tracking, admin reports, and employee management.",
+  "requestFramePermissions": ["camera"]
+}
