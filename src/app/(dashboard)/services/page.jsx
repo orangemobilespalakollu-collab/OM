@@ -62,6 +62,12 @@ export default function ServicesPage() {
           setSelectedService(matched);
           setView('details');
         }
+      } else if (selectedService) {
+        // Update selectedService if it exists in the updated data
+        const updatedService = data.find((s) => s.id === selectedService.id);
+        if (updatedService) {
+          setSelectedService(updatedService);
+        }
       }
     } catch (err) {
       console.error('Error fetching services:', err);
@@ -652,8 +658,8 @@ function ServiceDetails({ service, onBack, onUpdate }) {
       await serviceService.updateStatus(service.id, selectedStatus, profile?.id, statusReason);
       toast.success(`Status updated to ${selectedStatus}`);
       setStatusReason('');
-      onUpdate();
-      onBack();
+      onUpdate(); // This will update the selectedService via fetchServices
+      // Don't call onBack() - let user see the updated status and go back manually
     } catch (err) {
       toast.error(err.message);
     } finally {
