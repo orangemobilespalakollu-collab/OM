@@ -16,6 +16,7 @@ export const dashboardService = {
     const inProgress = services?.filter(s => s.status === 'In Progress').length || 0;
     const waitingForParts = services?.filter(s => s.status === 'Waiting for Parts').length || 0;
     const completedNotReturned = services?.filter(s => s.status === 'Completed').length || 0;
+    const received = services?.filter(s => s.status === 'Received').length || 0;
     
     const registeredToday = services?.filter(s => new Date(s.created_at) >= today).length || 0;
     const completedToday = services?.filter(s => s.status === 'Completed' && new Date(s.created_at) >= today).length || 0;
@@ -36,6 +37,7 @@ export const dashboardService = {
     const salesRevenueToday = sales?.reduce((sum, s) => sum + (s.price * s.quantity), 0) || 0;
 
     return {
+      received,
       inProgress,
       waitingForParts,
       completedNotReturned,

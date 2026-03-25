@@ -779,7 +779,13 @@ function ServiceDetails({ service, onBack, onUpdate }) {
           {/* Return Button */}
           <button
             onClick={() => setShowReturn(true)}
-            className="w-full rounded-2xl bg-orange-600 py-4 font-bold text-white shadow-lg transition-all hover:bg-orange-700 active:scale-[0.98]"
+            disabled={service.status !== 'Completed' && service.status !== 'Not Repairable'}
+            className={cn(
+              "w-full rounded-2xl py-4 font-bold text-white shadow-lg transition-all active:scale-[0.98]",
+              service.status === 'Completed' || service.status === 'Not Repairable'
+                ? "bg-orange-600 hover:bg-orange-700"
+                : "bg-gray-400 cursor-not-allowed"
+            )}
           >
             Return Mobile
           </button>

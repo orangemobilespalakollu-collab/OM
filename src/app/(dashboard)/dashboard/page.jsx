@@ -18,6 +18,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { profile } = useAuth();
   const [stats, setStats] = useState({
+    received: 0,
     inProgress: 0,
     waitingForParts: 0,
     completedNotReturned: 0,
@@ -118,7 +119,14 @@ export default function DashboardPage() {
       {/* Work Priority */}
       <section>
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">Work Priority</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <PriorityCard 
+            title="Received" 
+            count={stats.received || 0} 
+            color="text-orange-600" 
+            bgColor="bg-orange-50" 
+            onClick={() => router.push('/services?status=Received')}
+          />
           <PriorityCard 
             title="In Progress" 
             count={stats.inProgress} 

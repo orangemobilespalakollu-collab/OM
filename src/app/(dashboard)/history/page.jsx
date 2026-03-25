@@ -8,7 +8,10 @@ import {
   Search, 
   ChevronRight, 
   Wrench, 
-  ShoppingBag
+  ShoppingBag,
+  User,
+  MapPin,
+  Smartphone
 } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 
@@ -25,6 +28,8 @@ export default function HistoryPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [brandFilter, setBrandFilter] = useState('all');
+  const [view, setView] = useState('list');
+  const [selectedService, setSelectedService] = useState(null);
 
   useEffect(() => {
     if (profile) {
@@ -109,31 +114,39 @@ export default function HistoryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Past History</h2>
-        <div className="flex rounded-lg bg-gray-100 p-1">
-          <button
-            onClick={() => setActiveTab('services')}
-            className={cn(
-              "flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all",
-              activeTab === 'services' ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
-            )}
-          >
-            <Wrench className="h-4 w-4" />
-            Services
-          </button>
-          <button
-            onClick={() => setActiveTab('sales')}
-            className={cn(
-              "flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all",
-              activeTab === 'sales' ? "bg-white text-purple-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
-            )}
-          >
-            <ShoppingBag className="h-4 w-4" />
-            Sales
-          </button>
-        </div>
-      </div>
+      {view === 'details' && selectedService ? (
+        <ServiceHistoryDetails 
+          service={selectedService} 
+          onBack={() => setView('list')} 
+          profile={profile}
+        />
+      ) : (
+        <>
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">Past History</h2>
+            <div className="flex rounded-lg bg-gray-100 p-1">
+              <button
+                onClick={() => setActiveTab('services')}
+                className={cn(
+                  "flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all",
+                  activeTab === 'services' ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                <Wrench className="h-4 w-4" />
+                Services
+              </button>
+              <button
+                onClick={() => setActiveTab('sales')}
+                className={cn(
+                  "flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all",
+                  activeTab === 'sales' ? "bg-white text-purple-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                <ShoppingBag className="h-4 w-4" />
+                Sales
+              </button>
+            </div>
+          </div>
 
       <div className="space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -212,7 +225,11 @@ export default function HistoryPage() {
         ) : activeTab === 'services' ? (
           filteredServices.length > 0 ? (
             filteredServices.map((service) => (
-              <div key={service.id} className="rounded-2xl bg-white p-5 shadow-sm">
+              <div 
+                key={service.id} 
+                onClick={() => { setSelectedService(service); setView('details'); }}
+                className="cursor-pointer rounded-2xl bg-white p-5 shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
+              >
                 <div className="flex justify-between">
                   <div>
                     <h4 className="font-bold text-gray-900">{service.customer_name}</h4>
@@ -256,6 +273,193 @@ export default function HistoryPage() {
             </div>
           )
         )}
+      </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ServiceHistoryDetails({ service, onBack, profile }) {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [service.id]);
+
+  async function fetchHistory() {
+    try {
+      setLoading(false);
+      // For history view, we can get the service history from the service object or fetch additional details
+      // Since this is history, we'll show what we have
+    } catch (err) {
+      console.error('Error fetching history:', err);
+      setLoading(false);
+    }
+  }
+
+  // Role-based data display
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'owner';
+  const isTechnician = profile?.role === 'technician';
+
+  return (
+    <div className="max-w-4xl mx-auto pb-20">
+      <div className="mb-6 flex items-center gap-4">
+        <button onClick={onBack} className="rounded-full bg-white p-2 shadow-sm">
+          <ChevronRight className="h-6 w-6 rotate-180" />
+        </button>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">{service.customer_name}</h2>
+          <p className="text-sm font-bold text-orange-600 uppercase">{service.ticket_number}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          {/* Customer & Device Info */}
+          <div className="rounded-2xl bg-white p-6 shadow-sm space-y-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <InfoItem label="Mobile Number" value={service.customer_mobile} icon={User} />
+              <InfoItem label="Address/Area" value={service.customer_address || 'N/A'} icon={MapPin} />
+              <InfoItem label="Device" value={`${service.device_brand} ${service.device_model}`} icon={Smartphone} />
+              <InfoItem label="Issue Type" value={service.issue_type} icon={Wrench} />
+            </div>
+            
+            {service.issue_description && (
+              <div className="border-t pt-4">
+                <p className="text-xs font-bold text-gray-400 uppercase">Issue Description</p>
+                <p className="mt-1 text-sm text-gray-600">{service.issue_description}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Photos */}
+          <div className="rounded-2xl bg-white p-6 shadow-sm">
+            <h3 className="mb-4 font-bold text-gray-900">Photos</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {service.customer_photo_url ? (
+                <img 
+                  src={service.customer_photo_url} 
+                  alt="Customer" 
+                  className="aspect-square rounded-lg object-cover cursor-pointer hover:opacity-80"
+                  onClick={() => window.open(service.customer_photo_url, '_blank')}
+                />
+              ) : <div className="aspect-square rounded-lg bg-gray-50 flex items-center justify-center text-[10px] text-gray-400">No Customer Photo</div>}
+              
+              {service.device_front_photo_url ? (
+                <img 
+                  src={service.device_front_photo_url} 
+                  alt="Device Front" 
+                  className="aspect-square rounded-lg object-cover cursor-pointer hover:opacity-80"
+                  onClick={() => window.open(service.device_front_photo_url, '_blank')}
+                />
+              ) : <div className="aspect-square rounded-lg bg-gray-50 flex items-center justify-center text-[10px] text-gray-400">No Front Photo</div>}
+              
+              {service.device_back_photo_url ? (
+                <img 
+                  src={service.device_back_photo_url} 
+                  alt="Device Back" 
+                  className="aspect-square rounded-lg object-cover cursor-pointer hover:opacity-80"
+                  onClick={() => window.open(service.device_back_photo_url, '_blank')}
+                />
+              ) : <div className="aspect-square rounded-lg bg-gray-50 flex items-center justify-center text-[10px] text-gray-400">No Back Photo</div>}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {/* Service Summary */}
+          <div className="rounded-2xl bg-white p-6 shadow-sm space-y-4">
+            <h3 className="font-bold text-gray-900">Service Summary</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">Received Date:</span>
+                <span className="text-sm font-medium">{new Date(service.created_at).toLocaleDateString()}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">Returned Date:</span>
+                <span className="text-sm font-medium">{new Date(service.returned_at).toLocaleDateString()}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">Estimated Cost:</span>
+                <span className="text-sm font-medium">{formatCurrency(service.estimated_cost)}</span>
+              </div>
+              <div className="flex justify-between items-center border-t pt-3">
+                <span className="text-sm font-medium text-gray-700">Final Amount:</span>
+                <span className="text-lg font-bold text-green-600">{formatCurrency(service.final_amount)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Role-based Information */}
+          {isAdmin && (
+            <div className="rounded-2xl bg-white p-6 shadow-sm space-y-4">
+              <h3 className="font-bold text-gray-900">Business Details</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Profit/Loss:</span>
+                  <span className={`text-sm font-bold ${service.final_amount >= service.estimated_cost ? 'text-green-600' : 'text-red-600'}`}>
+                    {service.final_amount >= service.estimated_cost ? '+' : ''}{formatCurrency(service.final_amount - service.estimated_cost)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Service Duration:</span>
+                  <span className="text-sm font-medium">
+                    {Math.ceil((new Date(service.returned_at) - new Date(service.created_at)) / (1000 * 60 * 60 * 24))} days
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isTechnician && (
+            <div className="rounded-2xl bg-white p-6 shadow-sm space-y-4">
+              <h3 className="font-bold text-gray-900">Technical Notes</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Final Status:</span>
+                  <span className="text-sm font-medium text-green-600">Completed</span>
+                </div>
+                <div className="text-sm text-gray-600">
+                  Service completed successfully. Device returned to customer.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Service Timeline */}
+          <div className="rounded-2xl bg-white p-6 shadow-sm">
+            <h3 className="mb-4 font-bold text-gray-900">Service Timeline</h3>
+            <div className="space-y-4">
+              <div className="relative pl-4 border-l-2 border-orange-100">
+                <div className="absolute -left-[7px] top-0 h-3 w-3 rounded-full bg-orange-500" />
+                <p className="text-sm font-bold text-gray-900">Service Received</p>
+                <p className="text-xs text-gray-500">by {service.profiles?.full_name || 'Staff'}</p>
+                <p className="text-[10px] text-gray-400">{new Date(service.created_at).toLocaleString()}</p>
+              </div>
+              
+              <div className="relative pl-4 border-l-2 border-green-100">
+                <div className="absolute -left-[7px] top-0 h-3 w-3 rounded-full bg-green-500" />
+                <p className="text-sm font-bold text-gray-900">Service Completed & Returned</p>
+                <p className="text-xs text-gray-500">by {service.returned_by_profile?.full_name || 'Staff'}</p>
+                <p className="text-[10px] text-gray-400">{new Date(service.returned_at).toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InfoItem({ label, value, icon: Icon }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs font-bold text-gray-400 uppercase">{label}</p>
+      <div className="flex items-center gap-2">
+        <Icon className="h-4 w-4 text-orange-600" />
+        <p className="font-medium text-gray-900">{value}</p>
       </div>
     </div>
   );
