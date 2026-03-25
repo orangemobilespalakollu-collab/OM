@@ -22,6 +22,9 @@ export default function HistoryPage() {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [brandFilter, setBrandFilter] = useState('all');
 
   useEffect(() => {
     if (profile) {
@@ -46,16 +49,63 @@ export default function HistoryPage() {
     }
   }
 
-  const filteredServices = services.filter(s => 
-    s.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.ticket_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.device_model.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredServices = services.filter(s => {
+    const matchesSearch = 
+      s.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.device_brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.device_model.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.ticket_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.issue_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (s.issue_description && s.issue_description.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    const matchesBrand = brandFilter === 'all' || s.device_brand.toLowerCase() === brandFilter.toLowerCase();
+    
+    // Date filtering for services (using returned_at if available, otherwise created_at)
+    let matchesDate = true;
+    if (dateFrom || dateTo) {
+      const serviceDate = new Date(s.returned_at || s.created_at);
+      const fromDate = dateFrom ? new Date(dateFrom) : null;
+      const toDate = dateTo ? new Date(dateTo) : null;
+      
+      if (fromDate) {
+        fromDate.setHours(0, 0, 0, 0);
+        matchesDate = matchesDate && serviceDate >= fromDate;
+      }
+      if (toDate) {
+        toDate.setHours(23, 59, 59, 999);
+        matchesDate = matchesDate && serviceDate <= toDate;
+      }
+    }
+    
+    return matchesSearch && matchesBrand && matchesDate;
+  });
 
-  const filteredSales = sales.filter(s => 
-    s.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.brand_type.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredSales = sales.filter(s => {
+    const matchesSearch = 
+      s.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.brand_type.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesBrand = brandFilter === 'all' || s.brand_type.toLowerCase() === brandFilter.toLowerCase();
+    
+    // Date filtering for sales
+    let matchesDate = true;
+    if (dateFrom || dateTo) {
+      const saleDate = new Date(s.created_at);
+      const fromDate = dateFrom ? new Date(dateFrom) : null;
+      const toDate = dateTo ? new Date(dateTo) : null;
+      
+      if (fromDate) {
+        fromDate.setHours(0, 0, 0, 0);
+        matchesDate = matchesDate && saleDate >= fromDate;
+      }
+      if (toDate) {
+        toDate.setHours(23, 59, 59, 999);
+        matchesDate = matchesDate && saleDate <= toDate;
+      }
+    }
+    
+    return matchesSearch && matchesBrand && matchesDate;
+  });
 
   return (
     <div className="space-y-6">
@@ -85,15 +135,75 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-        <input
-          type="text"
-          placeholder={`Search ${activeTab}...`}
-          className="w-full rounded-xl border border-gray-200 py-2.5 pl-10 pr-4 focus:border-orange-500 focus:outline-none"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+      <div className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder={`Search ${activeTab}...`}
+              className="w-full rounded-xl border border-gray-200 py-2.5 pl-10 pr-4 focus:border-orange-500 focus:outline-none"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Filters Row */}
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Brand Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">Brand:</span>
+            <select
+              value={brandFilter}
+              onChange={(e) => setBrandFilter(e.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+            >
+              <option value="all">All Brands</option>
+              {activeTab === 'services' ? (
+                <>
+                  <option value="samsung">Samsung</option>
+                  <option value="apple">Apple</option>
+                  <option value="oneplus">OnePlus</option>
+                  <option value="xiaomi">Xiaomi</option>
+                  <option value="oppo">Oppo</option>
+                  <option value="vivo">Vivo</option>
+                  <option value="realme">Realme</option>
+                  <option value="motorola">Motorola</option>
+                  <option value="other">Other</option>
+                </>
+              ) : (
+                <>
+                  <option value="accessories">Accessories</option>
+                  <option value="chargers">Chargers</option>
+                  <option value="cases">Cases</option>
+                  <option value="screen protectors">Screen Protectors</option>
+                  <option value="other">Other</option>
+                </>
+              )}
+            </select>
+          </div>
+
+          {/* Date Range Filters */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">From:</span>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">To:</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+            />
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

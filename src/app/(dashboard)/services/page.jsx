@@ -31,6 +31,10 @@ export default function ServicesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [issueFilter, setIssueFilter] = useState('all');
+  const [brandFilter, setBrandFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   useEffect(() => {
     const action = searchParams.get('action');
@@ -70,12 +74,35 @@ export default function ServicesPage() {
     const matchesSearch = 
       s.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.customer_mobile.includes(searchQuery) ||
+      s.device_brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.device_model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.ticket_number.toLowerCase().includes(searchQuery.toLowerCase());
+      s.ticket_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.issue_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (s.issue_description && s.issue_description.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
+    const matchesIssue = issueFilter === 'all' || s.issue_type === issueFilter;
+    const matchesBrand = brandFilter === 'all' || s.device_brand.toLowerCase() === brandFilter.toLowerCase();
     
-    return matchesSearch && matchesStatus;
+    // Date filtering
+    let matchesDate = true;
+    if (dateFrom || dateTo) {
+      const serviceDate = new Date(s.created_at);
+      
+      if (dateFrom) {
+        const fromDate = new Date(dateFrom);
+        fromDate.setHours(0, 0, 0, 0);
+        matchesDate = matchesDate && serviceDate >= fromDate;
+      }
+      
+      if (dateTo) {
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        matchesDate = matchesDate && serviceDate <= toDate;
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesIssue && matchesBrand && matchesDate;
   });
 
   if (view === 'register') return <ServiceRegistration onCancel={() => setView('list')} onComplete={() => { setView('list'); fetchServices(); }} />;
@@ -84,50 +111,117 @@ export default function ServicesPage() {
   return (
     <div className="space-y-6">
       {/* Header Actions */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search name, mobile, model..."
-            className="w-full rounded-xl border border-gray-200 py-2.5 pl-10 pr-4 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      <div className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search name, mobile, brand, model, issue..."
+              className="w-full rounded-xl border border-gray-200 py-2.5 pl-10 pr-4 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setView('register')}
+              className="flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 font-bold text-white transition-colors hover:bg-orange-700"
+            >
+              <Plus className="h-5 w-5" />
+              <span className="hidden sm:inline">New Service</span>
+            </button>
+            <button 
+              onClick={() => router.push('/history?tab=services')}
+              className="rounded-xl border border-gray-200 bg-white p-2.5 text-gray-500 hover:bg-gray-50"
+            >
+              <History className="h-5 w-5" />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={() => setView('register')}
-            className="flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 font-bold text-white transition-colors hover:bg-orange-700"
-          >
-            <Plus className="h-5 w-5" />
-            <span className="hidden sm:inline">New Service</span>
-          </button>
-          <button 
-            onClick={() => router.push('/history?tab=services')}
-            className="rounded-xl border border-gray-200 bg-white p-2.5 text-gray-500 hover:bg-gray-50"
-          >
-            <History className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
 
-      {/* Filters */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {['all', 'Received', 'In Progress', 'Waiting for Parts', 'Completed', 'Not Repairable'].map((status) => (
-          <button
-            key={status}
-            onClick={() => setStatusFilter(status)}
-            className={cn(
-              "whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-              statusFilter === status 
-                ? "bg-orange-600 text-white" 
-                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-            )}
-          >
-            {status === 'all' ? 'All Active' : status}
-          </button>
-        ))}
+        {/* Filters Row */}
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Status Filters */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Status:</span>
+            <div className="flex gap-1">
+              {['all', 'Received', 'In Progress', 'Waiting for Parts', 'Completed', 'Not Repairable'].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  className={cn(
+                    "whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                    statusFilter === status 
+                      ? "bg-orange-600 text-white" 
+                      : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                  )}
+                >
+                  {status === 'all' ? 'All Active' : status}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Issue Type Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">Issue:</span>
+            <select
+              value={issueFilter}
+              onChange={(e) => setIssueFilter(e.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+            >
+              <option value="all">All Issues</option>
+              <option value="Display Problem">Display Problem</option>
+              <option value="Battery Problem">Battery Problem</option>
+              <option value="Charging Problem">Charging Problem</option>
+              <option value="Software Issue">Software Issue</option>
+              <option value="Water Damage">Water Damage</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          {/* Brand Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">Brand:</span>
+            <select
+              value={brandFilter}
+              onChange={(e) => setBrandFilter(e.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+            >
+              <option value="all">All Brands</option>
+              <option value="samsung">Samsung</option>
+              <option value="apple">Apple</option>
+              <option value="oneplus">OnePlus</option>
+              <option value="xiaomi">Xiaomi</option>
+              <option value="oppo">Oppo</option>
+              <option value="vivo">Vivo</option>
+              <option value="realme">Realme</option>
+              <option value="motorola">Motorola</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          {/* Date Range Filters */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">From:</span>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">To:</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Services List */}
