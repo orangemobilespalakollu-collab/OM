@@ -638,6 +638,7 @@ function ServiceDetails({ service, onBack, onUpdate }) {
   const [statusReason, setStatusReason] = useState('');
   const [selectedStatus, setSelectedStatus] = useState(service.status);
   const [previewImage, setPreviewImage] = useState(null);
+  const isFinalStatus = service.status === 'Completed' || service.status === 'Not Repairable';
 
   useEffect(() => {
     fetchHistory();
@@ -734,10 +735,13 @@ function ServiceDetails({ service, onBack, onUpdate }) {
           <div className="rounded-2xl bg-white p-6 shadow-sm space-y-4">
             <h3 className="font-bold text-gray-900">Update Status</h3>
             <select
-              className="w-full rounded-lg border border-gray-200 p-2.5 focus:border-orange-500 focus:outline-none"
+              className={cn(
+                "w-full rounded-lg border border-gray-200 p-2.5 focus:border-orange-500 focus:outline-none",
+                isFinalStatus && "bg-gray-100 text-gray-500 cursor-not-allowed"
+              )}
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              disabled={loading}
+              disabled={loading || isFinalStatus}
             >
               {['Received', 'In Progress', 'Waiting for Parts', 'Completed', 'Not Repairable'].map(status => (
                 <option key={status} value={status}>{status}</option>
@@ -759,7 +763,7 @@ function ServiceDetails({ service, onBack, onUpdate }) {
 
             <button
               onClick={updateStatus}
-              disabled={loading || selectedStatus === service.status}
+              disabled={loading || selectedStatus === service.status || isFinalStatus}
               className="w-full rounded-xl bg-gray-900 py-2.5 font-bold text-white transition-all hover:bg-black disabled:opacity-50"
             >
               Update Status
@@ -888,3 +892,4 @@ function InfoItem({ label, value, icon: Icon }) {
     </div>
   );
 }
+
