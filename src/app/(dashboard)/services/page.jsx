@@ -445,17 +445,27 @@ function ServiceRegistration({ onCancel, onComplete }) {
 
 function PhotoUpload({ label, onFile }) {
   const [preview, setPreview] = useState(null);
+  const [objectUrl, setObjectUrl] = useState('');
   const inputId = `photo-upload-${label.replace(/\s+/g, '-').toLowerCase()}`;
+
+  useEffect(() => {
+    return () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [objectUrl]);
 
   function handleChange(e) {
     const file = e.target.files?.[0];
     if (file) {
       onFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+      const url = URL.createObjectURL(file);
+      setObjectUrl(url);
+      setPreview(url);
     }
   }
 
@@ -468,7 +478,14 @@ function PhotoUpload({ label, onFile }) {
             <img src={preview} alt="Preview" className="h-full w-full object-cover" />
             <button 
               type="button"
-              onClick={() => { setPreview(null); onFile(null); }}
+              onClick={() => {
+                if (objectUrl) {
+                  URL.revokeObjectURL(objectUrl);
+                  setObjectUrl('');
+                }
+                setPreview(null);
+                onFile(null);
+              }}
               className="absolute bottom-2 right-2 rounded-full bg-black/50 p-1.5 text-white backdrop-blur-sm"
             >
               <Plus className="h-4 w-4 rotate-45" />
