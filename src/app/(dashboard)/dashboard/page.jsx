@@ -33,15 +33,22 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalActivities, setTotalActivities] = useState(0);
+  const [activityLoading, setActivityLoading] = useState(false);
 
   const ACTIVITIES_PER_PAGE = 5;
   const MAX_ACTIVITIES = 50;
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchInitialDashboard();
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      fetchRecentActivity();
+    }
   }, [currentPage]);
 
-  async function fetchDashboardData() {
+  async function fetchInitialDashboard() {
     try {
       setLoading(true);
 
@@ -57,6 +64,25 @@ export default function DashboardPage() {
       console.error('Error fetching dashboard data:', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchRecentActivity() {
+    try {
+      setActivityLoading(true);
+
+      const activityResponse = await dashboardService.getRecentActivity(
+        currentPage,
+        ACTIVITIES_PER_PAGE,
+        MAX_ACTIVITIES
+      );
+
+      setRecentActivity(activityResponse.data || []);
+      setTotalActivities(activityResponse.total || 0);
+    } catch (err) {
+      console.error('Error fetching recent activity:', err);
+    } finally {
+      setActivityLoading(false);
     }
   }
 
@@ -185,7 +211,25 @@ export default function DashboardPage() {
             <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
           </div>
 
-          {recentActivity.length === 0 ? (
+          {activityLoading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className="animate-pulse rounded-xl border border-gray-100 bg-white p-3"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="h-8 w-8 rounded-full bg-gray-200" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 w-2/3 rounded bg-gray-200" />
+                      <div className="h-3 w-1/3 rounded bg-gray-100" />
+                    </div>
+                    <div className="h-3 w-10 rounded bg-gray-100" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : recentActivity.length === 0 ? (
             <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50">
               <p className="text-sm font-medium text-gray-500">No activity found for today</p>
             </div>
