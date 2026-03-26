@@ -97,20 +97,22 @@ export default function DashboardPage() {
       {/* Quick Actions */}
       <section>
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">Quick Actions</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {quickActions.map((action) => (
             <button
               key={action.name}
               onClick={() => router.push(action.href)}
               className={cn(
-                "flex items-center gap-4 rounded-2xl p-6 text-white transition-transform hover:scale-[1.02] active:scale-[0.98]",
+                "flex items-center gap-3 rounded-2xl px-4 py-4 text-white shadow-sm transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]",
                 action.color
               )}
             >
-              <div className="rounded-full bg-white/20 p-3">
-                <action.icon className="h-6 w-6" />
+              <div className="rounded-xl bg-white/20 p-2.5 backdrop-blur-sm">
+                <action.icon className="h-5 w-5" />
               </div>
-              <span className="text-lg font-bold">{action.name}</span>
+              <div className="text-left">
+                <p className="text-sm font-bold leading-tight">{action.name}</p>
+              </div>
             </button>
           ))}
         </div>
@@ -158,12 +160,12 @@ export default function DashboardPage() {
           <SummaryCard 
             title="Registered" 
             count={stats.registeredToday}
-            onClick={() => router.push('/services?today=registered')}
+            onClick={() => router.push('/services?filter=registeredToday')}
           />
           <SummaryCard 
             title="Completed" 
             count={stats.completedToday}
-            onClick={() => router.push('/services?status=Completed&today=true')}
+            onClick={() => router.push('/services?filter=completedToday')}
           />
           <SummaryCard 
             title="Returned" 
@@ -179,7 +181,7 @@ export default function DashboardPage() {
             title="Revenue" 
             count={formatCurrency(stats.revenueToday)}
             isCurrency
-            onClick={() => router.push('/sales?today=true')}
+            onClick={() => router.push('/history?tab=earnings&today=true')}
           />
         </div>
       </section>
