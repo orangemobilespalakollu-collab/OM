@@ -31,47 +31,34 @@ export default function DashboardPage() {
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activityLimit, setActivityLimit] = useState(5);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalActivities, setTotalActivities] = useState(0);
+
+  const ACTIVITIES_PER_PAGE = 5;
+  const MAX_ACTIVITIES = 50;
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [currentPage]);
 
   async function fetchDashboardData() {
     try {
       setLoading(true);
-      const [statsData, activityData] = await Promise.all([
+
+      const offset = (currentPage - 1) * ACTIVITIES_PER_PAGE;
+
+      const [statsData, activityResponse] = await Promise.all([
         dashboardService.getDashboardStats(),
-        dashboardService.getRecentActivity(5)
+        dashboardService.getRecentActivity(ACTIVITIES_PER_PAGE, offset, MAX_ACTIVITIES)
       ]);
 
       setStats(statsData);
-      setRecentActivity(activityData);
+      setRecentActivity(activityResponse.data || []);
+      setTotalActivities(activityResponse.total || 0);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function loadMoreActivities() {
-    const newLimit = activityLimit + 5;
-    setActivityLimit(newLimit);
-    try {
-      const activityData = await dashboardService.getRecentActivity(newLimit);
-      setRecentActivity(activityData);
-    } catch (err) {
-      console.error('Error loading more activities:', err);
-    }
-  }
-
-  async function showLessActivities() {
-    setActivityLimit(5);
-    try {
-      const activityData = await dashboardService.getRecentActivity(5);
-      setRecentActivity(activityData);
-    } catch (err) {
-      console.error('Error showing less activities:', err);
     }
   }
 
@@ -92,6 +79,15 @@ export default function DashboardPage() {
     </div>
   );
 
+  const totalPages = Math.ceil(Math.min(totalActivities, MAX_ACTIVITIES) / ACTIVITIES_PER_PAGE);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
   return (
     <div className="space-y-8">
       {/* Quick Actions */}
@@ -196,54 +192,89 @@ export default function DashboardPage() {
         <section className="rounded-2xl bg-white p-6 shadow-sm">
           <div className="mb-6 flex items-center justify-between">
             <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
-            <div className="flex gap-2">
-              {activityLimit > 5 && (
-                <button
-                  onClick={showLessActivities}
-                  className="text-sm font-medium text-gray-500 hover:underline"
-                >
-                  Show Less
-                </button>
-              )}
-              <button
-                onClick={loadMoreActivities}
-                className="text-sm font-medium text-orange-600 hover:underline"
-              >
-                See More
-              </button>
+            <p className="text-sm text-gray-500">
+              Showing up to 50 recent entries
+            </p>
+          </div>
+
+          {recentActivity.length === 0 ? (
+            <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50">
+              <p className="text-sm font-medium text-gray-500">No data found</p>
             </div>
-          </div>
-          <div className="space-y-4">
-            {recentActivity.map((activity, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  const serviceId = activity.services?.id;
-                  if (serviceId) {
-                    router.push(`/services?serviceId=${serviceId}`);
-                  }
-                }}
-                className="w-full rounded-xl border border-gray-100 bg-white p-3 text-left hover:bg-orange-50"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="rounded-full bg-gray-100 p-2">
-                    <Clock className="h-4 w-4 text-gray-500" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">
-                      {activity.services?.customer_name} - {activity.services?.device_model}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Status updated to <span className="font-semibold text-orange-600">{activity.status}</span>
-                    </p>
-                  </div>
-                  <span className="text-[10px] text-gray-400">
-                    {new Date(activity.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+          ) : (
+            <>
+              <div className="space-y-4">
+                {recentActivity.map((activity, i) => (
+                  <button
+                    key={activity.id || i}
+                    onClick={() => {
+                      const serviceId = activity.services?.id;
+                      if (serviceId) {
+                        router.push(`/services?serviceId=${serviceId}`);
+                      }
+                    }}
+                    className="w-full rounded-xl border border-gray-100 bg-white p-3 text-left transition hover:bg-orange-50"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="rounded-full bg-gray-100 p-2">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          {activity.services?.customer_name || 'Unknown Customer'} - {activity.services?.device_model || 'Unknown Device'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Status updated to{" "}
+                          <span className="font-semibold text-orange-600">{activity.status}</span>
+                        </p>
+                      </div>
+                      <span className="text-[10px] text-gray-400">
+                        {new Date(activity.created_at).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-2 border-t border-gray-100 pt-4">
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Prev
+                  </button>
+
+                  {getPageNumbers().map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={cn(
+                        "rounded-lg px-3 py-1.5 text-sm font-medium transition",
+                        currentPage === page
+                          ? "bg-orange-500 text-white"
+                          : "border border-gray-200 text-gray-700 hover:bg-gray-50"
+                      )}
+                    >
+                      {page}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Next
+                  </button>
                 </div>
-              </button>
-            ))}
-          </div>
+              )}
+            </>
+          )}
         </section>
 
         {/* Smart Alerts */}
