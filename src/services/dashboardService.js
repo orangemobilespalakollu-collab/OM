@@ -57,9 +57,13 @@ export const dashboardService = {
 
     // Prevent page overflow beyond max 50
     if (offset >= max) {
+      const { count } = await supabase
+        .from('service_status_history')
+        .select('*', { count: 'exact', head: true });
+
       return {
         data: [],
-        total: max,
+        total: Math.min(count || 0, max),
       };
     }
 
