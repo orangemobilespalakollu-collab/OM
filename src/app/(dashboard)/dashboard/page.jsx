@@ -29,15 +29,9 @@ export default function DashboardPage() {
     salesToday: 0,
     revenueToday: 0,
   });
-
   const [recentActivity, setRecentActivity] = useState([]);
-  const [allActivities, setAllActivities] = useState([]); // NEW
-  const [currentPage, setCurrentPage] = useState(1); // NEW
-  const [isExpanded, setIsExpanded] = useState(false); // NEW
-
   const [loading, setLoading] = useState(true);
-
-  const ITEMS_PER_PAGE = 5; // NEW
+  const [activityLimit, setActivityLimit] = useState(5);
 
   useEffect(() => {
     fetchDashboardData();
@@ -48,12 +42,11 @@ export default function DashboardPage() {
       setLoading(true);
       const [statsData, activityData] = await Promise.all([
         dashboardService.getDashboardStats(),
-        dashboardService.getRecentActivity(50) // UPDATED
+        dashboardService.getRecentActivity(5)
       ]);
 
       setStats(statsData);
-      setAllActivities(activityData); // NEW
-      setRecentActivity(activityData.slice(0, 5)); // NEW
+      setRecentActivity(activityData);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
     } finally {
@@ -61,25 +54,25 @@ export default function DashboardPage() {
     }
   }
 
-  // PAGINATION LOGIC
-  const totalPages = Math.ceil(allActivities.length / ITEMS_PER_PAGE);
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    const start = (page - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    setRecentActivity(allActivities.slice(start, end));
-  };
-
-  function handleSeeMore() {
-    setIsExpanded(true);
-    handlePageChange(2);
+  async function loadMoreActivities() {
+    const newLimit = activityLimit + 5;
+    setActivityLimit(newLimit);
+    try {
+      const activityData = await dashboardService.getRecentActivity(newLimit);
+      setRecentActivity(activityData);
+    } catch (err) {
+      console.error('Error loading more activities:', err);
+    }
   }
 
-  function handleSeeLess() {
-    setIsExpanded(false);
-    setCurrentPage(1);
-    setRecentActivity(allActivities.slice(0, 5));
+  async function showLessActivities() {
+    setActivityLimit(5);
+    try {
+      const activityData = await dashboardService.getRecentActivity(5);
+      setRecentActivity(activityData);
+    } catch (err) {
+      console.error('Error showing less activities:', err);
+    }
   }
 
   const quickActions = [
@@ -129,10 +122,34 @@ export default function DashboardPage() {
       <section>
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">Work Priority</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <PriorityCard title="Received" count={stats.received || 0} color="text-orange-600" bgColor="bg-orange-50" onClick={() => router.push('/services?status=Received')} />
-          <PriorityCard title="In Progress" count={stats.inProgress} color="text-blue-600" bgColor="bg-blue-50" onClick={() => router.push('/services?status=In Progress')} />
-          <PriorityCard title="Waiting for Parts" count={stats.waitingForParts} color="text-yellow-600" bgColor="bg-yellow-50" onClick={() => router.push('/services?status=Waiting for Parts')} />
-          <PriorityCard title="Completed (Not Returned)" count={stats.completedNotReturned} color="text-green-600" bgColor="bg-green-50" onClick={() => router.push('/services?status=Completed')} />
+          <PriorityCard 
+            title="Received" 
+            count={stats.received || 0} 
+            color="text-orange-600" 
+            bgColor="bg-orange-50" 
+            onClick={() => router.push('/services?status=Received')}
+          />
+          <PriorityCard 
+            title="In Progress" 
+            count={stats.inProgress} 
+            color="text-blue-600" 
+            bgColor="bg-blue-50" 
+            onClick={() => router.push('/services?status=In Progress')}
+          />
+          <PriorityCard 
+            title="Waiting for Parts" 
+            count={stats.waitingForParts} 
+            color="text-yellow-600" 
+            bgColor="bg-yellow-50" 
+            onClick={() => router.push('/services?status=Waiting for Parts')}
+          />
+          <PriorityCard 
+            title="Completed (Not Returned)" 
+            count={stats.completedNotReturned} 
+            color="text-green-600" 
+            bgColor="bg-green-50" 
+            onClick={() => router.push('/services?status=Completed')}
+          />
         </div>
       </section>
 
@@ -140,28 +157,63 @@ export default function DashboardPage() {
       <section>
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">Today Summary</h3>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-6">
-          <SummaryCard title="Registered" count={stats.registeredToday} onClick={() => router.push('/services?filter=registeredToday')} />
-          <SummaryCard title="Completed" count={stats.completedToday} onClick={() => router.push('/services?filter=completedToday')} />
-          <SummaryCard title="Non Repairable" count={stats.notRepairableToday} onClick={() => router.push('/services?filter=notRepairableToday')} />
-          <SummaryCard title="Returned" count={stats.returnedToday} onClick={() => router.push('/history?tab=services&today=returned')} />
-          <SummaryCard title="Sales" count={stats.salesToday} onClick={() => router.push('/sales?today=true')} />
-          <SummaryCard title="Revenue" count={formatCurrency(stats.revenueToday)} isCurrency onClick={() => router.push('/sales?today=true')} />
+          <SummaryCard 
+            title="Registered" 
+            count={stats.registeredToday}
+            onClick={() => router.push('/services?filter=registeredToday')}
+          />
+          <SummaryCard 
+            title="Completed" 
+            count={stats.completedToday}
+            onClick={() => router.push('/services?filter=completedToday')}
+          />
+          <SummaryCard 
+            title="Non Repairable" 
+            count={stats.notRepairableToday}
+            onClick={() => router.push('/services?filter=notRepairableToday')}
+          />
+          <SummaryCard 
+            title="Returned" 
+            count={stats.returnedToday}
+            onClick={() => router.push('/history?tab=services&today=returned')}
+          />
+          <SummaryCard 
+            title="Sales" 
+            count={stats.salesToday}
+            onClick={() => router.push('/sales?today=true')}
+          />
+          <SummaryCard 
+            title="Revenue" 
+            count={formatCurrency(stats.revenueToday)}
+            isCurrency
+            onClick={() => router.push('/sales?today=true')}
+          />
         </div>
       </section>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        
         {/* Recent Activity */}
         <section className="rounded-2xl bg-white p-6 shadow-sm">
-          <div className="mb-6">
+          <div className="mb-6 flex items-center justify-between">
             <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
+            <div className="flex gap-2">
+              {activityLimit > 5 && (
+                <button
+                  onClick={showLessActivities}
+                  className="text-sm font-medium text-gray-500 hover:underline"
+                >
+                  Show Less
+                </button>
+              )}
+              <button
+                onClick={loadMoreActivities}
+                className="text-sm font-medium text-orange-600 hover:underline"
+              >
+                See More
+              </button>
+            </div>
           </div>
-
           <div className="space-y-4">
-            {recentActivity.length === 0 && (
-              <p className="text-sm text-gray-500 text-center">No data found</p>
-            )}
-
             {recentActivity.map((activity, i) => (
               <button
                 key={i}
@@ -192,72 +244,33 @@ export default function DashboardPage() {
               </button>
             ))}
           </div>
-
-          {/* Pagination + Controls */}
-          <div className="mt-4 flex flex-col items-center gap-3">
-
-            {!isExpanded && allActivities.length > 5 && (
-              <button onClick={handleSeeMore} className="text-sm font-medium text-orange-600 hover:underline">
-                See More
-              </button>
-            )}
-
-            {isExpanded && (
-              <>
-                <div className="flex items-center gap-2 flex-wrap justify-center">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-2 py-1 text-xs rounded bg-gray-100 disabled:opacity-50"
-                  >
-                    Prev
-                  </button>
-
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .slice(0, 10)
-                    .map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => handlePageChange(page)}
-                        className={cn(
-                          "px-2 py-1 text-xs rounded",
-                          currentPage === page
-                            ? "bg-orange-500 text-white"
-                            : "bg-gray-100"
-                        )}
-                      >
-                        {page}
-                      </button>
-                    ))}
-
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="px-2 py-1 text-xs rounded bg-gray-100 disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-
-                <button onClick={handleSeeLess} className="text-sm font-medium text-gray-500 hover:underline">
-                  See Less
-                </button>
-              </>
-            )}
-          </div>
         </section>
 
         {/* Smart Alerts */}
         <section className="rounded-2xl bg-white p-6 shadow-sm">
           <h3 className="mb-6 text-lg font-bold text-gray-900">Smart Alerts</h3>
           <div className="space-y-4">
-            {stats.inProgress > 0 && <AlertItem message="Service in progress for more than 3 days" type="warning" />}
-            {stats.waitingForParts > 5 && <AlertItem message="High number of services waiting for parts" type="danger" />}
-            <AlertItem message="All systems operational" type="success" />
+            {stats.inProgress > 0 && (
+              <AlertItem 
+                message="Service in progress for more than 3 days" 
+                type="warning" 
+              />
+            )}
+            {stats.waitingForParts > 5 && (
+              <AlertItem 
+                message="High number of services waiting for parts" 
+                type="danger" 
+              />
+            )}
+            <AlertItem 
+              message="All systems operational" 
+              type="success" 
+            />
           </div>
         </section>
       </div>
 
+      {/* Admin Only Section */}
       {profile?.role === 'admin' && (
         <section className="rounded-2xl bg-gradient-to-br from-orange-600 to-orange-700 p-8 text-white">
           <div className="mb-8 flex items-center justify-between">
@@ -280,6 +293,47 @@ export default function DashboardPage() {
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+function PriorityCard({ title, count, color, bgColor, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn("flex items-center justify-between rounded-2xl p-6 transition-transform hover:scale-[1.02]", bgColor)}
+    >
+      <span className="font-medium text-gray-700">{title}</span>
+      <span className={cn("text-3xl font-bold", color)}>{count}</span>
+    </button>
+  );
+}
+
+function SummaryCard({ title, count, isCurrency, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full rounded-xl bg-white p-4 text-left shadow-sm transition-transform hover:scale-[1.02] hover:bg-orange-50 active:scale-[0.98]"
+    >
+      <p className="text-xs font-medium text-gray-500 uppercase">{title}</p>
+      <p className={cn("mt-1 font-bold text-gray-900", isCurrency ? "text-sm" : "text-xl")}>
+        {count}
+      </p>
+    </button>
+  );
+}
+
+function AlertItem({ message, type }) {
+  const styles = {
+    warning: "bg-yellow-50 text-yellow-700 border-yellow-100",
+    danger: "bg-red-50 text-red-700 border-red-100",
+    success: "bg-green-50 text-green-700 border-green-100",
+  };
+
+  return (
+    <div className={cn("flex items-center gap-3 rounded-lg border p-4 text-sm font-medium", styles[type])}>
+      <AlertCircle className="h-5 w-5 shrink-0" />
+      {message}
     </div>
   );
 }
