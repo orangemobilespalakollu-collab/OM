@@ -675,6 +675,8 @@ function ServiceDetails({ service, onBack, onUpdate }) {
   const [statusReason, setStatusReason] = useState('');
   const [selectedStatus, setSelectedStatus] = useState(service.status);
   const [previewIndex, setPreviewIndex] = useState(null);
+  const [touchStartX, setTouchStartX] = useState(null);
+  const [touchEndX, setTouchEndX] = useState(null);
   const isFinalStatus = service.status === 'Completed' || service.status === 'Not Repairable';
 
   const photoList = [
@@ -682,6 +684,37 @@ function ServiceDetails({ service, onBack, onUpdate }) {
     service.device_front_photo_url,
     service.device_back_photo_url,
   ].filter(Boolean);
+
+  const minSwipeDistance = 50;
+
+function goToPreviousImage() {
+  setPreviewIndex((prev) => (prev === 0 ? photoList.length - 1 : prev - 1));
+}
+
+function goToNextImage() {
+  setPreviewIndex((prev) => (prev === photoList.length - 1 ? 0 : prev + 1));
+}
+
+function handleTouchStart(e) {
+  setTouchEndX(null);
+  setTouchStartX(e.targetTouches[0].clientX);
+}
+
+function handleTouchMove(e) {
+  setTouchEndX(e.targetTouches[0].clientX);
+}
+
+function handleTouchEnd() {
+  if (!touchStartX || !touchEndX) return;
+
+  const distance = touchStartX - touchEndX;
+
+  if (distance > minSwipeDistance) {
+    goToNextImage(); // swipe left
+  } else if (distance < -minSwipeDistance) {
+    goToPreviousImage(); // swipe right
+  }
+}
 
   useEffect(() => {
     fetchHistory();
@@ -947,7 +980,12 @@ function ServiceDetails({ service, onBack, onUpdate }) {
       )}
 
       {previewIndex !== null && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4">
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           {/* Close Button */}
           <button
             onClick={() => setPreviewIndex(null)}
@@ -960,9 +998,7 @@ function ServiceDetails({ service, onBack, onUpdate }) {
           {/* Left Arrow */}
           {photoList.length > 1 && (
             <button
-              onClick={() =>
-                setPreviewIndex((prev) => (prev === 0 ? photoList.length - 1 : prev - 1))
-              }
+              onClick={goToPreviousImage}
               className="absolute left-4 rounded-full bg-black/50 p-3 text-white text-2xl"
               aria-label="Previous image"
             >
@@ -974,15 +1010,13 @@ function ServiceDetails({ service, onBack, onUpdate }) {
           <img
             src={photoList[previewIndex]}
             alt="Preview"
-            className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain"
+            className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain select-none"
           />
 
           {/* Right Arrow */}
           {photoList.length > 1 && (
             <button
-              onClick={() =>
-                setPreviewIndex((prev) => (prev === photoList.length - 1 ? 0 : prev + 1))
-              }
+              onClick={goToNextImage}
               className="absolute right-4 rounded-full bg-black/50 p-3 text-white text-2xl"
               aria-label="Next image"
             >
