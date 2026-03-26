@@ -35,30 +35,66 @@ export default function ServicesPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [issueFilter, setIssueFilter] = useState('all');
   const [brandFilter, setBrandFilter] = useState('all');
+  const [specialFilter, setSpecialFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
   useEffect(() => {
-    const action = searchParams.get('action');
-    const serviceId = searchParams.get('serviceId');
-    const statusParam = searchParams.get('status'); // <-- 1. Get status from URL
+  const action = searchParams.get('action');
+  const serviceId = searchParams.get('serviceId');
 
-    if (action === 'new') {
-      setView('register');
-    } else if (serviceId) { // <-- 2. Simplified logic for details
-      setView('details');
-    } else {
-      setView('list');
-      // 3. If a status is in the URL, apply it to the filter state
-      if (statusParam) {
-        setStatusFilter(statusParam);
-      } else {
-        setStatusFilter('all');
-      }
-    }
+  if (action === 'new') {
+    setView('register');
+  } else if (serviceId) {
+    setView('details');
+  } else {
+    setView('list');
+  }
 
-    fetchServices(serviceId);
-  }, [searchParams, router]);
+  fetchServices(serviceId);
+}, [searchParams]);
+
+useEffect(() => {
+  const today = new Date().toISOString().split('T')[0];
+  const statusParam = searchParams.get('status');
+  const todayParam = searchParams.get('today');
+  const filterParam = searchParams.get('filter');
+
+  // reset filters first
+  setSpecialFilter('all');
+
+  if (statusParam) {
+    setStatusFilter(statusParam);
+  } else {
+    setStatusFilter('all');
+  }
+
+  // Registered Today
+  if (filterParam === 'registeredToday') {
+    setSpecialFilter('registeredToday');
+    setDateFrom(today);
+    setDateTo(today);
+  }
+
+  // Completed Today
+  else if (filterParam === 'completedToday') {
+    setSpecialFilter('completedToday');
+    setStatusFilter('Completed');
+    setDateFrom('');
+    setDateTo('');
+  }
+
+  // Old today fallback
+  else if (todayParam === 'true' || todayParam === 'registered') {
+    setDateFrom(today);
+    setDateTo(today);
+  }
+
+  else {
+    setDateFrom('');
+    setDateTo('');
+  }
+}, [searchParams]);
 
   async function fetchServices(serviceId = null) {
     try {
@@ -103,15 +139,40 @@ export default function ServicesPage() {
     
     // Date filtering
     let matchesDate = true;
-    if (dateFrom || dateTo) {
+
+    // Registered Today = based on created_at
+    if (specialFilter === 'registeredToday') {
+      const today = new Date();
       const serviceDate = new Date(s.created_at);
-      
+
+      matchesDate =
+        serviceDate.getFullYear() === today.getFullYear() &&
+        serviceDate.getMonth() === today.getMonth() &&
+        serviceDate.getDate() === today.getDate();
+    }
+
+    // Completed Today = based on updated_at (or completion update time)
+    else if (specialFilter === 'completedToday') {
+      const today = new Date();
+      const updatedDate = new Date(s.updated_at || s.created_at);
+
+      matchesDate =
+        s.status === 'Completed' &&
+        updatedDate.getFullYear() === today.getFullYear() &&
+        updatedDate.getMonth() === today.getMonth() &&
+        updatedDate.getDate() === today.getDate();
+    }
+
+    // Normal manual date filters
+    else if (dateFrom || dateTo) {
+      const serviceDate = new Date(s.created_at);
+
       if (dateFrom) {
         const fromDate = new Date(dateFrom);
         fromDate.setHours(0, 0, 0, 0);
         matchesDate = matchesDate && serviceDate >= fromDate;
       }
-      
+
       if (dateTo) {
         const toDate = new Date(dateTo);
         toDate.setHours(23, 59, 59, 999);
