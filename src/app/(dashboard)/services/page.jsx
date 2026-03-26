@@ -674,8 +674,14 @@ function ServiceDetails({ service, onBack, onUpdate }) {
   const [finalAmount, setFinalAmount] = useState(service.estimated_cost.toString());
   const [statusReason, setStatusReason] = useState('');
   const [selectedStatus, setSelectedStatus] = useState(service.status);
-  const [previewImage, setPreviewImage] = useState(null);
+  const [previewIndex, setPreviewIndex] = useState(null);
   const isFinalStatus = service.status === 'Completed' || service.status === 'Not Repairable';
+
+  const photoList = [
+    service.customer_photo_url,
+    service.device_front_photo_url,
+    service.device_back_photo_url,
+  ].filter(Boolean);
 
   useEffect(() => {
     fetchHistory();
@@ -755,14 +761,58 @@ function ServiceDetails({ service, onBack, onUpdate }) {
             <h3 className="mb-4 font-bold text-gray-900">Photos</h3>
             <div className="grid grid-cols-3 gap-2">
               {service.customer_photo_url ? (
-                <img src={service.customer_photo_url} className="aspect-square rounded-lg object-cover" />
-              ) : <div className="aspect-square rounded-lg bg-gray-50 flex items-center justify-center text-[10px] text-gray-400">No Photo</div>}
+                <button
+                  type="button"
+                  onClick={() => setPreviewIndex(photoList.indexOf(service.customer_photo_url))}
+                  className="overflow-hidden rounded-lg border border-gray-200 transition hover:shadow-lg"
+                >
+                  <img
+                    src={service.customer_photo_url}
+                    alt="Customer Photo"
+                    className="aspect-square w-full object-cover"
+                  />
+                </button>
+              ) : (
+                <div className="aspect-square rounded-lg bg-gray-50 flex items-center justify-center text-[10px] text-gray-400">
+                  No Photo
+                </div>
+              )}
+
               {service.device_front_photo_url ? (
-                <img src={service.device_front_photo_url} className="aspect-square rounded-lg object-cover" />
-              ) : <div className="aspect-square rounded-lg bg-gray-50 flex items-center justify-center text-[10px] text-gray-400">No Front</div>}
+                <button
+                  type="button"
+                  onClick={() => setPreviewIndex(photoList.indexOf(service.device_front_photo_url))}
+                  className="overflow-hidden rounded-lg border border-gray-200 transition hover:shadow-lg"
+                >
+                  <img
+                    src={service.device_front_photo_url}
+                    alt="Device Front"
+                    className="aspect-square w-full object-cover"
+                  />
+                </button>
+              ) : (
+                <div className="aspect-square rounded-lg bg-gray-50 flex items-center justify-center text-[10px] text-gray-400">
+                  No Front
+                </div>
+              )}
+
               {service.device_back_photo_url ? (
-                <img src={service.device_back_photo_url} className="aspect-square rounded-lg object-cover" />
-              ) : <div className="aspect-square rounded-lg bg-gray-50 flex items-center justify-center text-[10px] text-gray-400">No Back</div>}
+                <button
+                  type="button"
+                  onClick={() => setPreviewIndex(photoList.indexOf(service.device_back_photo_url))}
+                  className="overflow-hidden rounded-lg border border-gray-200 transition hover:shadow-lg"
+                >
+                  <img
+                    src={service.device_back_photo_url}
+                    alt="Device Back"
+                    className="aspect-square w-full object-cover"
+                  />
+                </button>
+              ) : (
+                <div className="aspect-square rounded-lg bg-gray-50 flex items-center justify-center text-[10px] text-gray-400">
+                  No Back
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -896,20 +946,49 @@ function ServiceDetails({ service, onBack, onUpdate }) {
         </div>
       )}
 
-      {previewImage && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4">
+      {previewIndex !== null && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4">
+          {/* Close Button */}
           <button
-            onClick={() => setPreviewImage(null)}
-            className="absolute right-4 top-4 rounded-full bg-black/50 p-2 text-white"
+            onClick={() => setPreviewIndex(null)}
+            className="absolute right-4 top-4 rounded-full bg-black/50 p-2 text-white text-xl"
             aria-label="Close image preview"
           >
             ×
           </button>
+
+          {/* Left Arrow */}
+          {photoList.length > 1 && (
+            <button
+              onClick={() =>
+                setPreviewIndex((prev) => (prev === 0 ? photoList.length - 1 : prev - 1))
+              }
+              className="absolute left-4 rounded-full bg-black/50 p-3 text-white text-2xl"
+              aria-label="Previous image"
+            >
+              ‹
+            </button>
+          )}
+
+          {/* Preview Image */}
           <img
-            src={previewImage}
-            alt="Customer Full Size"
+            src={photoList[previewIndex]}
+            alt="Preview"
             className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain"
           />
+
+          {/* Right Arrow */}
+          {photoList.length > 1 && (
+            <button
+              onClick={() =>
+                setPreviewIndex((prev) => (prev === photoList.length - 1 ? 0 : prev + 1))
+              }
+              className="absolute right-4 rounded-full bg-black/50 p-3 text-white text-2xl"
+              aria-label="Next image"
+            >
+              ›
+            </button>
+          )}
         </div>
       )}
     </div>
