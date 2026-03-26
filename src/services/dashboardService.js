@@ -55,11 +55,16 @@ export const dashboardService = {
     const safePage = Math.max(1, page);
     const offset = (safePage - 1) * limit;
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString();
+
     // Prevent page overflow beyond max 50
     if (offset >= max) {
       const { count } = await supabase
         .from('service_status_history')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', todayStr);
 
       return {
         data: [],
@@ -82,6 +87,7 @@ export const dashboardService = {
           device_model
         )
       `, { count: 'exact' })
+      .gte('created_at', todayStr)
       .order('created_at', { ascending: false })
       .range(start, end);
 
@@ -91,5 +97,5 @@ export const dashboardService = {
       data: data || [],
       total: Math.min(count || 0, max),
     };
-  }
+}
 };
