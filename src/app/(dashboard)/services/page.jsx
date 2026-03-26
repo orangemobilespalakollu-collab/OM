@@ -128,7 +128,7 @@ export default function ServicesPage() {
   return (
     <div className="space-y-6">
       {/* Header Actions */}
-      <div className="space-y-4">
+      <div className="relative space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -140,14 +140,23 @@ export default function ServicesPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setView('register')}
-              className="flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 font-bold text-white transition-colors hover:bg-orange-700"
-            >
-              <Plus className="h-5 w-5" />
-              <span className="hidden sm:inline">New Service</span>
-            </button>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setView('register')}
+                className="flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 font-bold text-white transition-colors hover:bg-orange-700"
+              >
+                <Plus className="h-5 w-5" />
+                <span className="hidden sm:inline">New Service</span>
+              </button>
+
+              <button 
+                onClick={() => router.push('/history?tab=services')}
+                className="rounded-xl border border-gray-200 bg-white p-2.5 text-gray-500 hover:bg-gray-50"
+              >
+                <History className="h-5 w-5" />
+              </button>
+            </div>
 
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -163,13 +172,6 @@ export default function ServicesPage() {
                 <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-orange-500"></span>
               )}
             </button>
-
-            <button 
-              onClick={() => router.push('/history?tab=services')}
-              className="rounded-xl border border-gray-200 bg-white p-2.5 text-gray-500 hover:bg-gray-50"
-            >
-              <History className="h-5 w-5" />
-            </button>
           </div>
         </div>
 
@@ -184,7 +186,7 @@ export default function ServicesPage() {
                   key={status}
                   onClick={() => setStatusFilter(status)}
                   className={cn(
-                    "whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                    "whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
                     statusFilter === status 
                       ? "bg-orange-600 text-white" 
                       : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
@@ -198,7 +200,7 @@ export default function ServicesPage() {
 
           {/* Toggle Filters */}
           {showFilters && (
-            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="absolute right-0 top-[140px] z-30 w-full max-w-3xl rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
               <div className="flex flex-wrap items-center gap-4">
                 {/* Issue Type Filter */}
                 <div className="flex items-center gap-2">
@@ -927,4 +929,3 @@ function InfoItem({ label, value, icon: Icon }) {
     </div>
   );
 }
-
