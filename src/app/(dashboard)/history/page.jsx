@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { historyService } from '@/services/historyService';
 import { useAuth } from '@/components/AuthProvider';
@@ -11,7 +11,8 @@ import {
   ShoppingBag,
   User,
   MapPin,
-  Smartphone
+  Smartphone,
+  SlidersHorizontal
 } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 
@@ -29,6 +30,9 @@ export default function HistoryPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [brandFilter, setBrandFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('Returned');
+const [showFilters, setShowFilters] = useState(false);
+const filtersRef = useRef(null);
   const [view, setView] = useState('list');
   const [selectedService, setSelectedService] = useState(null);
 
@@ -38,15 +42,44 @@ export default function HistoryPage() {
     }
   }, [activeTab, profile]);
 
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (filtersRef.current && !filtersRef.current.contains(event.target)) {
+        setShowFilters(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    setSearchQuery('');
+    setBrandFilter('all');
+    setDateFrom('');
+    setDateTo('');
+    setShowFilters(false);
+
+    if (activeTab === 'services') {
+      setStatusFilter('Returned');
+    }
+  }, [activeTab]);
+  
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
+
+    if (activeTab === 'services') {
+      setStatusFilter('Returned');
+    }
 
     if (todayParam === 'returned' && activeTab === 'services') {
       setDateFrom(today);
       setDateTo(today);
-    }
-
-    if (todayParam === 'true') {
+      setStatusFilter('Returned');
+    } else if (todayParam === 'true') {
       setDateFrom(today);
       setDateTo(today);
     }
@@ -79,11 +112,12 @@ export default function HistoryPage() {
       (s.issue_description && s.issue_description.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const matchesBrand = brandFilter === 'all' || s.device_brand.toLowerCase() === brandFilter.toLowerCase();
+    const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
     
-    // Date filtering for services (using returned_at if available, otherwise created_at)
+    // Date filtering for services
     let matchesDate = true;
     if (dateFrom || dateTo) {
-      const serviceDate = new Date(s.returned_at || s.created_at);
+      const serviceDate = new Date(s.returned_at || s.updated_at || s.created_at);
       const fromDate = dateFrom ? new Date(dateFrom) : null;
       const toDate = dateTo ? new Date(dateTo) : null;
       
@@ -97,7 +131,7 @@ export default function HistoryPage() {
       }
     }
     
-    return matchesSearch && matchesBrand && matchesDate;
+    return matchesSearch && matchesBrand && matchesStatus && matchesDate;
   });
 
   const filteredSales = sales.filter(s => {
@@ -137,8 +171,7 @@ export default function HistoryPage() {
         />
       ) : (
         <>
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Past History</h2>
+          <div className="flex justify-start">
             <div className="flex rounded-lg bg-gray-100 p-1">
               <button
                 onClick={() => setActiveTab('services')}
@@ -162,76 +195,125 @@ export default function HistoryPage() {
               </button>
             </div>
           </div>
-
-      <div className="space-y-4">
+      <div className="relative space-y-4" ref={filtersRef}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder={`Search ${activeTab}...`}
-              className="w-full rounded-xl border border-gray-200 py-2.5 pl-10 pr-4 focus:border-orange-500 focus:outline-none"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
+          <div className="flex items-center gap-3 w-full">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder={`Search ${activeTab}...`}
+                className="w-full rounded-xl border border-gray-200 py-2.5 pl-10 pr-4 focus:border-orange-500 focus:outline-none"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
 
-        {/* Filters Row */}
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Brand Filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Brand:</span>
-            <select
-              value={brandFilter}
-              onChange={(e) => setBrandFilter(e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
-            >
-              <option value="all">All Brands</option>
-              {activeTab === 'services' ? (
-                <>
-                  <option value="samsung">Samsung</option>
-                  <option value="apple">Apple</option>
-                  <option value="oneplus">OnePlus</option>
-                  <option value="xiaomi">Xiaomi</option>
-                  <option value="oppo">Oppo</option>
-                  <option value="vivo">Vivo</option>
-                  <option value="realme">Realme</option>
-                  <option value="motorola">Motorola</option>
-                  <option value="other">Other</option>
-                </>
-              ) : (
-                <>
-                  <option value="accessories">Accessories</option>
-                  <option value="chargers">Chargers</option>
-                  <option value="cases">Cases</option>
-                  <option value="screen protectors">Screen Protectors</option>
-                  <option value="other">Other</option>
-                </>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={cn(
+                "relative rounded-xl border p-2.5 transition-colors shrink-0",
+                showFilters
+                  ? "border-orange-500 bg-orange-50 text-orange-600"
+                  : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
               )}
-            </select>
-          </div>
-
-          {/* Date Range Filters */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">From:</span>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">To:</span>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
-            />
+            >
+              <SlidersHorizontal className="h-5 w-5" />
+              {(
+                brandFilter !== 'all' ||
+                dateFrom ||
+                dateTo ||
+                (activeTab === 'services' && statusFilter !== 'Returned')
+              ) && (
+                <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-orange-500"></span>
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Quick Filters */}
+        {activeTab === 'services' && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Status:</span>
+            <div className="flex flex-wrap gap-1">
+              {['Returned', 'Completed', 'Not Repairable', 'all'].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  className={cn(
+                    "whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
+                    statusFilter === status
+                      ? "bg-orange-600 text-white"
+                      : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                  )}
+                >
+                  {status === 'all' ? 'All' : status}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Filter Popup */}
+        {showFilters && (
+          <div className="absolute right-0 top-[72px] z-30 w-full max-w-3xl rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Brand Filter */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">Brand:</span>
+                <select
+                  value={brandFilter}
+                  onChange={(e) => setBrandFilter(e.target.value)}
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+                >
+                  <option value="all">All Brands</option>
+                  {activeTab === 'services' ? (
+                    <>
+                      <option value="samsung">Samsung</option>
+                      <option value="apple">Apple</option>
+                      <option value="oneplus">OnePlus</option>
+                      <option value="xiaomi">Xiaomi</option>
+                      <option value="oppo">Oppo</option>
+                      <option value="vivo">Vivo</option>
+                      <option value="realme">Realme</option>
+                      <option value="motorola">Motorola</option>
+                      <option value="other">Other</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="accessories">Accessories</option>
+                      <option value="chargers">Chargers</option>
+                      <option value="cases">Cases</option>
+                      <option value="screen protectors">Screen Protectors</option>
+                      <option value="other">Other</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              {/* Date Filters */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">From:</span>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">To:</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
