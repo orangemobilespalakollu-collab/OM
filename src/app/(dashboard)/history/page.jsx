@@ -30,9 +30,9 @@ export default function HistoryPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [brandFilter, setBrandFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('Returned');
-const [showFilters, setShowFilters] = useState(false);
-const filtersRef = useRef(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
+  const filtersRef = useRef(null);
   const [view, setView] = useState('list');
   const [selectedService, setSelectedService] = useState(null);
 
@@ -64,21 +64,21 @@ const filtersRef = useRef(null);
     setShowFilters(false);
 
     if (activeTab === 'services') {
-      setStatusFilter('Returned');
+      setStatusFilter('all');
     }
   }, [activeTab]);
-  
+
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
 
     if (activeTab === 'services') {
-      setStatusFilter('Returned');
+      setStatusFilter('all');
     }
 
     if (todayParam === 'returned' && activeTab === 'services') {
       setDateFrom(today);
       setDateTo(today);
-      setStatusFilter('Returned');
+      setStatusFilter('all');
     } else if (todayParam === 'true') {
       setDateFrom(today);
       setDateTo(today);
@@ -112,8 +112,11 @@ const filtersRef = useRef(null);
       (s.issue_description && s.issue_description.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const matchesBrand = brandFilter === 'all' || s.device_brand.toLowerCase() === brandFilter.toLowerCase();
-    const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
-    
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'Completed' && s.status === 'Completed') ||
+      (statusFilter === 'Not Repairable' && s.status === 'Not Repairable');
+      
     // Date filtering for services
     let matchesDate = true;
     if (dateFrom || dateTo) {
@@ -172,22 +175,27 @@ const filtersRef = useRef(null);
       ) : (
         <>
           <div className="flex justify-start">
-            <div className="flex rounded-lg bg-gray-100 p-1">
+            <div className="flex w-full rounded-xl bg-gray-100 p-1">
               <button
                 onClick={() => setActiveTab('services')}
                 className={cn(
-                  "flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all",
-                  activeTab === 'services' ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  "flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all",
+                  activeTab === 'services'
+                    ? "bg-white text-orange-600 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                 )}
               >
                 <Wrench className="h-4 w-4" />
                 Services
               </button>
+
               <button
                 onClick={() => setActiveTab('sales')}
                 className={cn(
-                  "flex items-center gap-2 rounded-md px-4 py-1.5 text-sm font-medium transition-all",
-                  activeTab === 'sales' ? "bg-white text-purple-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  "flex-1 flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all",
+                  activeTab === 'sales'
+                    ? "bg-white text-purple-600 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                 )}
               >
                 <ShoppingBag className="h-4 w-4" />
@@ -223,7 +231,7 @@ const filtersRef = useRef(null);
                 brandFilter !== 'all' ||
                 dateFrom ||
                 dateTo ||
-                (activeTab === 'services' && statusFilter !== 'Returned')
+                (activeTab === 'services' && statusFilter !== 'all')
               ) && (
                 <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-orange-500"></span>
               )}
@@ -231,89 +239,83 @@ const filtersRef = useRef(null);
           </div>
         </div>
 
-        {/* Quick Filters */}
-        {activeTab === 'services' && (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Status:</span>
-            <div className="flex flex-wrap gap-1">
-              {['Returned', 'Completed', 'Not Repairable', 'all'].map((status) => (
-                <button
-                  key={status}
-                  onClick={() => setStatusFilter(status)}
-                  className={cn(
-                    "whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
-                    statusFilter === status
-                      ? "bg-orange-600 text-white"
-                      : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-                  )}
-                >
-                  {status === 'all' ? 'All' : status}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Filter Popup */}
-        {showFilters && (
-          <div className="absolute right-0 top-[72px] z-30 w-full max-w-3xl rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
-            <div className="flex flex-wrap items-center gap-4">
-              {/* Brand Filter */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">Brand:</span>
-                <select
-                  value={brandFilter}
-                  onChange={(e) => setBrandFilter(e.target.value)}
-                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
-                >
-                  <option value="all">All Brands</option>
-                  {activeTab === 'services' ? (
-                    <>
-                      <option value="samsung">Samsung</option>
-                      <option value="apple">Apple</option>
-                      <option value="oneplus">OnePlus</option>
-                      <option value="xiaomi">Xiaomi</option>
-                      <option value="oppo">Oppo</option>
-                      <option value="vivo">Vivo</option>
-                      <option value="realme">Realme</option>
-                      <option value="motorola">Motorola</option>
-                      <option value="other">Other</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="accessories">Accessories</option>
-                      <option value="chargers">Chargers</option>
-                      <option value="cases">Cases</option>
-                      <option value="screen protectors">Screen Protectors</option>
-                      <option value="other">Other</option>
-                    </>
-                  )}
-                </select>
-              </div>
+          {showFilters && (
+            <div className="absolute right-0 top-[72px] z-30 w-full max-w-3xl rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
+              <div className="flex flex-wrap items-center gap-4">
 
-              {/* Date Filters */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">From:</span>
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
-                />
-              </div>
+                {/* Status Filter - Services Only */}
+                {activeTab === 'services' && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-700">Status:</span>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+                    >
+                      <option value="all">All</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Not Repairable">Non Repairable</option>
+                    </select>
+                  </div>
+                )}
 
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">To:</span>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
-                />
+                {/* Brand Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">Brand:</span>
+                  <select
+                    value={brandFilter}
+                    onChange={(e) => setBrandFilter(e.target.value)}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+                  >
+                    <option value="all">All Brands</option>
+                    {activeTab === 'services' ? (
+                      <>
+                        <option value="samsung">Samsung</option>
+                        <option value="apple">Apple</option>
+                        <option value="oneplus">OnePlus</option>
+                        <option value="xiaomi">Xiaomi</option>
+                        <option value="oppo">Oppo</option>
+                        <option value="vivo">Vivo</option>
+                        <option value="realme">Realme</option>
+                        <option value="motorola">Motorola</option>
+                        <option value="other">Other</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="accessories">Accessories</option>
+                        <option value="chargers">Chargers</option>
+                        <option value="cases">Cases</option>
+                        <option value="screen protectors">Screen Protectors</option>
+                        <option value="other">Other</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                {/* Date Filters */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">From:</span>
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">To:</span>
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
