@@ -190,14 +190,11 @@ export default function DashboardPage() {
         <section className="rounded-2xl bg-white p-6 shadow-sm">
           <div className="mb-6 flex items-center justify-between">
             <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
-            <p className="text-sm text-gray-500">
-              Showing up to 50 recent entries
-            </p>
           </div>
 
           {recentActivity.length === 0 ? (
             <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50">
-              <p className="text-sm font-medium text-gray-500">No data found</p>
+              <p className="text-sm font-medium text-gray-500">No activity found for today</p>
             </div>
           ) : (
             <>
