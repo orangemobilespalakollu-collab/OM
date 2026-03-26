@@ -16,7 +16,8 @@ import {
   User,
   MapPin,
   IndianRupee,
-  XCircle
+  XCircle,
+  SlidersHorizontal
 } from 'lucide-react';
 import { cn, formatCurrency, setCookie, getCookie, deleteCookie } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -31,6 +32,7 @@ export default function ServicesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
   const [issueFilter, setIssueFilter] = useState('all');
   const [brandFilter, setBrandFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
@@ -146,6 +148,22 @@ export default function ServicesPage() {
               <Plus className="h-5 w-5" />
               <span className="hidden sm:inline">New Service</span>
             </button>
+
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={cn(
+                "relative rounded-xl border p-2.5 transition-colors",
+                showFilters
+                  ? "border-orange-500 bg-orange-50 text-orange-600"
+                  : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
+              )}
+            >
+              <SlidersHorizontal className="h-5 w-5" />
+              {(issueFilter !== 'all' || brandFilter !== 'all' || dateFrom || dateTo) && (
+                <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-orange-500"></span>
+              )}
+            </button>
+
             <button 
               onClick={() => router.push('/history?tab=services')}
               className="rounded-xl border border-gray-200 bg-white p-2.5 text-gray-500 hover:bg-gray-50"
@@ -156,11 +174,11 @@ export default function ServicesPage() {
         </div>
 
         {/* Filters Row */}
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Status Filters */}
-          <div className="flex items-center gap-2">
+        <div className="space-y-4">
+          {/* Always Visible Status Filters */}
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Status:</span>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               {['all', 'Received', 'In Progress', 'Waiting for Parts', 'Completed', 'Not Repairable'].map((status) => (
                 <button
                   key={status}
@@ -178,64 +196,72 @@ export default function ServicesPage() {
             </div>
           </div>
 
-          {/* Issue Type Filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Issue:</span>
-            <select
-              value={issueFilter}
-              onChange={(e) => setIssueFilter(e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
-            >
-              <option value="all">All Issues</option>
-              <option value="Display Problem">Display Problem</option>
-              <option value="Battery Problem">Battery Problem</option>
-              <option value="Charging Problem">Charging Problem</option>
-              <option value="Software Issue">Software Issue</option>
-              <option value="Water Damage">Water Damage</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
+          {/* Toggle Filters */}
+          {showFilters && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap items-center gap-4">
+                {/* Issue Type Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">Issue:</span>
+                  <select
+                    value={issueFilter}
+                    onChange={(e) => setIssueFilter(e.target.value)}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+                  >
+                    <option value="all">All Issues</option>
+                    <option value="Display Problem">Display Problem</option>
+                    <option value="Battery Problem">Battery Problem</option>
+                    <option value="Charging Problem">Charging Problem</option>
+                    <option value="Software Issue">Software Issue</option>
+                    <option value="Water Damage">Water Damage</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
 
-          {/* Brand Filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Brand:</span>
-            <select
-              value={brandFilter}
-              onChange={(e) => setBrandFilter(e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
-            >
-              <option value="all">All Brands</option>
-              <option value="samsung">Samsung</option>
-              <option value="apple">Apple</option>
-              <option value="oneplus">OnePlus</option>
-              <option value="xiaomi">Xiaomi</option>
-              <option value="oppo">Oppo</option>
-              <option value="vivo">Vivo</option>
-              <option value="realme">Realme</option>
-              <option value="motorola">Motorola</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
+                {/* Brand Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">Brand:</span>
+                  <select
+                    value={brandFilter}
+                    onChange={(e) => setBrandFilter(e.target.value)}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+                  >
+                    <option value="all">All Brands</option>
+                    <option value="samsung">Samsung</option>
+                    <option value="apple">Apple</option>
+                    <option value="oneplus">OnePlus</option>
+                    <option value="xiaomi">Xiaomi</option>
+                    <option value="oppo">Oppo</option>
+                    <option value="vivo">Vivo</option>
+                    <option value="realme">Realme</option>
+                    <option value="motorola">Motorola</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
 
-          {/* Date Range Filters */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">From:</span>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">To:</span>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
-            />
-          </div>
+                {/* Date Range Filters */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">From:</span>
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">To:</span>
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -901,3 +927,4 @@ function InfoItem({ label, value, icon: Icon }) {
     </div>
   );
 }
+
