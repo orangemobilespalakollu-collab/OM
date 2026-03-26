@@ -45,11 +45,9 @@ export default function DashboardPage() {
     try {
       setLoading(true);
 
-      const offset = (currentPage - 1) * ACTIVITIES_PER_PAGE;
-
       const [statsData, activityResponse] = await Promise.all([
         dashboardService.getDashboardStats(),
-        dashboardService.getRecentActivity(ACTIVITIES_PER_PAGE, offset, MAX_ACTIVITIES)
+        dashboardService.getRecentActivity(currentPage, ACTIVITIES_PER_PAGE, MAX_ACTIVITIES)
       ]);
 
       setStats(statsData);
