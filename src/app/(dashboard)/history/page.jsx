@@ -115,36 +115,10 @@ export default function HistoryPage() {
       brandFilter === 'all' ||
       s.device_brand.toLowerCase() === brandFilter.toLowerCase();
 
-    const serviceStatus = (s.status || '').toLowerCase();
-    const timelineStatus = (s.timeline_status || '').toLowerCase();
-    const previousStatus = (s.previous_status || '').toLowerCase();
-    const finalStatus = (s.final_status || '').toLowerCase();
-
     const matchesStatus =
       statusFilter === 'all' ||
-      serviceStatus === statusFilter.toLowerCase() ||
-      timelineStatus === statusFilter.toLowerCase() ||
-      previousStatus === statusFilter.toLowerCase() ||
-      finalStatus === statusFilter.toLowerCase() ||
+      (s.final_status || '').toLowerCase() === statusFilter.toLowerCase();
 
-      // Important logic:
-      // If current status is Returned, allow it to match previous workflow statuses
-      (statusFilter === 'Completed' &&
-        (serviceStatus === 'returned') &&
-        (
-          timelineStatus === 'completed' ||
-          previousStatus === 'completed' ||
-          finalStatus === 'completed'
-        )) ||
-
-      (statusFilter === 'Not Repairable' &&
-        (serviceStatus === 'returned') &&
-        (
-          timelineStatus === 'not repairable' ||
-          previousStatus === 'not repairable' ||
-          finalStatus === 'not repairable'
-        ));
-      
     // Date filtering for services
     let matchesDate = true;
     if (dateFrom || dateTo) {
