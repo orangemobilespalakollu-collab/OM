@@ -22,7 +22,8 @@ export const dashboardService = {
     const completedToday = services?.filter(s => s.status === 'Completed' && new Date(s.created_at) >= today).length || 0;
     const returnedToday = services?.filter(s => s.status === 'Returned' && new Date(s.returned_at) >= today).length || 0;
     
-    const serviceRevenueToday = services?.filter(s => s.status === 'Returned' && new Date(s.returned_at) >= today)
+    const serviceRevenueToday = services
+      ?.filter(s => s.status === 'Returned' && new Date(s.returned_at) >= today)
       .reduce((sum, s) => sum + (s.final_amount || 0), 0) || 0;
 
     // Fetch Sales Today
@@ -50,14 +51,41 @@ export const dashboardService = {
     };
   },
 
-  async getRecentActivity(limit = 5) {
-    const { data, error } = await supabase
+  async getRecentActivity(page = 1, limit = 5, max = 50) {
+    const safePage = Math.max(1, page);
+    const offset = (safePage - 1) * limit;
+
+    // Prevent page overflow beyond max 50
+    if (offset >= max) {
+      return {
+        data: [],
+        total: max,
+      };
+    }
+
+    const start = offset;
+    const end = Math.min(offset + limit - 1, max - 1);
+
+    const { data, count, error } = await supabase
       .from('service_status_history')
-      .select('*, services(customer_name, device_model)')
+      .select(`
+        id,
+        status,
+        created_at,
+        services (
+          id,
+          customer_name,
+          device_model
+        )
+      `, { count: 'exact' })
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .range(start, end);
 
     if (error) throw error;
-    return data || [];
+
+    return {
+      data: data || [],
+      total: Math.min(count || 0, max),
+    };
   }
 };
