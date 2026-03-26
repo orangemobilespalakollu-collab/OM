@@ -40,61 +40,69 @@ export default function ServicesPage() {
   const [dateTo, setDateTo] = useState('');
 
   useEffect(() => {
-  const action = searchParams.get('action');
-  const serviceId = searchParams.get('serviceId');
+    const action = searchParams.get('action');
+    const serviceId = searchParams.get('serviceId');
 
-  if (action === 'new') {
-    setView('register');
-  } else if (serviceId) {
-    setView('details');
-  } else {
-    setView('list');
-  }
+    if (action === 'new') {
+      setView('register');
+    } else if (serviceId) {
+      setView('details');
+    } else {
+      setView('list');
+    }
 
-  fetchServices(serviceId);
-}, [searchParams]);
+    fetchServices(serviceId);
+  }, [searchParams]);
 
-useEffect(() => {
-  const today = new Date().toISOString().split('T')[0];
-  const statusParam = searchParams.get('status');
-  const todayParam = searchParams.get('today');
-  const filterParam = searchParams.get('filter');
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const statusParam = searchParams.get('status');
+    const todayParam = searchParams.get('today');
+    const filterParam = searchParams.get('filter');
 
-  // reset filters first
-  setSpecialFilter('all');
+    // reset filters first
+    setSpecialFilter('all');
 
-  if (statusParam) {
-    setStatusFilter(statusParam);
-  } else {
-    setStatusFilter('all');
-  }
+    if (statusParam) {
+      setStatusFilter(statusParam);
+    } else {
+      setStatusFilter('all');
+    }
 
-  // Registered Today
-  if (filterParam === 'registeredToday') {
-    setSpecialFilter('registeredToday');
-    setDateFrom(today);
-    setDateTo(today);
-  }
+    // Registered Today
+    if (filterParam === 'registeredToday') {
+      setSpecialFilter('registeredToday');
+      setDateFrom(today);
+      setDateTo(today);
+    }
 
-  // Completed Today
-  else if (filterParam === 'completedToday') {
-    setSpecialFilter('completedToday');
-    setStatusFilter('Completed');
-    setDateFrom('');
-    setDateTo('');
-  }
+    // Completed Today
+    else if (filterParam === 'completedToday') {
+      setSpecialFilter('completedToday');
+      setStatusFilter('Completed');
+      setDateFrom('');
+      setDateTo('');
+    }
 
-  // Old today fallback
-  else if (todayParam === 'true' || todayParam === 'registered') {
-    setDateFrom(today);
-    setDateTo(today);
-  }
+    // Not Repairable Today
+    else if (filterParam === 'notRepairableToday') {
+      setSpecialFilter('notRepairableToday');
+      setStatusFilter('Not Repairable');
+      setDateFrom('');
+      setDateTo('');
+    }
 
-  else {
-    setDateFrom('');
-    setDateTo('');
-  }
-}, [searchParams]);
+    // Old today fallback
+    else if (todayParam === 'true' || todayParam === 'registered') {
+      setDateFrom(today);
+      setDateTo(today);
+    }
+
+    else {
+      setDateFrom('');
+      setDateTo('');
+    }
+  }, [searchParams]);
 
   async function fetchServices(serviceId = null) {
     try {
@@ -158,6 +166,18 @@ useEffect(() => {
 
       matchesDate =
         s.status === 'Completed' &&
+        updatedDate.getFullYear() === today.getFullYear() &&
+        updatedDate.getMonth() === today.getMonth() &&
+        updatedDate.getDate() === today.getDate();
+    }
+
+    // Not Repairable Today = based on updated_at
+    else if (specialFilter === 'notRepairableToday') {
+      const today = new Date();
+      const updatedDate = new Date(s.updated_at || s.created_at);
+
+      matchesDate =
+        s.status === 'Not Repairable' &&
         updatedDate.getFullYear() === today.getFullYear() &&
         updatedDate.getMonth() === today.getMonth() &&
         updatedDate.getDate() === today.getDate();
