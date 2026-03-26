@@ -79,13 +79,6 @@ export default function DashboardPage() {
 
   const totalPages = Math.ceil(Math.min(totalActivities, MAX_ACTIVITIES) / ACTIVITIES_PER_PAGE);
 
-  const getPageNumbers = () => {
-    const pages = [];
-    for (let i = 1; i <= totalPages; i++) {
-      pages.push(i);
-    }
-    return pages;
-  };
   return (
     <div className="space-y-8">
       {/* Quick Actions */}
@@ -235,7 +228,7 @@ export default function DashboardPage() {
               </div>
 
               {totalPages > 1 && (
-                <div className="mt-6 flex flex-wrap items-center justify-center gap-2 border-t border-gray-100 pt-4">
+                <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
@@ -244,20 +237,10 @@ export default function DashboardPage() {
                     Prev
                   </button>
 
-                  {getPageNumbers().map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={cn(
-                        "rounded-lg px-3 py-1.5 text-sm font-medium transition",
-                        currentPage === page
-                          ? "bg-orange-500 text-white"
-                          : "border border-gray-200 text-gray-700 hover:bg-gray-50"
-                      )}
-                    >
-                      {page}
-                    </button>
-                  ))}
+                  <p className="text-sm font-medium text-gray-500">
+                    Page <span className="font-semibold text-gray-900">{currentPage}</span> of{" "}
+                    <span className="font-semibold text-gray-900">{totalPages}</span>
+                  </p>
 
                   <button
                     onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
