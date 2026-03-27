@@ -30,8 +30,9 @@ export default function HistoryPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [brandFilter, setBrandFilter] = useState('all');
-const [showFilters, setShowFilters] = useState(false);
-const filtersRef = useRef(null);
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
+  const filtersRef = useRef(null);
   const [view, setView] = useState('list');
   const [selectedService, setSelectedService] = useState(null);
 
@@ -58,6 +59,7 @@ const filtersRef = useRef(null);
   useEffect(() => {
     setSearchQuery('');
     setBrandFilter('all');
+    setTypeFilter('all');
     setDateFrom('');
     setDateTo('');
     setShowFilters(false);
@@ -124,19 +126,28 @@ const filtersRef = useRef(null);
   });
 
   const filteredSales = sales.filter(s => {
-    const matchesSearch = 
-      s.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.brand_type.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesBrand = brandFilter === 'all' || s.brand_type.toLowerCase() === brandFilter.toLowerCase();
-    
+    const productName = (s.product_name || '').toLowerCase();
+    const brandType = (s.brand_type || '').toLowerCase();
+
+    const matchesSearch =
+      productName.includes(searchQuery.toLowerCase()) ||
+      brandType.includes(searchQuery.toLowerCase());
+
+    // Brand = actual brand/model shown below in card
+    const matchesBrand =
+      brandFilter === 'all' || brandType === brandFilter.toLowerCase();
+
+    // Type = product category shown as title
+    const matchesType =
+      typeFilter === 'all' || productName === typeFilter.toLowerCase();
+
     // Date filtering for sales
     let matchesDate = true;
     if (dateFrom || dateTo) {
       const saleDate = new Date(s.created_at);
       const fromDate = dateFrom ? new Date(dateFrom) : null;
       const toDate = dateTo ? new Date(dateTo) : null;
-      
+
       if (fromDate) {
         fromDate.setHours(0, 0, 0, 0);
         matchesDate = matchesDate && saleDate >= fromDate;
@@ -146,8 +157,8 @@ const filtersRef = useRef(null);
         matchesDate = matchesDate && saleDate <= toDate;
       }
     }
-    
-    return matchesSearch && matchesBrand && matchesDate;
+
+    return matchesSearch && matchesBrand && matchesType && matchesDate;
   });
 
   return (
@@ -209,12 +220,13 @@ const filtersRef = useRef(null);
             >
               <SlidersHorizontal className="h-5 w-5" />
               {(
-                  brandFilter !== 'all' ||
-                  dateFrom ||
-                  dateTo
-                ) && (
-                  <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-orange-500"></span>
-              )}
+                brandFilter !== 'all' ||
+                typeFilter !== 'all' ||
+                dateFrom ||
+                dateTo
+              ) && (
+                <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-orange-500"></span>
+            )}
             </button>
           </div>
         </div>
@@ -225,37 +237,62 @@ const filtersRef = useRef(null);
           <div className="absolute right-0 top-[72px] z-30 w-full max-w-3xl rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
             <div className="flex flex-wrap items-center gap-4">
               {/* Brand Filter */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">Brand:</span>
-                <select
-                  value={brandFilter}
-                  onChange={(e) => setBrandFilter(e.target.value)}
-                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
-                >
-                  <option value="all">All Brands</option>
-                  {activeTab === 'services' ? (
-                    <>
-                      <option value="samsung">Samsung</option>
-                      <option value="apple">Apple</option>
-                      <option value="oneplus">OnePlus</option>
-                      <option value="xiaomi">Xiaomi</option>
-                      <option value="oppo">Oppo</option>
-                      <option value="vivo">Vivo</option>
-                      <option value="realme">Realme</option>
-                      <option value="motorola">Motorola</option>
-                      <option value="other">Other</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="accessories">Accessories</option>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">Brand:</span>
+                  <select
+                    value={brandFilter}
+                    onChange={(e) => setBrandFilter(e.target.value)}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+                  >
+                    <option value="all">All Brands</option>
+                    {activeTab === 'services' ? (
+                      <>
+                        <option value="samsung">Samsung</option>
+                        <option value="apple">Apple</option>
+                        <option value="oneplus">OnePlus</option>
+                        <option value="xiaomi">Xiaomi</option>
+                        <option value="oppo">Oppo</option>
+                        <option value="vivo">Vivo</option>
+                        <option value="realme">Realme</option>
+                        <option value="motorola">Motorola</option>
+                        <option value="other">Other</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="fire boltt">Fire Boltt</option>
+                        <option value="boat">boAt</option>
+                        <option value="samsung a series">Samsung A Series</option>
+                        <option value="redmi note 8 pro">Redmi Note 8 Pro</option>
+                        <option value="iphone">iPhone</option>
+                        <option value="samsung">Samsung</option>
+                        <option value="oneplus">OnePlus</option>
+                        <option value="xiaomi">Xiaomi</option>
+                        <option value="other">Other</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                {/* Type Filter - Sales Only */}
+                {activeTab === 'sales' && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-700">Type:</span>
+                    <select
+                      value={typeFilter}
+                      onChange={(e) => setTypeFilter(e.target.value)}
+                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+                    >
+                      <option value="all">All Types</option>
+                      <option value="watches">Watches</option>
+                      <option value="screen guards">Screen Guards</option>
+                      <option value="pouches">Pouches</option>
                       <option value="chargers">Chargers</option>
                       <option value="cases">Cases</option>
-                      <option value="screen protectors">Screen Protectors</option>
+                      <option value="accessories">Accessories</option>
                       <option value="other">Other</option>
-                    </>
-                  )}
-                </select>
-              </div>
+                    </select>
+                  </div>
+                )}
 
               {/* Date Filters */}
               <div className="flex items-center gap-2">
