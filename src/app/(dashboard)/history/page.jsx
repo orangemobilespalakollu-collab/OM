@@ -30,7 +30,6 @@ export default function HistoryPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [brandFilter, setBrandFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('Returned');
 const [showFilters, setShowFilters] = useState(false);
 const filtersRef = useRef(null);
   const [view, setView] = useState('list');
@@ -62,23 +61,14 @@ const filtersRef = useRef(null);
     setDateFrom('');
     setDateTo('');
     setShowFilters(false);
-
-    if (activeTab === 'services') {
-      setStatusFilter('Returned');
-    }
   }, [activeTab]);
   
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
 
-    if (activeTab === 'services') {
-      setStatusFilter('Returned');
-    }
-
     if (todayParam === 'returned' && activeTab === 'services') {
       setDateFrom(today);
       setDateTo(today);
-      setStatusFilter('Returned');
     } else if (todayParam === 'true') {
       setDateFrom(today);
       setDateTo(today);
@@ -112,7 +102,6 @@ const filtersRef = useRef(null);
       (s.issue_description && s.issue_description.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const matchesBrand = brandFilter === 'all' || s.device_brand.toLowerCase() === brandFilter.toLowerCase();
-    const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
     
     // Date filtering for services
     let matchesDate = true;
@@ -131,7 +120,7 @@ const filtersRef = useRef(null);
       }
     }
     
-    return matchesSearch && matchesBrand && matchesStatus && matchesDate;
+    return matchesSearch && matchesBrand && matchesDate;
   });
 
   const filteredSales = sales.filter(s => {
@@ -220,39 +209,16 @@ const filtersRef = useRef(null);
             >
               <SlidersHorizontal className="h-5 w-5" />
               {(
-                brandFilter !== 'all' ||
-                dateFrom ||
-                dateTo ||
-                (activeTab === 'services' && statusFilter !== 'Returned')
-              ) && (
-                <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-orange-500"></span>
+                  brandFilter !== 'all' ||
+                  dateFrom ||
+                  dateTo
+                ) && (
+                  <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-orange-500"></span>
               )}
             </button>
           </div>
         </div>
 
-        {/* Quick Filters */}
-        {activeTab === 'services' && (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Status:</span>
-            <div className="flex flex-wrap gap-1">
-              {['Returned', 'Completed', 'Not Repairable', 'all'].map((status) => (
-                <button
-                  key={status}
-                  onClick={() => setStatusFilter(status)}
-                  className={cn(
-                    "whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold transition-colors",
-                    statusFilter === status
-                      ? "bg-orange-600 text-white"
-                      : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-                  )}
-                >
-                  {status === 'all' ? 'All' : status}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Filter Popup */}
         {showFilters && (
