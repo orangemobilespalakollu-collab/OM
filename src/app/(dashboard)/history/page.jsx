@@ -236,6 +236,28 @@ export default function HistoryPage() {
         {showFilters && (
           <div className="absolute right-0 top-[72px] z-30 w-full max-w-3xl rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl">
             <div className="flex flex-wrap items-center gap-4">
+              
+              {/* Type Filter - Sales Only */}
+                {activeTab === 'sales' && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-700">Type:</span>
+                    <select
+                      value={typeFilter}
+                      onChange={(e) => setTypeFilter(e.target.value)}
+                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+                    >
+                      <option value="all">All Types</option>
+                      <option value="watches">Watches</option>
+                      <option value="screen guards">Screen Guards</option>
+                      <option value="pouches">Pouches</option>
+                      <option value="chargers">Chargers</option>
+                      <option value="cases">Cases</option>
+                      <option value="accessories">Accessories</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                )}
+
               {/* Brand Filter */}
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-gray-700">Brand:</span>
@@ -272,27 +294,6 @@ export default function HistoryPage() {
                     )}
                   </select>
                 </div>
-
-                {/* Type Filter - Sales Only */}
-                {activeTab === 'sales' && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-700">Type:</span>
-                    <select
-                      value={typeFilter}
-                      onChange={(e) => setTypeFilter(e.target.value)}
-                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
-                    >
-                      <option value="all">All Types</option>
-                      <option value="watches">Watches</option>
-                      <option value="screen guards">Screen Guards</option>
-                      <option value="pouches">Pouches</option>
-                      <option value="chargers">Chargers</option>
-                      <option value="cases">Cases</option>
-                      <option value="accessories">Accessories</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                )}
 
               {/* Date Filters */}
               <div className="flex items-center gap-2">
