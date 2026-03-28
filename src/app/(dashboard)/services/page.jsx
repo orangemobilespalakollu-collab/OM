@@ -421,7 +421,11 @@ function ServiceRegistration({ onCancel, onComplete }) {
     estimated_cost: '',
   });
 
-  const [photos, setPhotos] = useState({});
+  const [photos, setPhotos] = useState({
+    customer: null,
+    front: null,
+    back: null
+  });
   const isRefreshRef = useRef(false);
 
   useEffect(() => {
@@ -650,10 +654,10 @@ function ServiceRegistration({ onCancel, onComplete }) {
             <Camera className="h-5 w-5 text-orange-600" />
             Photos
           </h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-3 gap-4">
             <PhotoUpload 
               label="Customer Photo" 
-              onFile={(file) => setPhotos({ ...photos, customer: file })} 
+              onFile={(file) => setPhotos(prev => ({ ...prev, customer: file }))} 
             />
             <PhotoUpload 
               label="Device Front" 
@@ -661,7 +665,7 @@ function ServiceRegistration({ onCancel, onComplete }) {
             />
             <PhotoUpload 
               label="Device Back" 
-              onFile={(file) => setPhotos({ ...photos, back: file })} 
+              onFile={(file) => setPhotos(prev => ({ ...prev, back: file }))} 
             />
           </div>
         </div>
@@ -681,7 +685,7 @@ function ServiceRegistration({ onCancel, onComplete }) {
 function PhotoUpload({ label, onFile }) {
   const [preview, setPreview] = useState(null);
   const [objectUrl, setObjectUrl] = useState('');
-  const [compressing, setCompressing] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const inputRef = useRef(null);
   const inputId = `photo-upload-${label.replace(/\s+/g, '-').toLowerCase()}`;
 
@@ -694,19 +698,13 @@ function PhotoUpload({ label, onFile }) {
   }, [objectUrl]);
 
   async function handleChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
     try {
-      setCompressing(true);
+      setProcessing(true);
 
-      const compressedFile = await compressImage(file, {
-        maxWidth: 700,
-        maxHeight: 700,
-        quality: 0.5,
-        targetSizeKB: 110,
-      });
-
+      const compressedFile = await compressImage(rawFile);
       onFile(compressedFile);
 
       if (objectUrl) {
@@ -716,31 +714,25 @@ function PhotoUpload({ label, onFile }) {
       const url = URL.createObjectURL(compressedFile);
       setObjectUrl(url);
       setPreview(url);
-    } catch (err) {
-      console.error('Image compression failed:', err);
-      onFile(file);
 
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
-
-      const url = URL.createObjectURL(file);
-      setObjectUrl(url);
-      setPreview(url);
-    } finally {
-      // IMPORTANT: clear input so browser releases reference
+      // important: clear input memory
       if (inputRef.current) {
         inputRef.current.value = '';
       }
-      setCompressing(false);
+    } catch (err) {
+      console.error('Photo compression failed:', err);
+      alert('Image processing failed. Please try again.');
+    } finally {
+      setProcessing(false);
     }
   }
 
-  function removePhoto() {
+  function handleRemove() {
     if (objectUrl) {
       URL.revokeObjectURL(objectUrl);
       setObjectUrl('');
     }
+
     setPreview(null);
     onFile(null);
 
@@ -752,18 +744,21 @@ function PhotoUpload({ label, onFile }) {
   return (
     <div className="space-y-2">
       <label className="text-[10px] font-bold text-gray-500 uppercase">{label}</label>
+
       <div className="relative aspect-square overflow-hidden rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 transition-colors hover:border-orange-300">
         {preview ? (
           <>
             <img
               src={preview}
               alt="Preview"
-              className="h-full w-full object-cover"
               loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
             />
+
             <button
               type="button"
-              onClick={removePhoto}
+              onClick={handleRemove}
               className="absolute bottom-2 right-2 rounded-full bg-black/50 p-1.5 text-white backdrop-blur-sm"
             >
               <Plus className="h-4 w-4 rotate-45" />
@@ -774,10 +769,10 @@ function PhotoUpload({ label, onFile }) {
             htmlFor={inputId}
             className="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 text-gray-400"
           >
-            {compressing ? (
+            {processing ? (
               <>
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-orange-500 border-t-transparent"></div>
-                <span className="text-[10px] font-bold uppercase">Compressing...</span>
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
+                <span className="text-[10px] font-bold uppercase">Processing...</span>
               </>
             ) : (
               <>
@@ -785,14 +780,16 @@ function PhotoUpload({ label, onFile }) {
                 <span className="text-[10px] font-bold uppercase">Capture</span>
               </>
             )}
+
             <input
               ref={inputRef}
               id={inputId}
               type="file"
               accept="image/*"
-              capture="environment"
+              capture="user"
               className="hidden"
               onChange={handleChange}
+              disabled={processing}
             />
           </label>
         )}
