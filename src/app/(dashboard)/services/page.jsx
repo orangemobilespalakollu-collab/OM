@@ -682,6 +682,7 @@ function PhotoUpload({ label, onFile }) {
   const [preview, setPreview] = useState(null);
   const [objectUrl, setObjectUrl] = useState('');
   const [compressing, setCompressing] = useState(false);
+  const inputRef = useRef(null);
   const inputId = `photo-upload-${label.replace(/\s+/g, '-').toLowerCase()}`;
 
   useEffect(() => {
@@ -702,7 +703,7 @@ function PhotoUpload({ label, onFile }) {
       const compressedFile = await compressImage(file, {
         maxWidth: 1000,
         maxHeight: 1000,
-        quality: 0.7,
+        quality: 0.65,
         targetSizeKB: 150,
       });
 
@@ -727,7 +728,24 @@ function PhotoUpload({ label, onFile }) {
       setObjectUrl(url);
       setPreview(url);
     } finally {
+      // IMPORTANT: clear input so browser releases reference
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
       setCompressing(false);
+    }
+  }
+
+  function removePhoto() {
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+      setObjectUrl('');
+    }
+    setPreview(null);
+    onFile(null);
+
+    if (inputRef.current) {
+      inputRef.current.value = '';
     }
   }
 
@@ -737,24 +755,22 @@ function PhotoUpload({ label, onFile }) {
       <div className="relative aspect-square overflow-hidden rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 transition-colors hover:border-orange-300">
         {preview ? (
           <>
-            <img src={preview} alt="Preview" className="h-full w-full object-cover" />
-            <button 
+            <img
+              src={preview}
+              alt="Preview"
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+            <button
               type="button"
-              onClick={() => {
-                if (objectUrl) {
-                  URL.revokeObjectURL(objectUrl);
-                  setObjectUrl('');
-                }
-                setPreview(null);
-                onFile(null);
-              }}
+              onClick={removePhoto}
               className="absolute bottom-2 right-2 rounded-full bg-black/50 p-1.5 text-white backdrop-blur-sm"
             >
               <Plus className="h-4 w-4 rotate-45" />
             </button>
           </>
         ) : (
-          <label 
+          <label
             htmlFor={inputId}
             className="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 text-gray-400"
           >
@@ -769,13 +785,14 @@ function PhotoUpload({ label, onFile }) {
                 <span className="text-[10px] font-bold uppercase">Capture</span>
               </>
             )}
-            <input 
+            <input
+              ref={inputRef}
               id={inputId}
-              type="file" 
-              accept="image/*" 
-              capture="environment" 
-              className="hidden" 
-              onChange={handleChange} 
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleChange}
             />
           </label>
         )}
