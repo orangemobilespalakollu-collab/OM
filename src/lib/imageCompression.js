@@ -1,80 +1,84 @@
-export async function compressImage(file, options = {}) {
-  const {
-    maxWidth = 1000,
-    maxHeight = 1000,
-    quality = 0.65,
-    targetSizeKB = 150,
-  } = options;
-
+export async function compressImage(file) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const objectUrl = URL.createObjectURL(file);
+    const reader = new FileReader();
 
-    img.onload = () => {
-      let width = img.width;
-      let height = img.height;
+    reader.onload = (event) => {
+      img.src = event.target.result;
+    };
 
-      // Resize while keeping aspect ratio
-      if (width > maxWidth || height > maxHeight) {
-        const ratio = Math.min(maxWidth / width, maxHeight / height);
-        width = Math.round(width * ratio);
-        height = Math.round(height * ratio);
-      }
+    img.onload = async () => {
+      try {
+        const maxWidth = 700;
+        const maxHeight = 700;
 
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d', { alpha: false });
+        let { width, height } = img;
 
-      canvas.width = width;
-      canvas.height = height;
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
 
-      ctx.drawImage(img, 0, 0, width, height);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
 
-      let currentQuality = quality;
+        if (!ctx) {
+          reject(new Error('Canvas not supported'));
+          return;
+        }
 
-      const tryCompress = () => {
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              URL.revokeObjectURL(objectUrl);
-              canvas.width = 0;
-              canvas.height = 0;
-              reject(new Error('Image compression failed'));
-              return;
-            }
+        canvas.width = width;
+        canvas.height = height;
 
-            const sizeKB = blob.size / 1024;
+        ctx.drawImage(img, 0, 0, width, height);
 
-            if (sizeKB > targetSizeKB && currentQuality > 0.4) {
-              currentQuality -= 0.05;
-              tryCompress();
-            } else {
-              const compressedFile = new File(
-                [blob],
-                file.name.replace(/\.\w+$/, '.jpg'),
-                { type: 'image/jpeg' }
-              );
-
-              // cleanup
-              URL.revokeObjectURL(objectUrl);
-              canvas.width = 0;
-              canvas.height = 0;
-
-              resolve(compressedFile);
-            }
-          },
-          'image/jpeg',
-          currentQuality
+        let quality = 0.55;
+        let compressedBlob = await new Promise((res) =>
+          canvas.toBlob(res, 'image/jpeg', quality)
         );
-      };
 
-      tryCompress();
+        while (compressedBlob && compressedBlob.size > 110 * 1024 && quality > 0.3) {
+          quality -= 0.05;
+          compressedBlob = await new Promise((res) =>
+            canvas.toBlob(res, 'image/jpeg', quality)
+          );
+        }
+
+        if (!compressedBlob) {
+          reject(new Error('Compression failed'));
+          return;
+        }
+
+        // cleanup memory
+        canvas.width = 0;
+        canvas.height = 0;
+        img.src = '';
+
+        const compressedFile = new File(
+          [compressedBlob],
+          `${file.name.split('.')[0] || 'image'}.jpg`,
+          {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          }
+        );
+
+        resolve(compressedFile);
+      } catch (err) {
+        reject(err);
+      }
     };
 
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error('Failed to load image'));
-    };
+    img.onerror = reject;
+    reader.onerror = reject;
 
-    img.src = objectUrl;
+    reader.readAsDataURL(file);
   });
 }
