@@ -743,8 +743,9 @@ function PhotoUpload({ label, onFile }) {
 
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-bold text-gray-500 uppercase">{label}</label>
-
+      <label className="block min-h-[28px] text-[10px] font-bold text-gray-500 uppercase leading-3">
+        {label}
+      </label>
       <div className="relative aspect-square overflow-hidden rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 transition-colors hover:border-orange-300">
         {preview ? (
           <>
