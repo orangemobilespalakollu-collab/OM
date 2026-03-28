@@ -89,6 +89,47 @@ export const serviceService = {
   },
 
   async returnService(serviceId, finalAmount, userId) {
+    // 1) Get existing photo URLs first
+    const { data: existingService, error: fetchError } = await supabase
+      .from('services')
+      .select('customer_photo_url, device_front_photo_url, device_back_photo_url')
+      .eq('id', serviceId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // 2) Extract storage file paths from public URLs
+    const urls = [
+      existingService?.customer_photo_url,
+      existingService?.device_front_photo_url,
+      existingService?.device_back_photo_url,
+    ].filter(Boolean);
+
+    const filePaths = urls
+      .map((url) => {
+        try {
+          const marker = '/storage/v1/object/public/service-photos/';
+          const index = url.indexOf(marker);
+          return index !== -1 ? url.substring(index + marker.length) : null;
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
+
+    // 3) Delete files from Supabase Storage (only if paths exist)
+    if (filePaths.length > 0) {
+      const { error: storageError } = await supabase.storage
+        .from('service-photos')
+        .remove(filePaths);
+
+      if (storageError) {
+        console.error('Error deleting storage files:', storageError);
+        // not throwing here so return flow won't break
+      }
+    }
+
+    // 4) Update DB record
     const { error } = await supabase
       .from('services')
       .update({ 
@@ -105,6 +146,7 @@ export const serviceService = {
 
     if (error) throw error;
 
+    // 5) Add history entry
     await supabase.from('service_status_history').insert({
       service_id: serviceId,
       status: 'Returned',
