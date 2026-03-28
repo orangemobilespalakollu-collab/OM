@@ -2,23 +2,15 @@ export async function compressImage(file, options = {}) {
   const {
     maxWidth = 1000,
     maxHeight = 1000,
-    quality = 0.7,
+    quality = 0.65,
     targetSizeKB = 150,
   } = options;
 
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const reader = new FileReader();
+    const objectUrl = URL.createObjectURL(file);
 
-    reader.readAsDataURL(file);
-
-    reader.onload = (event) => {
-      img.src = event.target.result;
-    };
-
-    reader.onerror = reject;
-
-    img.onload = async () => {
+    img.onload = () => {
       let width = img.width;
       let height = img.height;
 
@@ -30,7 +22,7 @@ export async function compressImage(file, options = {}) {
       }
 
       const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d', { alpha: false });
 
       canvas.width = width;
       canvas.height = height;
@@ -41,8 +33,11 @@ export async function compressImage(file, options = {}) {
 
       const tryCompress = () => {
         canvas.toBlob(
-          async (blob) => {
+          (blob) => {
             if (!blob) {
+              URL.revokeObjectURL(objectUrl);
+              canvas.width = 0;
+              canvas.height = 0;
               reject(new Error('Image compression failed'));
               return;
             }
@@ -58,6 +53,12 @@ export async function compressImage(file, options = {}) {
                 file.name.replace(/\.\w+$/, '.jpg'),
                 { type: 'image/jpeg' }
               );
+
+              // cleanup
+              URL.revokeObjectURL(objectUrl);
+              canvas.width = 0;
+              canvas.height = 0;
+
               resolve(compressedFile);
             }
           },
@@ -69,6 +70,11 @@ export async function compressImage(file, options = {}) {
       tryCompress();
     };
 
-    img.onerror = reject;
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Failed to load image'));
+    };
+
+    img.src = objectUrl;
   });
 }
