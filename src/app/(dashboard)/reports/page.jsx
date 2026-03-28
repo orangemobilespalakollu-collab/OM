@@ -72,6 +72,28 @@ export default function ReportsPage() {
     { key: 'created_at', label: 'Created At' },
   ];
 
+  const servicePdfColumns = [
+    { key: 'ticket_number', label: 'Ticket' },
+    { key: 'customer_name', label: 'Customer' },
+    { key: 'customer_mobile', label: 'Mobile' },
+    { key: 'device_brand', label: 'Brand' },
+    { key: 'device_model', label: 'Model' },
+    { key: 'issue_type', label: 'Issue' },
+    { key: 'estimated_cost', label: 'Est Cost' },
+    { key: 'final_amount', label: 'Final' },
+    { key: 'status', label: 'Status' },
+    { key: 'created_at', label: 'Date' }
+  ];
+
+  const salesPdfColumns = [
+    { key: 'product_name', label: 'Product' },
+    { key: 'brand_type', label: 'Brand' },
+    { key: 'quantity', label: 'Qty' },
+    { key: 'price', label: 'Price' },
+    { key: 'total', label: 'Total' },
+    { key: 'created_at', label: 'Date' }
+  ];
+
   useEffect(() => {
     if (profile?.role === 'admin') {
       fetchReportData();
@@ -155,9 +177,9 @@ export default function ReportsPage() {
       head: [headers],
       body,
       styles: {
-        fontSize: 8,
+        fontSize: 7,
         overflow: 'linebreak',
-        cellPadding: 2,
+        cellPadding: { top: 3, right: 2, bottom: 3, left: 2 },
       },
       headStyles: {
         fillColor: [249, 115, 22],
@@ -190,8 +212,8 @@ export default function ReportsPage() {
       status: service.status || '',
       registered_by: service.registered_by_name || service.profiles?.full_name || service.registered_by || '',
       returned_by: service.returned_by_name || service.returned_by_profile?.full_name || service.returned_by || '',
-      created_at: service.created_at ? new Date(service.created_at).toLocaleString() : '',
-      returned_at: service.returned_at ? new Date(service.returned_at).toLocaleString() : '',
+      created_at: service.created_at ? new Date(service.created_at).toLocaleDateString() : '',
+      returned_at: service.returned_at ? new Date(service.returned_at).toLocaleDateString() : '',
     }));
   }
 
@@ -203,13 +225,21 @@ export default function ReportsPage() {
       price: sale.price ?? '',
       total: sale.price && sale.quantity ? sale.price * sale.quantity : '',
       recorded_by: sale.recorded_by_name || sale.profiles?.full_name || sale.recorded_by || '',
-      created_at: sale.created_at ? new Date(sale.created_at).toLocaleString() : '',
+      created_at: sale.created_at ? new Date(sale.created_at).toLocaleDateString() : '',
     }));
   }
 
   function handleExport(type, format) {
-    const rows = type === 'sales' ? getSalesExportRows() : getServiceExportRows();
-    const columns = type === 'sales' ? salesExportColumns : serviceExportColumns;
+    let rows, columns;
+    
+    if (type === 'sales') {
+      rows = getSalesExportRows();
+      columns = format === 'pdf' ? salesPdfColumns : salesExportColumns;
+    } else {
+      rows = getServiceExportRows();
+      columns = format === 'pdf' ? servicePdfColumns : serviceExportColumns;
+    }
+
     if (!rows?.length) {
       return;
     }
