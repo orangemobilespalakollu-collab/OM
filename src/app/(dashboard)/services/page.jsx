@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { serviceService } from '@/services/serviceService';
 import { useAuth } from '@/components/AuthProvider';
+import { compressImage } from '@/lib/imageCompression';
 import { 
   Plus, 
   Search, 
@@ -680,6 +681,7 @@ function ServiceRegistration({ onCancel, onComplete }) {
 function PhotoUpload({ label, onFile }) {
   const [preview, setPreview] = useState(null);
   const [objectUrl, setObjectUrl] = useState('');
+  const [compressing, setCompressing] = useState(false);
   const inputId = `photo-upload-${label.replace(/\s+/g, '-').toLowerCase()}`;
 
   useEffect(() => {
@@ -690,16 +692,42 @@ function PhotoUpload({ label, onFile }) {
     };
   }, [objectUrl]);
 
-  function handleChange(e) {
+  async function handleChange(e) {
     const file = e.target.files?.[0];
-    if (file) {
-      onFile(file);
+    if (!file) return;
+
+    try {
+      setCompressing(true);
+
+      const compressedFile = await compressImage(file, {
+        maxWidth: 1000,
+        maxHeight: 1000,
+        quality: 0.7,
+        targetSizeKB: 150,
+      });
+
+      onFile(compressedFile);
+
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
       }
+
+      const url = URL.createObjectURL(compressedFile);
+      setObjectUrl(url);
+      setPreview(url);
+    } catch (err) {
+      console.error('Image compression failed:', err);
+      onFile(file);
+
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+
       const url = URL.createObjectURL(file);
       setObjectUrl(url);
       setPreview(url);
+    } finally {
+      setCompressing(false);
     }
   }
 
@@ -730,8 +758,17 @@ function PhotoUpload({ label, onFile }) {
             htmlFor={inputId}
             className="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 text-gray-400"
           >
-            <Camera className="h-8 w-8" />
-            <span className="text-[10px] font-bold uppercase">Capture</span>
+            {compressing ? (
+              <>
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-orange-500 border-t-transparent"></div>
+                <span className="text-[10px] font-bold uppercase">Compressing...</span>
+              </>
+            ) : (
+              <>
+                <Camera className="h-8 w-8" />
+                <span className="text-[10px] font-bold uppercase">Capture</span>
+              </>
+            )}
             <input 
               id={inputId}
               type="file" 
