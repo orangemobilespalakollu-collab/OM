@@ -701,10 +701,10 @@ function PhotoUpload({ label, onFile }) {
       setCompressing(true);
 
       const compressedFile = await compressImage(file, {
-        maxWidth: 1000,
-        maxHeight: 1000,
-        quality: 0.65,
-        targetSizeKB: 150,
+        maxWidth: 700,
+        maxHeight: 700,
+        quality: 0.5,
+        targetSizeKB: 110,
       });
 
       onFile(compressedFile);
