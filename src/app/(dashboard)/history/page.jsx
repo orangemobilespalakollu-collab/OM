@@ -12,7 +12,6 @@ import {
   Tag, Hash, ChevronDown, X, ArrowUpRight, ReceiptText,
 } from 'lucide-react';
 import { cn, formatCurrency, formatDate, formatDateTime, formatNumber } from '@/lib/utils';
-import { PageTransition, MagicalGrid, ScaleIn } from '@/components/MotionWrappers';
 
 /* ══════════════════════════════════════════════════════
    STYLES — full dashboard token system
@@ -64,7 +63,7 @@ const HISTORY_STYLES = `
 }
 
 .hy-mesh-bg {
-  background-color: transparent;
+  background-color: #fafafa;
   background-image:
     radial-gradient(at 20% 10%, rgba(249,115,22,0.08)  0px, transparent 50%),
     radial-gradient(at 80% 0%,  rgba(168,85,247,0.07)  0px, transparent 50%),
@@ -781,7 +780,7 @@ export default function HistoryPage() {
   }
 
   return (
-    <PageTransition>
+    <>
       <HistoryStyleInjector />
       <div className="hy-mesh-bg hy-font min-h-screen space-y-7 p-1">
 
@@ -977,36 +976,23 @@ export default function HistoryPage() {
         )}
 
         {/* ── Cards Grid ── */}
-        {loading ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[...Array(6)].map((_,i)=><CardSkeleton key={i} index={i} />)}
-          </div>
-        ) : activeTab==='services' ? (
-          filteredServices.length>0
-            ? <MagicalGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredServices.map((service, i) => (
-                  <ScaleIn key={service.id} delay={i * 0.04}>
-                    <ServiceCard
-                      service={service}
-                      index={i}
-                      onClick={() => { setSelectedService(service); setView('details'); }}
-                    />
-                  </ScaleIn>
-                ))}
-              </MagicalGrid>
-            : <EmptyState icon={Wrench} label="service history" />
-        ) : (
-          filteredSales.length>0
-            ? <MagicalGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredSales.map((sale, i) => (
-                  <ScaleIn key={sale.id} delay={i * 0.04}>
-                    <SaleCard sale={sale} index={i} />
-                  </ScaleIn>
-                ))}
-              </MagicalGrid>
-            : <EmptyState icon={ShoppingBag} label="sales history" />
-        )}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {loading ? (
+            [...Array(6)].map((_,i)=><CardSkeleton key={i} index={i} />)
+          ) : activeTab==='services' ? (
+            filteredServices.length>0
+              ? filteredServices.map((svc,i)=>(
+                  <ServiceCard key={svc.id} service={svc} index={i}
+                    onClick={()=>{setSelectedService(svc);setView('details');}} />
+                ))
+              : <EmptyState icon={Wrench} label="service history" />
+          ) : (
+            filteredSales.length>0
+              ? filteredSales.map((sale,i)=><SaleCard key={sale.id} sale={sale} index={i} />)
+              : <EmptyState icon={ShoppingBag} label="sales history" />
+          )}
+        </div>
       </div>
-    </PageTransition>
+    </>
   );
 }

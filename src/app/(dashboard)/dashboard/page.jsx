@@ -4,14 +4,27 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { dashboardService } from '@/services/dashboardService';
-import { 
-  PageTransition, 
-  StaggerContainer, 
-  Reveal, 
-  ScaleIn 
-} from '@/components/MotionWrappers';
-import { motion } from 'framer-motion';
-import { IndianRupee, Activity, Zap, ArrowUpRight, Sparkles, Bell, TriangleAlert, CircleCheck, PlusCircle, ShoppingBag, Wrench, AlertCircle, TrendingUp, Clock, ChevronRight, FileEdit, CheckCircle2, XOctagon, PackageCheck } from 'lucide-react';
+import {
+  PlusCircle,
+  ShoppingBag,
+  Wrench,
+  AlertCircle,
+  TrendingUp,
+  Clock,
+  ChevronRight,
+  FileEdit,
+  CheckCircle2,
+  XOctagon,
+  PackageCheck,
+  IndianRupee,
+  Activity,
+  Zap,
+  ArrowUpRight,
+  Sparkles,
+  Bell,
+  TriangleAlert,
+  CircleCheck,
+} from 'lucide-react';
 import { cn, formatCurrency, formatDate, formatTime, formatNumber } from '@/lib/utils';
 import { MetricDetailsDialog } from '@/components/MetricDetailsDialog';
 import { toast } from 'sonner';
@@ -295,12 +308,12 @@ export default function DashboardPage() {
   const dateStr = formatDate(now);
 
   return (
-    <PageTransition>
+    <>
       <StyleInjector />
-      <div className="relative dashboard-font min-h-screen space-y-8 p-1">
+      <div className="mesh-bg dashboard-font min-h-screen space-y-8 p-1">
 
         {/* ── Hero Header ── */}
-        <header className="vfx-aura relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-7 shadow-2xl">
+        <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-7 shadow-2xl">
           {/* decorative orbs */}
           <div className="orb w-64 h-64 bg-orange-500/20 -top-16 -left-16 animate-float" style={{animationDelay:'0s'}} />
           <div className="orb w-48 h-48 bg-purple-500/20 -bottom-12 left-1/3 animate-float" style={{animationDelay:'1s'}} />
@@ -312,25 +325,11 @@ export default function DashboardPage() {
 
           <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <motion.p 
-                initial={{ opacity: 0, x: -10 }} 
-                animate={{ opacity: 1, x: 0 }} 
-                className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40 mb-1"
-              >
-                {dateStr}
-              </motion.p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40 mb-1">{dateStr}</p>
               <h1 className="display-font text-2xl sm:text-3xl font-bold text-white mb-1">
-                <TextReveal text={`${greeting},`} className="inline-block" />
-                <span className="shimmer-text ml-2">{profile?.name?.split(' ')[0] || 'there'} 👋</span>
+                {greeting}, <span className="shimmer-text">{profile?.name?.split(' ')[0] || 'there'} 👋</span>
               </h1>
-              <motion.p 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                transition={{ delay: 0.8 }}
-                className="text-sm text-white/50"
-              >
-                Here's what's happening in your shop today.
-              </motion.p>
+              <p className="text-sm text-white/50">Here's what's happening in your shop today.</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="glass rounded-2xl px-5 py-3 text-right">
@@ -347,54 +346,51 @@ export default function DashboardPage() {
         {/* ── Quick Actions ── */}
         <section>
           <SectionLabel icon={Zap} label="Quick Actions" />
-          <StaggerContainer>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {[
-                { name: 'Register New Service', desc: 'Create a service ticket', icon: PlusCircle, color: '#f97316', lightBg: '#fff7ed', borderColor: '#fed7aa', href: '/services?action=new' },
-                { name: 'Add New Sale', desc: 'Record parts / accessories', icon: ShoppingBag, color: '#a855f7', lightBg: '#faf5ff', borderColor: '#e9d5ff', href: '/sales?action=new' },
-                { name: 'View Services', desc: 'Manage active repairs', icon: Wrench, color: '#3b82f6', lightBg: '#eff6ff', borderColor: '#bfdbfe', href: '/services' },
-              ].map((a, i) => (
-                <ScaleIn key={a.name} delay={i * 0.1}>
-                  <button
-                    onClick={() => router.push(a.href)}
-                    className="card-hover group relative flex items-center gap-4 rounded-2xl border-2 p-4 text-left shadow-sm transition-all w-full"
-                    style={{ borderColor: a.borderColor, backgroundColor: a.lightBg }}
-                  >
-                    <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ backgroundColor: a.color }} />
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3"
-                      style={{ backgroundColor: a.color + '20', border: `1.5px solid ${a.color}40` }}>
-                      <a.icon className="h-5 w-5" style={{ color: a.color }} strokeWidth={2.5} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{a.name}</p>
-                      <p className="text-xs mt-0.5 font-medium" style={{ color: a.color + 'bb' }}>{a.desc}</p>
-                    </div>
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-sm"
-                      style={{ backgroundColor: a.color + '15', border: `1px solid ${a.color}30` }}>
-                      <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ color: a.color }} />
-                    </div>
-                  </button>
-                </ScaleIn>
-              ))}
-            </div>
-          </StaggerContainer>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {[
+              { name: 'Register New Service', desc: 'Create a service ticket', icon: PlusCircle, color: '#f97316', lightBg: '#fff7ed', borderColor: '#fed7aa', href: '/services?action=new' },
+              { name: 'Add New Sale', desc: 'Record parts / accessories', icon: ShoppingBag, color: '#a855f7', lightBg: '#faf5ff', borderColor: '#e9d5ff', href: '/sales?action=new' },
+              { name: 'View Services', desc: 'Manage active repairs', icon: Wrench, color: '#3b82f6', lightBg: '#eff6ff', borderColor: '#bfdbfe', href: '/services' },
+            ].map((a, i) => (
+              <button
+                key={a.name}
+                onClick={() => router.push(a.href)}
+                className="card-hover group relative flex items-center gap-4 rounded-2xl border-2 p-4 text-left shadow-sm transition-all"
+                style={{ borderColor: a.borderColor, backgroundColor: a.lightBg }}
+              >
+                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ backgroundColor: a.color }} />
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3"
+                  style={{ backgroundColor: a.color + '20', border: `1.5px solid ${a.color}40` }}>
+                  <a.icon className="h-5 w-5" style={{ color: a.color }} strokeWidth={2.5} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{a.name}</p>
+                  <p className="text-xs mt-0.5 font-medium" style={{ color: a.color + 'bb' }}>{a.desc}</p>
+                </div>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-sm"
+                  style={{ backgroundColor: a.color + '15', border: `1px solid ${a.color}30` }}>
+                  <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ color: a.color }} />
+                </div>
+              </button>
+            ))}
+          </div>
         </section>
 
         {/* ── Work Priority ── */}
         <section>
           <SectionLabel icon={Activity} label="Work Priority" />
-          <MagicalGrid className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <PriorityCard title="Received"            count={stats.received || 0}          color="#3b82f6" gradClass="gradient-blue"    shadowColor="rgba(59,130,246,0.2)"   onClick={() => router.push('/services?status=Received')} />
             <PriorityCard title="In Progress"         count={stats.inProgress}              color="#f97316" gradClass="gradient-orange"  shadowColor="rgba(249,115,22,0.2)"   onClick={() => router.push('/services?status=In Progress')} />
             <PriorityCard title="Waiting for Parts"   count={stats.waitingForParts}         color="#f59e0b" gradClass="gradient-amber"   shadowColor="rgba(245,158,11,0.2)"   onClick={() => router.push('/services?status=Waiting for Parts')} />
             <PriorityCard title="Completed (Unreturned)" count={stats.completedNotReturned} color="#10b981" gradClass="gradient-emerald" shadowColor="rgba(16,185,129,0.2)"   onClick={() => router.push('/services?status=Completed')} />
-          </MagicalGrid>
+          </div>
         </section>
 
         {/* ── Today Summary ── */}
         <section>
           <SectionLabel icon={Sparkles} label="Today Summary" />
-          <MagicalGrid className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
             <MetricDetailsDialog title="Registered Today" dataList={stats.registeredTodayList}>
               <SummaryCard title="Registered"    count={stats.registeredToday}               icon={FileEdit}      color="#3b82f6" gradClass="gradient-blue"    />
             </MetricDetailsDialog>
@@ -404,11 +400,11 @@ export default function DashboardPage() {
             <SummaryCard title="Sales"         count={stats.salesToday}                      icon={ShoppingBag}   color="#a855f7" gradClass="gradient-purple"  onClick={() => router.push('/sales?today=true')} />
             <SummaryCard title="Revenue"       count={formatCurrency(stats.revenueToday)}    icon={IndianRupee}   color="#f97316" gradClass="gradient-orange"  isCurrency
               onClick={() => { if (profile?.role === 'admin' || profile?.role === 'owner') setIsRevenueOpen(true); }} />
-          </MagicalGrid>
+          </div>
         </section>
 
         {/* ── Bottom grid ── */}
-        <MagicalGrid className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
 
           {/* Recent Activity */}
           <section className="glass rounded-3xl p-6 shadow-xl overflow-hidden relative">
@@ -447,58 +443,59 @@ export default function DashboardPage() {
                     const isMine = activity.updated_by === profile?.id;
                     const ss = getStatusStyles(activity.status);
                     return (
-                      <ScaleIn key={activity.id || i} delay={i * 0.05}>
-                        <button
-                          onClick={() => handleActivityClick(activity)}
-                          className={cn(
-                            "group w-full relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-300 card-hover",
-                            isMine
-                              ? "border-orange-300/60 bg-gradient-to-r from-orange-50 via-white to-purple-50/30 shadow-md ring-1 ring-orange-200/50"
-                              : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
-                          )}
-                        >
-                          {/* glow accent */}
-                          {isMine && <div className="absolute top-0 left-0 h-full w-1 rounded-l-2xl bg-gradient-to-b from-orange-400 to-purple-500" />}
+                      <button
+                        key={activity.id || i}
+                        onClick={() => handleActivityClick(activity)}
+                        className={cn(
+                          "group w-full relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-300 card-hover",
+                          "animate-slide-up",
+                          isMine
+                            ? "border-orange-300/60 bg-gradient-to-r from-orange-50 via-white to-purple-50/30 shadow-md ring-1 ring-orange-200/50"
+                            : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                        )}
+                        style={{ animationDelay: `${i * 0.06}s` }}
+                      >
+                        {/* glow accent */}
+                        {isMine && <div className="absolute top-0 left-0 h-full w-1 rounded-l-2xl bg-gradient-to-b from-orange-400 to-purple-500" />}
 
-                          <div className="flex items-center gap-3 pl-1">
-                            {/* status dot with pulse ring */}
-                            <div className="relative shrink-0">
-                              <span className="block h-3 w-3 rounded-full shadow-sm" style={{ backgroundColor: ss.dotColor }} />
-                              <span className="absolute inset-0 rounded-full" style={{ backgroundColor: ss.dotColor, animation: 'pulse-ring 2s cubic-bezier(0.215,0.61,0.355,1) infinite' }} />
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2 flex-wrap">
-                                <p className="display-font text-sm font-bold text-gray-900 truncate">
-                                  {activity.services?.customer_name || 'Unknown Customer'}
-                                </p>
-                                <div className="flex items-center gap-2 shrink-0">
-                                  {isMine && (
-                                    <span className="rounded-full bg-gradient-to-r from-orange-400 to-purple-500 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-white shadow-sm">
-                                      You
-                                    </span>
-                                  )}
-                                  <span className="text-[10px] font-semibold text-gray-400">
-                                    {formatTime(activity.created_at)}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <p className="text-xs text-gray-400 mt-0.5 truncate">
-                                {[activity.services?.device_brand, activity.services?.device_model].filter(Boolean).join(' ') || 'Device'}
-                              </p>
-
-                              <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 border text-[10px] font-bold uppercase tracking-wider"
-                                style={{ backgroundColor: ss.badgeBg, borderColor: ss.badgeBorder, color: ss.badgeText }}>
-                                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: ss.dotColor }} />
-                                {activity.status}
-                              </div>
-                            </div>
-
-                            <ChevronRight className="h-4 w-4 text-gray-300 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                        <div className="flex items-center gap-3 pl-1">
+                          {/* status dot with pulse ring */}
+                          <div className="relative shrink-0">
+                            <span className="block h-3 w-3 rounded-full shadow-sm" style={{ backgroundColor: ss.dotColor }} />
+                            <span className="absolute inset-0 rounded-full" style={{ backgroundColor: ss.dotColor, animation: 'pulse-ring 2s cubic-bezier(0.215,0.61,0.355,1) infinite' }} />
                           </div>
-                        </button>
-                      </ScaleIn>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <p className="display-font text-sm font-bold text-gray-900 truncate">
+                                {activity.services?.customer_name || 'Unknown Customer'}
+                              </p>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {isMine && (
+                                  <span className="rounded-full bg-gradient-to-r from-orange-400 to-purple-500 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-white shadow-sm">
+                                    You
+                                  </span>
+                                )}
+                                <span className="text-[10px] font-semibold text-gray-400">
+                                  {formatTime(activity.created_at)}
+                                </span>
+                              </div>
+                            </div>
+
+                            <p className="text-xs text-gray-400 mt-0.5 truncate">
+                              {[activity.services?.device_brand, activity.services?.device_model].filter(Boolean).join(' ') || 'Device'}
+                            </p>
+
+                            <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 border text-[10px] font-bold uppercase tracking-wider"
+                              style={{ backgroundColor: ss.badgeBg, borderColor: ss.badgeBorder, color: ss.badgeText }}>
+                              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: ss.dotColor }} />
+                              {activity.status}
+                            </div>
+                          </div>
+
+                          <ChevronRight className="h-4 w-4 text-gray-300 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                        </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -566,7 +563,7 @@ export default function DashboardPage() {
               )}
             </div>
           </section>
-        </MagicalGrid>
+        </div>
 
         {/* Revenue Modal */}
         {isRevenueOpen && (
@@ -578,7 +575,7 @@ export default function DashboardPage() {
           />
         )}
       </div>
-    </PageTransition>
+    </>
   );
 }
 
@@ -598,11 +595,9 @@ function SectionLabel({ icon: Icon, label }) {
 
 function PriorityCard({ title, count, color, gradClass, shadowColor, onClick }) {
   return (
-    <motion.button
-      whileTap={{ scale: 0.95 }}
-      whileHover={{ y: -4, scale: 1.01 }}
+    <button
       onClick={onClick}
-      className={cn("group relative overflow-hidden rounded-2xl border border-white/80 p-5 text-left shadow-md", gradClass)}
+      className={cn("card-hover group relative overflow-hidden rounded-2xl border border-white/80 p-5 text-left shadow-md", gradClass)}
       style={{ boxShadow: `0 4px 20px ${shadowColor}` }}
     >
       <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full blur-2xl opacity-20" style={{ backgroundColor: color }} />
@@ -617,19 +612,17 @@ function PriorityCard({ title, count, color, gradClass, shadowColor, onClick }) 
         <TrendingUp className="h-3.5 w-3.5 text-gray-300 transition-colors group-hover:text-gray-500" />
       </div>
 
-      <p className="text-4xl font-bold tabular-nums leading-none text-gray-900">{count}</p>
+      <p className="text-4xl font-bold tabular-nums leading-none text-gray-900 animate-count-in">{count}</p>
       <p className="mt-2 text-[13px] font-medium text-gray-500">{title}</p>
-    </motion.button>
+    </button>
   );
 }
 
 function SummaryCard({ title, count, isCurrency, onClick, icon: Icon, color, gradClass }) {
   return (
-    <motion.button
-      whileTap={{ scale: 0.95 }}
-      whileHover={{ y: -2, scale: 1.02 }}
+    <button
       onClick={onClick}
-      className={cn("group relative w-full overflow-hidden rounded-2xl border border-white/80 p-4 text-left shadow-md", gradClass)}
+      className={cn("card-hover group relative w-full overflow-hidden rounded-2xl border border-white/80 p-4 text-left shadow-md", gradClass)}
     >
       <div className="absolute -top-8 -right-8 h-20 w-20 rounded-full blur-2xl opacity-20" style={{ backgroundColor: color }} />
       <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${color}70, ${color}10)` }} />
@@ -639,11 +632,11 @@ function SummaryCard({ title, count, isCurrency, onClick, icon: Icon, color, gra
         {Icon && <Icon className="h-4 w-4" style={{ color }} strokeWidth={2} />}
       </div>
 
-      <p className="text-2xl font-bold tabular-nums leading-none text-gray-900">
+      <p className="text-2xl font-bold tabular-nums leading-none text-gray-900 animate-count-in">
         {count}
       </p>
       <p className="mt-2 text-[11px] font-semibold text-gray-500">{title}</p>
-    </motion.button>
+    </button>
   );
 }
 

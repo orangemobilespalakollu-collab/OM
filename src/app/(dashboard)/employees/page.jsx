@@ -25,7 +25,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/utils';
-import { PageTransition, MagicalGrid, ScaleIn } from '@/components/MotionWrappers';
 
 /* ─── Styles ─── */
 const STYLES = `
@@ -83,7 +82,12 @@ const STYLES = `
 }
 
 .em-mesh {
-  background-color: transparent;
+  background-color: #fafafa;
+  background-image:
+    radial-gradient(at 20% 10%, rgba(249,115,22,0.08) 0px, transparent 50%),
+    radial-gradient(at 80% 0%,  rgba(168,85,247,0.07) 0px, transparent 50%),
+    radial-gradient(at 0%  60%, rgba(59,130,246,0.06) 0px, transparent 50%),
+    radial-gradient(at 90% 80%, rgba(34,197,94,0.05)  0px, transparent 50%);
 }
 
 .em-card-hover {
@@ -152,22 +156,28 @@ function Avatar({ name, size = 'md', color = '#f97316' }) {
   );
 }
 
-function StatusDot() {
+/* ── Status dot ── */
+function StatusDot({ active = true }) {
   return (
-    <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-green-500 border-2 border-white ring-2 ring-green-100 ring-offset-0">
-      <span className="h-1.5 w-1.5 rounded-full bg-white opacity-40 animate-pulse" />
+    <span className="relative flex h-2.5 w-2.5">
+      <span className="absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: active ? '#22c55e' : '#9ca3af', animation: active ? 'pulse-ring 2s cubic-bezier(0.215,0.61,0.355,1) infinite' : 'none' }} />
+      <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ backgroundColor: active ? '#22c55e' : '#9ca3af' }} />
     </span>
   );
 }
+
+/* ─── Employee colors by index ─── */
+const EMP_COLORS = ['#f97316', '#a855f7', '#3b82f6', '#10b981', '#f59e0b', '#06b6d4', '#ef4444', '#8b5cf6'];
+const EMP_GRADS  = ['gradient-orange', 'gradient-purple', 'gradient-blue', 'gradient-emerald', 'gradient-amber', 'gradient-cyan', 'gradient-red', 'gradient-purple'];
 
 /* ─── Main Page ─── */
 export default function EmployeesPage() {
   const { profile: adminProfile } = useAuth();
   const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('list'); // 'list' | 'register' | 'details'
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [view, setView] = useState('list');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (adminProfile?.role === 'admin' || adminProfile?.role === 'owner') fetchEmployees();
@@ -178,22 +188,13 @@ export default function EmployeesPage() {
       setLoading(true);
       const data = await employeeService.getEmployees();
       setEmployees(data);
-    } catch (err) {
-      console.error('Error fetching employees:', err);
-      toast.error('Failed to load employee list');
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   }
-
-  const EMP_COLORS = ['#f97316', '#a855f7', '#3b82f6', '#10b981', '#f43f5e', '#f59e0b'];
-  const EMP_GRADS = [
-    'gradient-orange', 'gradient-purple', 'gradient-blue', 'gradient-emerald', 'gradient-red', 'gradient-amber'
-  ];
 
   if (adminProfile?.role !== 'admin' && adminProfile?.role !== 'owner') {
     return (
-      <PageTransition>
+      <>
         <StyleInjector />
         <div className="em-mesh em-font flex min-h-[500px] flex-col items-center justify-center gap-5 rounded-3xl p-8 text-center">
           <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-red-400 to-red-600 shadow-2xl shadow-red-200">
@@ -204,118 +205,157 @@ export default function EmployeesPage() {
             <p className="mt-1 text-sm text-gray-500">Only administrators can manage employees.</p>
           </div>
         </div>
-      </PageTransition>
+      </>
     );
   }
 
-  if (view === 'register') return <RegisterEmployee onCancel={() => setView('list')} onComplete={() => { setView('list'); fetchEmployees(); }} />;
-  if (view === 'details' && selectedEmployee) return <EmployeeDetails employee={selectedEmployee} color={EMP_COLORS[selectedIndex % EMP_COLORS.length]} onBack={() => setView('list')} />;
+  if (view === 'register') return (
+    <RegisterEmployee
+      onCancel={() => setView('list')}
+      onComplete={() => { setView('list'); fetchEmployees(); }}
+    />
+  );
 
-  if (loading) {
-    return (
-      <div className="p-4 space-y-4">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="h-24 rounded-2xl bg-gray-100 animate-pulse" />
-        ))}
-      </div>
-    );
-  }
+  if (view === 'details' && selectedEmployee) return (
+    <EmployeeDetails
+      employee={selectedEmployee}
+      color={EMP_COLORS[selectedIndex % EMP_COLORS.length]}
+      onBack={() => setView('list')}
+    />
+  );
 
   return (
-    <PageTransition>
+    <>
       <StyleInjector />
       <div className="em-mesh em-font min-h-screen space-y-8 p-1">
 
-        {/* Hero Header */}
+        {/* ── Hero Header ── */}
         <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-7 shadow-2xl">
           <div className="em-orb w-64 h-64 bg-orange-500/20 -top-16 -left-16 em-float" style={{ animationDelay: '0s' }} />
-          <div className="em-orb w-48 h-48 bg-purple-500/20 -bottom-12 right-10 em-float" style={{ animationDelay: '1.2s' }} />
+          <div className="em-orb w-48 h-48 bg-purple-500/20 -bottom-12 left-1/3 em-float" style={{ animationDelay: '1s' }} />
+          <div className="em-orb w-56 h-56 bg-blue-500/15 -top-8 right-10 em-float" style={{ animationDelay: '2s' }} />
           <div className="absolute right-6 top-6 h-20 w-20 rounded-full border-2 border-dashed border-white/10 em-spin-slow" />
+          <div className="absolute right-10 top-10 h-12 w-12 rounded-full border border-orange-400/30 em-spin-slow" style={{ animationDirection: 'reverse', animationDuration: '5s' }} />
 
           <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40 mb-1">Company Directory</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40 mb-1">Team Management</p>
               <h1 className="em-display text-2xl sm:text-3xl font-bold text-white mb-1">
-                <span className="em-shimmer-text">Our Team</span> 👥
+                <span className="em-shimmer-text">Employees</span> 👥
               </h1>
-              <p className="text-sm text-white/50">Manage your staff and their permissions.</p>
+              <p className="text-sm text-white/50">
+                {loading ? 'Loading…' : `${employees.length} team member${employees.length !== 1 ? 's' : ''} registered`}
+              </p>
             </div>
-            <button
-              onClick={() => setView('register')}
-              className="em-card-hover group flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-orange-400 to-purple-500 px-6 py-3.5 text-sm font-bold text-white shadow-xl shadow-orange-500/20 active:scale-95 transition-all"
-            >
-              <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
-              Add Member
-            </button>
+            {/* stat badge */}
+            <div className="flex items-center gap-3">
+              <div className="em-glass rounded-2xl px-5 py-3 text-right">
+                <p className="em-display text-2xl font-bold text-gray-900 em-count-in">{employees.length}</p>
+                <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                  <StatusDot />
+                  <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Active</p>
+                </div>
+              </div>
+            </div>
           </div>
         </header>
 
-        {/* Team Grid */}
+        {/* ── Add Employee Quick Action ── */}
         <section>
-          <SectionLabel icon={Users} label="Active Members" />
-          {employees.length === 0 ? (
-            <div className="flex h-48 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50">
-              <Users className="h-8 w-8 text-gray-300" />
-              <p className="text-sm font-semibold text-gray-400">No employees registered yet.</p>
+          <SectionLabel icon={Zap} label="Quick Actions" />
+          <button
+            onClick={() => setView('register')}
+            className="em-card-hover group relative flex w-full items-center gap-4 rounded-2xl border-2 p-4 text-left shadow-sm transition-all sm:w-auto sm:min-w-[280px]"
+            style={{ borderColor: '#fed7aa', backgroundColor: '#fff7ed' }}
+          >
+            <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-orange-500" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-110 group-hover:rotate-3"
+              style={{ backgroundColor: '#f9731620', border: '1.5px solid #f9731640' }}>
+              <Plus className="h-5 w-5 text-orange-500" strokeWidth={2.5} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900">Register New Employee</p>
+              <p className="text-xs mt-0.5 font-medium text-orange-400">Add a team member</p>
+            </div>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+              style={{ backgroundColor: '#f9731615', border: '1px solid #f9731630' }}>
+              <ArrowUpRight className="h-4 w-4 text-orange-500 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </div>
+          </button>
+        </section>
+
+        {/* ── Employee Grid ── */}
+        <section>
+          <SectionLabel icon={Users} label="Team Members" />
+
+          {loading ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-28 animate-pulse rounded-2xl bg-gray-200" />
+              ))}
+            </div>
+          ) : employees.length === 0 ? (
+            <div className="em-glass flex h-52 flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-gray-200">
+              <Users className="h-10 w-10 text-gray-300" />
+              <p className="text-sm font-semibold text-gray-400">No employees registered yet</p>
               <button
                 onClick={() => setView('register')}
-                className="mt-2 text-xs font-bold text-orange-500 underline"
+                className="mt-1 rounded-xl border-2 border-orange-200 bg-orange-50 px-4 py-2 text-xs font-bold text-orange-600 transition-all hover:bg-orange-100"
               >
-                Register your first member
+                + Add First Employee
               </button>
             </div>
           ) : (
-            <MagicalGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {employees.map((emp, i) => {
                 const color = EMP_COLORS[i % EMP_COLORS.length];
                 const gradClass = EMP_GRADS[i % EMP_GRADS.length];
                 return (
-                  <ScaleIn key={emp.id} delay={i * 0.05}>
-                    <button
-                      onClick={() => { setSelectedEmployee(emp); setSelectedIndex(i); setView('details'); }}
-                      className={`em-card-hover group relative overflow-hidden rounded-2xl border border-white/80 p-5 text-left shadow-md ${gradClass}`}
-                      style={{ boxShadow: `0 4px 20px ${color}22` }}
-                    >
-                      {/* top accent */}
-                      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
-                        style={{ background: `linear-gradient(90deg, ${color}80, ${color}20)` }} />
-                      {/* glow blob */}
-                      <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full blur-2xl opacity-20"
-                        style={{ backgroundColor: color }} />
+                  <button
+                    key={emp.id}
+                    onClick={() => { setSelectedEmployee(emp); setSelectedIndex(i); setView('details'); }}
+                    className={`em-card-hover group relative overflow-hidden rounded-2xl border border-white/80 p-5 text-left shadow-md em-slide-up ${gradClass}`}
+                    style={{ animationDelay: `${i * 0.07}s`, boxShadow: `0 4px 20px ${color}22` }}
+                  >
+                    {/* top accent */}
+                    <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
+                      style={{ background: `linear-gradient(90deg, ${color}80, ${color}20)` }} />
+                    {/* glow blob */}
+                    <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full blur-2xl opacity-20"
+                      style={{ backgroundColor: color }} />
 
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="relative">
-                          <Avatar name={emp.full_name} color={color} />
-                          <span className="absolute -bottom-0.5 -right-0.5">
-                            <StatusDot />
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="em-display text-sm font-bold text-gray-900 truncate">{emp.full_name}</p>
-                          <p className="text-xs text-gray-400 mt-0.5 truncate">{emp.mobile}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-widest"
-                          style={{ backgroundColor: color + '15', borderColor: color + '30', color }}>
-                          <Shield className="h-2.5 w-2.5" />
-                          Staff
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="relative">
+                        <Avatar name={emp.full_name} color={color} />
+                        <span className="absolute -bottom-0.5 -right-0.5">
+                          <StatusDot />
                         </span>
-                        <div className="flex h-7 w-7 items-center justify-center rounded-xl transition-transform group-hover:translate-x-0.5"
-                          style={{ backgroundColor: color + '12' }}>
-                          <ChevronRight className="h-3.5 w-3.5" style={{ color }} />
-                        </div>
                       </div>
-                    </button>
-                  </ScaleIn>
+                      <div className="flex-1 min-w-0">
+                        <p className="em-display text-sm font-bold text-gray-900 truncate">{emp.full_name}</p>
+                        <p className="text-xs text-gray-400 mt-0.5 truncate">{emp.mobile}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-widest"
+                        style={{ backgroundColor: color + '15', borderColor: color + '30', color }}>
+                        <Shield className="h-2.5 w-2.5" />
+                        Staff
+                      </span>
+                      <div className="flex h-7 w-7 items-center justify-center rounded-xl transition-transform group-hover:translate-x-0.5"
+                        style={{ backgroundColor: color + '12' }}>
+                        <ChevronRight className="h-3.5 w-3.5" style={{ color }} />
+                      </div>
+                    </div>
+                  </button>
                 );
               })}
-            </MagicalGrid>
+            </div>
           )}
         </section>
       </div>
-    </PageTransition>
+    </>
   );
 }
 
@@ -340,7 +380,7 @@ function RegisterEmployee({ onCancel, onComplete }) {
   }
 
   return (
-    <PageTransition>
+    <>
       <StyleInjector />
       <div className="em-mesh em-font min-h-screen space-y-8 p-1">
 
@@ -366,11 +406,11 @@ function RegisterEmployee({ onCancel, onComplete }) {
           </div>
         </header>
 
-        <div className="mx-auto max-w-md">
+        <div className="mx-auto max-w-md em-slide-up">
 
           {done ? (
             /* ── Success state ── */
-            <div className="em-glass rounded-3xl overflow-hidden shadow-xl em-slide-up">
+            <div className="em-glass rounded-3xl overflow-hidden shadow-xl">
               <div className="relative overflow-hidden bg-gradient-to-br from-green-600 to-emerald-700 px-6 py-8 text-center">
                 <div className="em-orb w-32 h-32 bg-white/10 -top-8 -right-8" />
                 <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 shadow-lg">
@@ -398,7 +438,7 @@ function RegisterEmployee({ onCancel, onComplete }) {
             </div>
           ) : (
             /* ── Form ── */
-            <div className="em-glass rounded-3xl overflow-hidden shadow-xl em-slide-up">
+            <div className="em-glass rounded-3xl overflow-hidden shadow-xl">
               {/* modal header */}
               <div className="relative overflow-hidden bg-gradient-to-br from-gray-900 to-gray-800 px-6 py-5">
                 <div className="em-orb w-28 h-28 bg-orange-500/20 -top-6 -right-6" />
@@ -483,7 +523,7 @@ function RegisterEmployee({ onCancel, onComplete }) {
           )}
         </div>
       </div>
-    </PageTransition>
+    </>
   );
 }
 
@@ -528,7 +568,7 @@ function EmployeeDetails({ employee, color, onBack }) {
   };
 
   return (
-    <PageTransition>
+    <>
       <StyleInjector />
       <div className="em-mesh em-font min-h-screen space-y-8 p-1">
 
@@ -561,10 +601,10 @@ function EmployeeDetails({ employee, color, onBack }) {
           </div>
         </header>
 
-        <div className="mx-auto max-w-2xl space-y-8">
+        <div className="mx-auto max-w-2xl space-y-8 em-slide-up">
 
           {/* ── Info Cards ── */}
-          <section className="em-slide-up">
+          <section>
             <SectionLabel icon={User} label="Employee Info" />
             <div className="space-y-3">
               {[
@@ -588,7 +628,7 @@ function EmployeeDetails({ employee, color, onBack }) {
           </section>
 
           {/* ── Reset Password ── */}
-          <section className="em-slide-up">
+          <section>
             <SectionLabel icon={KeyRound} label="Security" />
             <div className="em-glass rounded-3xl overflow-hidden shadow-xl">
               <div className="p-5 space-y-3 bg-white">
@@ -624,7 +664,7 @@ function EmployeeDetails({ employee, color, onBack }) {
           </section>
 
           {/* ── Recent Activity ── */}
-          <section className="em-slide-up">
+          <section>
             <SectionLabel icon={Activity} label="Recent Activity" />
             <div className="em-glass rounded-3xl p-6 shadow-xl overflow-hidden relative">
               <div className="em-orb w-36 h-36 bg-orange-400/10 -top-8 -right-8" />
@@ -678,7 +718,7 @@ function EmployeeDetails({ employee, color, onBack }) {
 
         </div>
       </div>
-    </PageTransition>
+    </>
   );
 }
 

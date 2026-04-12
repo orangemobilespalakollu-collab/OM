@@ -19,7 +19,6 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { PageTransition, MagicalGrid, ScaleIn } from '@/components/MotionWrappers';
 
 /* ─── Styles ─── */
 const STYLES = `
@@ -71,7 +70,13 @@ const STYLES = `
 }
 
 .ac-mesh {
-  background-color: transparent;
+  background-color: #fafafa;
+  background-image:
+    radial-gradient(at 20% 10%, rgba(249,115,22,0.08) 0px, transparent 50%),
+    radial-gradient(at 80% 0%,  rgba(168,85,247,0.07) 0px, transparent 50%),
+    radial-gradient(at 0%  60%, rgba(59,130,246,0.06) 0px, transparent 50%),
+    radial-gradient(at 90% 80%, rgba(34,197,94,0.05)  0px, transparent 50%);
+}
 
 .ac-card-hover {
   transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s ease;
@@ -208,7 +213,7 @@ export default function AccountPage() {
     .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
 
   return (
-    <PageTransition>
+    <>
       <StyleInjector />
       <div className="ac-mesh ac-font min-h-screen p-1">
         <div className="mx-auto max-w-xl space-y-8">
@@ -467,7 +472,7 @@ export default function AccountPage() {
           )}
         </div>
       </div>
-    </PageTransition>
+    </>
   );
 }
 

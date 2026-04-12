@@ -26,7 +26,6 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { cn, formatCurrency, formatDate, formatNumber } from '@/lib/utils';
-import { PageTransition, MagicalGrid, ScaleIn } from '@/components/MotionWrappers';
 import {
   Dialog,
   DialogTrigger,
@@ -110,7 +109,7 @@ const STYLES = `
 }
 
 .rp-mesh-bg {
-  background-color: transparent;
+  background-color: #fafafa;
   background-image:
     radial-gradient(at 20% 10%, rgba(249,115,22,0.08) 0px, transparent 50%),
     radial-gradient(at 80% 0%,  rgba(168,85,247,0.07) 0px, transparent 50%),
@@ -401,7 +400,7 @@ export default function ReportsPage() {
     : 'All time';
 
   return (
-    <PageTransition>
+    <>
       <StyleInjector />
       <div className="rp-mesh-bg rp-dashboard-font min-h-screen space-y-8 p-1">
 
@@ -545,41 +544,35 @@ export default function ReportsPage() {
         <section>
           <SectionLabel icon={IndianRupee} label="Revenue Overview" />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <ScaleIn delay={0.1}>
-              <Link href="/history?tab=sales" className="block">
-                <RevenueCard
-                  title="Sales Revenue"
-                  value={formatCurrency(data.summary.totalSales)}
-                  icon={ShoppingBag}
-                  color="#a855f7"
-                  gradClass="gradient-purple"
-                  shadowColor="rgba(168,85,247,0.2)"
-                />
-              </Link>
-            </ScaleIn>
-            <ScaleIn delay={0.15}>
-              <Link href="/history?tab=services" className="block">
-                <RevenueCard
-                  title="Services Revenue"
-                  value={formatCurrency(data.summary.finalAmount)}
-                  icon={Wrench}
-                  color="#3b82f6"
-                  gradClass="gradient-blue"
-                  shadowColor="rgba(59,130,246,0.2)"
-                />
-              </Link>
-            </ScaleIn>
-            <ScaleIn delay={0.2}>
+            <Link href="/history?tab=sales" className="block">
               <RevenueCard
-                title="Overall Revenue"
-                value={formatCurrency(data.summary.overallRevenue)}
-                icon={IndianRupee}
-                color="#f97316"
-                gradClass="gradient-orange"
-                shadowColor="rgba(249,115,22,0.2)"
-                highlight
+                title="Sales Revenue"
+                value={formatCurrency(data.summary.totalSales)}
+                icon={ShoppingBag}
+                color="#a855f7"
+                gradClass="gradient-purple"
+                shadowColor="rgba(168,85,247,0.2)"
               />
-            </ScaleIn>
+            </Link>
+            <Link href="/history?tab=services" className="block">
+              <RevenueCard
+                title="Services Revenue"
+                value={formatCurrency(data.summary.finalAmount)}
+                icon={Wrench}
+                color="#3b82f6"
+                gradClass="gradient-blue"
+                shadowColor="rgba(59,130,246,0.2)"
+              />
+            </Link>
+            <RevenueCard
+              title="Overall Revenue"
+              value={formatCurrency(data.summary.overallRevenue)}
+              icon={IndianRupee}
+              color="#f97316"
+              gradClass="gradient-orange"
+              shadowColor="rgba(249,115,22,0.2)"
+              highlight
+            />
           </div>
         </section>
 
@@ -840,7 +833,7 @@ export default function ReportsPage() {
           </section>
         </div>
       </div>
-    </PageTransition>
+    </>
   );
 }
 

@@ -18,7 +18,6 @@ import {
   History,
   ChevronRight,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 /* ─── Styles ─── */
@@ -236,39 +235,7 @@ export default function Layout({ children }) {
   return (
     <>
       <StyleInjector />
-      <div className="vfx-magic-bg" />
-      
-      {/* ── Floating Magical Orbs ── */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-[-1]">
-        <motion.div
-          animate={{ 
-            x: [0, 100, 0], 
-            y: [0, 50, 0],
-            scale: [1, 1.2, 1] 
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-20 -left-20 w-96 h-96 bg-orange-500/10 blur-[100px] rounded-full"
-        />
-        <motion.div
-          animate={{ 
-            x: [0, -80, 0], 
-            y: [0, 120, 0],
-            scale: [1, 1.3, 1] 
-          }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/2 -right-20 w-[500px] h-[500px] bg-purple-500/10 blur-[120px] rounded-full"
-        />
-        <motion.div
-          animate={{ 
-            x: [0, 60, 0], 
-            y: [0, -90, 0] 
-          }}
-          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-blue-500/10 blur-[80px] rounded-full"
-        />
-      </div>
-
-      <div className="lyt-font flex min-h-screen">
+      <div className="lyt-font flex min-h-screen" style={{ backgroundColor: '#fafafa' }}>
 
         {/* ════════════════════════════════════════
             DESKTOP SIDEBAR
@@ -386,28 +353,19 @@ export default function Layout({ children }) {
             MOBILE SIDEBAR OVERLAY
         ════════════════════════════════════════ */}
         {/* Backdrop */}
-        <AnimatePresence>
-          {isSidebarOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
-              onClick={() => setIsSidebarOpen(false)}
-            />
+        <div
+          className={cn(
+            'fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden',
+            isSidebarOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
           )}
-        </AnimatePresence>
+          onClick={() => setIsSidebarOpen(false)}
+        />
 
         {/* Drawer */}
-        <AnimatePresence>
-          {isSidebarOpen && (
-            <motion.aside
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 left-0 z-50 w-72 flex flex-col lg:hidden"
-            >
+        <aside className={cn(
+          'fixed inset-y-0 left-0 z-50 w-72 flex flex-col transition-transform duration-300 ease-in-out lg:hidden',
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        )}>
           <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800" />
           <div className="lyt-orb w-48 h-48 bg-orange-500/15 -top-12 -left-12" />
           <div className="lyt-orb w-32 h-32 bg-purple-500/12 bottom-20 -right-8" />
@@ -498,9 +456,7 @@ export default function Layout({ children }) {
               </button>
             </div>
           </div>
-        </motion.aside>
-      )}
-    </AnimatePresence>
+        </aside>
 
         {/* ════════════════════════════════════════
             MAIN CONTENT AREA
@@ -510,7 +466,14 @@ export default function Layout({ children }) {
           {/* ══════════════════════════════════════
               PREMIUM TOP HEADER
           ══════════════════════════════════════ */}
-          <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between px-4 lg:px-6 transition-all duration-500 vfx-glass-premium border-b border-white/20 shadow-sm shadow-black/5">
+          <header className="sticky top-0 z-20 flex h-[68px] items-center justify-between px-4 lg:px-6"
+            style={{
+              background: 'rgba(250,250,250,0.92)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              borderBottom: '1px solid rgba(0,0,0,0.055)',
+              boxShadow: '0 1px 24px rgba(0,0,0,0.04)',
+            }}>
 
             {/* ── Left: hamburger + page identity ── */}
             <div className="flex items-center gap-3">
@@ -683,19 +646,8 @@ export default function Layout({ children }) {
           </header>
 
           {/* ── Page Content ── */}
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6 relative">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={pathname}
-                initial={{ opacity: 0, scale: 0.99, y: 8 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.99, y: -8 }}
-                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full"
-              >
-                {children}
-              </motion.div>
-            </AnimatePresence>
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            {children}
           </main>
         </div>
       </div>
