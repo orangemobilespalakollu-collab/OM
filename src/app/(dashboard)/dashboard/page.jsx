@@ -31,512 +31,222 @@ import { toast } from 'sonner';
 import { historyService } from '@/services/historyService';
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   STYLES — All original styles PRESERVED + advanced VFX/motion layer added
+   DESIGN PHILOSOPHY
+   ─ Single accent: #f97316 (orange)  |  Dark ink: #0d0d0d  |  Surface: #fafafa
+   ─ Motion IS the visual hierarchy — tilt, count-up, reveal, morphing blobs
+   ─ No rainbow gradients; depth via shadow + motion + monochrome layering
 ───────────────────────────────────────────────────────────────────────────── */
+
 const STYLES = `
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  --orange: #f97316;
-  --orange-light: #fed7aa;
-  --purple: #a855f7;
-  --purple-light: #e9d5ff;
-  --blue: #3b82f6;
-  --blue-light: #bfdbfe;
-  --green: #22c55e;
-  --green-light: #bbf7d0;
-  --cyan: #06b6d4;
-  --amber: #f59e0b;
-  --red: #ef4444;
-  --emerald: #10b981;
-
-  /* VFX tokens */
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
-  --ease-in-back: cubic-bezier(0.36, 0, 0.66, -0.56);
+  --accent:        #f97316;
+  --accent-dim:    rgba(249,115,22,0.12);
+  --ink:           #0d0d0d;
+  --ink-mid:       #4b5563;
+  --ink-faint:     #9ca3af;
+  --surface:       #f9fafb;
+  --surface-raise: #ffffff;
+  --border:        #e5e7eb;
+  --border-strong: #d1d5db;
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-expo:     cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ── Original keyframes (preserved) ── */
-@keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position:  200% center; }
+.font-display { font-family: 'Instrument Serif', Georgia, serif; }
+.font-body    { font-family: 'Geist', system-ui, sans-serif; }
+
+/* ────────────────── KEYFRAMES ────────────────── */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(22px); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
 }
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-6px); }
-}
-@keyframes pulse-ring {
-  0%   { transform: scale(0.8); opacity: 0.8; }
-  70%  { transform: scale(1.6); opacity: 0; }
-  100% { transform: scale(1.6); opacity: 0; }
-}
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes count-in {
-  from { opacity: 0; transform: scale(0.5); }
-  to   { opacity: 1; transform: scale(1); }
-}
-@keyframes gradient-shift {
-  0%,100% { background-position: 0% 50%; }
-  50%      { background-position: 100% 50%; }
+@keyframes num-rise {
+  from { opacity: 0; transform: translateY(10px) scale(0.92); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
 }
 @keyframes spin-slow {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+@keyframes live-ring {
+  0%   { transform: scale(1);   opacity: 0.5; }
+  70%  { transform: scale(2.4); opacity: 0; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
 @keyframes blink {
   0%,100% { opacity: 1; }
-  50%      { opacity: 0.3; }
+  50%      { opacity: 0.2; }
 }
-
-/* ── NEW Advanced VFX keyframes ── */
-@keyframes morph {
-  0%,100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-  25%      { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
-  50%      { border-radius: 50% 60% 30% 40% / 40% 50% 60% 50%; }
-  75%      { border-radius: 40% 30% 60% 70% / 60% 40% 50% 30%; }
-}
-@keyframes aurora {
-  0%   { transform: translate(-50%,-50%) rotate(0deg)   scale(1);   opacity: 0.5; }
-  33%  { transform: translate(-50%,-50%) rotate(120deg) scale(1.15); opacity: 0.7; }
-  66%  { transform: translate(-50%,-50%) rotate(240deg) scale(0.95); opacity: 0.4; }
-  100% { transform: translate(-50%,-50%) rotate(360deg) scale(1);   opacity: 0.5; }
-}
-@keyframes ticker-slide {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-@keyframes reveal-left {
-  from { clip-path: inset(0 100% 0 0); opacity: 0; }
-  to   { clip-path: inset(0 0% 0 0);   opacity: 1; }
-}
-@keyframes pop-in {
-  0%   { opacity: 0; transform: scale(0.6) rotate(-6deg); }
-  60%  { transform: scale(1.08) rotate(2deg); }
-  100% { opacity: 1; transform: scale(1) rotate(0deg); }
-}
-@keyframes glow-pulse {
-  0%,100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); }
-  50%      { box-shadow: 0 0 28px 8px rgba(249,115,22,0.18); }
-}
-@keyframes number-roll {
-  from { transform: translateY(100%); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
-}
-@keyframes bg-pan {
-  from { background-position: 0% 50%; }
-  to   { background-position: 100% 50%; }
-}
-@keyframes dash-draw {
-  from { stroke-dashoffset: 1000; }
-  to   { stroke-dashoffset: 0; }
-}
-@keyframes card-enter {
-  from { opacity: 0; transform: translateY(32px) scale(0.96); filter: blur(4px); }
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); filter: blur(3px); }
   to   { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0); }
 }
-@keyframes icon-bounce {
-  0%,100% { transform: scale(1) rotate(0deg); }
-  30%      { transform: scale(1.2) rotate(-8deg); }
-  60%      { transform: scale(0.95) rotate(4deg); }
+@keyframes shine {
+  from { left: -80%; }
+  to   { left: 130%; }
 }
-@keyframes shine-sweep {
-  from { left: -100%; }
-  to   { left: 200%; }
+@keyframes ripple-out {
+  from { transform: scale(0); opacity: 0.35; }
+  to   { transform: scale(3.5); opacity: 0; }
 }
-@keyframes floating-particle {
-  0%   { transform: translateY(0px)   translateX(0px)   opacity: 1; }
-  100% { transform: translateY(-80px) translateX(20px)  opacity: 0; }
+@keyframes slide-right {
+  from { opacity: 0; transform: translateX(-14px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
-@keyframes counter-up {
-  from { transform: translateY(8px); opacity: 0; }
-  to   { transform: translateY(0);   opacity: 1; }
-}
-@keyframes ripple {
-  0%   { transform: scale(0);   opacity: 0.5; }
-  100% { transform: scale(4);   opacity: 0; }
-}
-@keyframes line-grow {
+@keyframes underline-grow {
   from { transform: scaleX(0); transform-origin: left; }
   to   { transform: scaleX(1); transform-origin: left; }
 }
-@keyframes noise-shift {
-  0%   { transform: translate(0,0); }
-  10%  { transform: translate(-2%,-2%); }
-  20%  { transform: translate(2%, 1%); }
-  30%  { transform: translate(-1%, 3%); }
-  40%  { transform: translate(3%,-1%); }
-  50%  { transform: translate(-2%, 2%); }
-  60%  { transform: translate(1%,-3%); }
-  70%  { transform: translate(-3%, 1%); }
-  80%  { transform: translate(2%, 2%); }
-  90%  { transform: translate(-1%,-2%); }
-  100% { transform: translate(0,0); }
+@keyframes blob-morph {
+  0%,100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  33%      { border-radius: 30% 70% 60% 40% / 50% 60% 30% 60%; }
+  66%      { border-radius: 50% 30% 70% 40% / 40% 70% 30% 60%; }
+}
+@keyframes glow-breathe {
+  0%,100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); }
+  50%      { box-shadow: 0 0 28px 8px rgba(249,115,22,0.2); }
+}
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(44px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(44px) rotate(-360deg); }
+}
+@keyframes top-bar-in {
+  from { transform: scaleX(0); transform-origin: left; }
+  to   { transform: scaleX(1); transform-origin: left; }
 }
 
-/* ── Original utility classes (preserved) ── */
-.animate-slide-up   { animation: slide-up 0.5s ease forwards; }
-.animate-count-in   { animation: count-in 0.4s cubic-bezier(.34,1.56,.64,1) forwards; }
-.animate-float      { animation: float 3s ease-in-out infinite; }
-.animate-spin-slow  { animation: spin-slow 8s linear infinite; }
-.animate-blink      { animation: blink 2s ease-in-out infinite; }
+/* ────────────────── STAGGER GRID ────────────────── */
+.stagger > *:nth-child(1) { animation: card-in 0.55s var(--ease-expo) 0.04s both; }
+.stagger > *:nth-child(2) { animation: card-in 0.55s var(--ease-expo) 0.10s both; }
+.stagger > *:nth-child(3) { animation: card-in 0.55s var(--ease-expo) 0.16s both; }
+.stagger > *:nth-child(4) { animation: card-in 0.55s var(--ease-expo) 0.22s both; }
+.stagger > *:nth-child(5) { animation: card-in 0.55s var(--ease-expo) 0.28s both; }
+.stagger > *:nth-child(6) { animation: card-in 0.55s var(--ease-expo) 0.34s both; }
 
-/* ── NEW VFX utility classes ── */
-.animate-morph       { animation: morph 8s ease-in-out infinite; }
-.animate-aurora      { animation: aurora 12s linear infinite; }
-.animate-pop-in      { animation: pop-in 0.5s var(--ease-spring) forwards; }
-.animate-glow-pulse  { animation: glow-pulse 3s ease-in-out infinite; }
-.animate-card-enter  { animation: card-enter 0.6s var(--ease-out-expo) forwards; }
-.animate-icon-bounce { animation: icon-bounce 0.5s var(--ease-spring) forwards; }
-.animate-counter-up  { animation: counter-up 0.4s var(--ease-out-quart) forwards; }
-.animate-line-grow   { animation: line-grow 0.8s var(--ease-out-expo) forwards; }
+.section-enter { animation: fade-up 0.65s var(--ease-expo) both; }
 
-/* ── MetricDetailsDialog overrides (preserved) ── */
-[role="dialog"] [data-radix-dialog-content],
-[data-state="open"][role="dialog"] {
+/* ────────────────── SHINE SWEEP ────────────────── */
+.shine-host { position: relative; overflow: hidden; }
+.shine-host::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -80%;
+  width: 50%; height: 200%;
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.5) 50%, transparent 70%);
+  transform: skewX(-20deg);
+  pointer-events: none; z-index: 2;
+}
+.shine-host:hover::before { animation: shine 0.5s ease forwards; }
+
+/* ────────────────── RIPPLE ────────────────── */
+.ripple-host { position: relative; overflow: hidden; }
+.ripple-circle {
+  position: absolute; border-radius: 50%;
+  background: rgba(255,255,255,0.28);
+  transform: scale(0);
+  animation: ripple-out 0.6s linear forwards;
+  pointer-events: none;
+}
+
+/* ────────────────── BLOB ────────────────── */
+.blob {
+  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  animation: blob-morph 10s ease-in-out infinite;
+  position: absolute; pointer-events: none;
+}
+
+/* ────────────────── ACCENT LINE ────────────────── */
+.accent-line {
+  display: block; height: 2px; background: var(--accent);
+  animation: underline-grow 0.8s var(--ease-expo) 0.3s both;
+}
+
+/* ────────────────── GLOW BREATHE ────────────────── */
+.accent-glow { animation: glow-breathe 3s ease-in-out infinite; }
+
+/* ────────────────── DIALOG OVERRIDES ────────────────── */
+[role="dialog"] {
   border-radius: 1.5rem !important;
-  border: none !important;
+  border: 1px solid var(--border) !important;
   box-shadow: 0 25px 60px -12px rgba(0,0,0,0.18) !important;
+  font-family: 'Geist', system-ui, sans-serif !important;
   overflow: hidden !important;
-  font-family: 'DM Sans', sans-serif !important;
 }
-[role="dialog"] h2,
-[role="dialog"] [data-dialog-title] {
-  font-family: 'DM Sans', sans-serif !important;
-  font-size: 0.9375rem !important;
-  font-weight: 600 !important;
-  color: #111827 !important;
+[role="dialog"] h2, [role="dialog"] [data-radix-dialog-title] {
+  font-family: 'Geist', sans-serif !important;
+  font-size: 0.9375rem !important; font-weight: 600 !important;
+  color: var(--ink) !important;
 }
 [role="dialog"] table { width: 100%; border-collapse: separate; border-spacing: 0 4px; }
 [role="dialog"] thead th {
   font-size: 0.65rem !important; font-weight: 700 !important;
   text-transform: uppercase !important; letter-spacing: 0.1em !important;
-  color: #9ca3af !important; padding: 4px 10px !important;
+  color: var(--ink-faint) !important; padding: 4px 10px !important;
 }
 [role="dialog"] tbody tr { background: #f9fafb; border-radius: 10px; transition: background 0.15s; }
-[role="dialog"] tbody tr:hover { background: #eff6ff !important; }
+[role="dialog"] tbody tr:hover { background: #fff7ed !important; }
 [role="dialog"] tbody td {
   padding: 8px 10px !important; font-size: 0.8125rem !important;
-  font-weight: 500 !important; color: #374151 !important; border-top: none !important;
+  font-weight: 500 !important; color: var(--ink-mid) !important; border-top: none !important;
 }
 [role="dialog"] tbody td:first-child { border-radius: 10px 0 0 10px; }
 [role="dialog"] tbody td:last-child  { border-radius: 0 10px 10px 0; }
-[role="dialog"] {
-  border-radius: 1.5rem !important; border: 1px solid #e5e7eb !important;
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.18) !important;
-  font-family: 'DM Sans', sans-serif !important; overflow: hidden !important;
-}
-[role="dialog"] h2, [role="dialog"] [data-radix-dialog-title] {
-  font-family: 'DM Sans', sans-serif !important; font-size: 0.9375rem !important;
-  font-weight: 600 !important; color: #111827 !important;
-}
-[role="dialog"] table, [role="dialog"] [data-list] { font-size: 0.8125rem !important; }
-[role="dialog"] tr:nth-child(even), [role="dialog"] li:nth-child(even) { background-color: #f9fafb !important; }
-
-/* ── Original token classes (preserved) ── */
-.shimmer-text {
-  background: linear-gradient(90deg, #f97316, #a855f7, #3b82f6, #f97316);
-  background-size: 300% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: shimmer 4s linear infinite;
-}
-.glass {
-  background: rgba(255,255,255,0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.9);
-}
-.mesh-bg {
-  background-color: #fafafa;
-  background-image:
-    radial-gradient(at 20% 10%, rgba(249,115,22,0.08) 0px, transparent 50%),
-    radial-gradient(at 80% 0%,  rgba(168,85,247,0.07) 0px, transparent 50%),
-    radial-gradient(at 0%  60%, rgba(59,130,246,0.06) 0px, transparent 50%),
-    radial-gradient(at 90% 80%, rgba(34,197,94,0.05)  0px, transparent 50%);
-}
-.card-hover {
-  transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s ease, border-color 0.2s;
-}
-.card-hover:hover {
-  transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.12);
-}
-.gradient-orange  { background: linear-gradient(135deg, #fff7ed, #fff); }
-.gradient-purple  { background: linear-gradient(135deg, #faf5ff, #fff); }
-.gradient-blue    { background: linear-gradient(135deg, #eff6ff, #fff); }
-.gradient-green   { background: linear-gradient(135deg, #f0fdf4, #fff); }
-.gradient-cyan    { background: linear-gradient(135deg, #ecfeff, #fff); }
-.gradient-amber   { background: linear-gradient(135deg, #fffbeb, #fff); }
-.gradient-red     { background: linear-gradient(135deg, #fef2f2, #fff); }
-.gradient-emerald { background: linear-gradient(135deg, #ecfdf5, #fff); }
-.glow-orange { box-shadow: 0 4px 24px rgba(249,115,22,0.18); }
-.glow-purple { box-shadow: 0 4px 24px rgba(168,85,247,0.18); }
-.glow-blue   { box-shadow: 0 4px 24px rgba(59,130,246,0.18); }
-.glow-green  { box-shadow: 0 4px 24px rgba(34,197,94,0.18); }
-.orb {
-  border-radius: 50%; filter: blur(40px);
-  position: absolute; pointer-events: none;
-}
-.dashboard-font { font-family: 'DM Sans', sans-serif; }
-.display-font   { font-family: 'Syne', sans-serif; }
-
-/* ── NEW VFX Specific styles ── */
-
-/* Magnetic card — enhanced card-hover with magnetic field effect */
-.magnetic-card {
-  transition: transform 0.3s var(--ease-spring), box-shadow 0.3s ease, border-color 0.2s;
-  will-change: transform;
-}
-
-/* Shimmer sweep on hover (shine across card) */
-.shine-on-hover {
-  position: relative;
-  overflow: hidden;
-}
-.shine-on-hover::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -100%;
-  width: 60%;
-  height: 200%;
-  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.5) 50%, transparent 60%);
-  transform: skewX(-20deg);
-  transition: none;
-  pointer-events: none;
-}
-.shine-on-hover:hover::after {
-  animation: shine-sweep 0.55s ease forwards;
-}
-
-/* Aurora header bg */
-.aurora-bg {
-  position: relative;
-  overflow: hidden;
-}
-.aurora-bg::before {
-  content: '';
-  position: absolute;
-  width: 500px; height: 500px;
-  background: conic-gradient(
-    from 0deg,
-    rgba(249,115,22,0.25),
-    rgba(168,85,247,0.2),
-    rgba(59,130,246,0.2),
-    rgba(249,115,22,0.25)
-  );
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  animation: aurora 16s linear infinite;
-  border-radius: 50%;
-  filter: blur(60px);
-}
-
-/* Morph blob decoration */
-.morph-blob {
-  animation: morph 10s ease-in-out infinite;
-  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-}
-
-/* Stagger entrance for grid children */
-.stagger-enter > *:nth-child(1) { animation: card-enter 0.55s var(--ease-out-expo) 0.05s both; }
-.stagger-enter > *:nth-child(2) { animation: card-enter 0.55s var(--ease-out-expo) 0.12s both; }
-.stagger-enter > *:nth-child(3) { animation: card-enter 0.55s var(--ease-out-expo) 0.19s both; }
-.stagger-enter > *:nth-child(4) { animation: card-enter 0.55s var(--ease-out-expo) 0.26s both; }
-.stagger-enter > *:nth-child(5) { animation: card-enter 0.55s var(--ease-out-expo) 0.33s both; }
-.stagger-enter > *:nth-child(6) { animation: card-enter 0.55s var(--ease-out-expo) 0.40s both; }
-
-/* Section reveal */
-.section-reveal {
-  animation: card-enter 0.7s var(--ease-out-expo) both;
-}
-
-/* Gradient border (animated) */
-.gradient-border {
-  position: relative;
-}
-.gradient-border::before {
-  content: '';
-  position: absolute;
-  inset: -1.5px;
-  border-radius: inherit;
-  background: linear-gradient(135deg, #f97316, #a855f7, #3b82f6, #f97316);
-  background-size: 300% 300%;
-  animation: bg-pan 4s linear infinite;
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.gradient-border:hover::before { opacity: 1; }
-
-/* Ripple button effect */
-.ripple-btn {
-  position: relative;
-  overflow: hidden;
-}
-.ripple-btn .ripple-circle {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.35);
-  transform: scale(0);
-  animation: ripple 0.6s linear;
-  pointer-events: none;
-}
-
-/* Ticker bar */
-.ticker-wrapper {
-  overflow: hidden;
-  white-space: nowrap;
-}
-.ticker-content {
-  display: inline-block;
-  animation: ticker-slide 28s linear infinite;
-  will-change: transform;
-}
-.ticker-content:hover { animation-play-state: paused; }
-
-/* Number counter animation override */
-.count-animate {
-  display: inline-block;
-  animation: counter-up 0.5s var(--ease-spring) both;
-}
-
-/* Noise texture overlay (subtle film grain) */
-.grain::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events: none;
-  mix-blend-mode: overlay;
-  opacity: 0.4;
-  animation: noise-shift 0.5s steps(2) infinite;
-}
-
-/* Glowing border accent on active cards */
-.glow-border-orange { box-shadow: 0 0 0 1.5px rgba(249,115,22,0.3), 0 8px 32px rgba(249,115,22,0.15); }
-.glow-border-purple { box-shadow: 0 0 0 1.5px rgba(168,85,247,0.3), 0 8px 32px rgba(168,85,247,0.15); }
-.glow-border-blue   { box-shadow: 0 0 0 1.5px rgba(59,130,246,0.3),  0 8px 32px rgba(59,130,246,0.15); }
-.glow-border-green  { box-shadow: 0 0 0 1.5px rgba(34,197,94,0.3),   0 8px 32px rgba(34,197,94,0.15); }
-
-/* Floating particle trail */
-.particle {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  animation: floating-particle 1.2s ease-out forwards;
-}
-
-/* Progress bar shimmer */
-.progress-shimmer {
-  position: relative;
-  overflow: hidden;
-}
-.progress-shimmer::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%);
-  animation: shimmer 1.5s ease infinite;
-  background-size: 200% 100%;
-}
-
-/* Header text reveal */
-.text-reveal {
-  animation: reveal-left 0.8s var(--ease-out-expo) both;
-}
-
-/* SVG path draw */
-.svg-draw {
-  stroke-dasharray: 1000;
-  stroke-dashoffset: 1000;
-  animation: dash-draw 2s var(--ease-out-expo) forwards;
-}
-
-/* Status badge pulse */
-.status-live {
-  position: relative;
-}
-.status-live::before {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  background: inherit;
-  opacity: 0.4;
-  animation: pulse-ring 2s cubic-bezier(0.215,0.61,0.355,1) infinite;
-}
 `;
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Style Injector (same pattern as original)
-───────────────────────────────────────────────────────────────────────────── */
+/* ─── Style Injector ─── */
 function StyleInjector() {
   useEffect(() => {
-    if (document.getElementById('dash-styles')) return;
+    if (document.getElementById('dash-v2')) return;
     const el = document.createElement('style');
-    el.id = 'dash-styles';
+    el.id = 'dash-v2';
     el.textContent = STYLES;
     document.head.appendChild(el);
   }, []);
   return null;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Ripple hook — adds click ripple to any button ref
-───────────────────────────────────────────────────────────────────────────── */
+/* ─── Ripple hook ─── */
 function useRipple() {
   return useCallback((e) => {
     const btn = e.currentTarget;
     const circle = document.createElement('span');
-    const diameter = Math.max(btn.clientWidth, btn.clientHeight);
-    const radius = diameter / 2;
-    const rect = btn.getBoundingClientRect();
-    circle.classList.add('ripple-circle');
+    const d = Math.max(btn.clientWidth, btn.clientHeight);
+    const r = btn.getBoundingClientRect();
+    circle.className = 'ripple-circle';
     Object.assign(circle.style, {
-      width: `${diameter}px`, height: `${diameter}px`,
-      left: `${e.clientX - rect.left - radius}px`,
-      top:  `${e.clientY - rect.top  - radius}px`,
+      width: `${d}px`, height: `${d}px`,
+      left: `${e.clientX - r.left - d / 2}px`,
+      top:  `${e.clientY - r.top  - d / 2}px`,
     });
     btn.appendChild(circle);
     setTimeout(() => circle.remove(), 700);
   }, []);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Magnetic card — subtle cursor-tracking tilt
-───────────────────────────────────────────────────────────────────────────── */
-function useMagneticTilt(strength = 8) {
+/* ─── 3D Tilt hook ─── */
+function useTilt(strength = 6) {
   const ref = useRef(null);
   const onMove = useCallback((e) => {
-    const el = ref.current;
-    if (!el) return;
+    const el = ref.current; if (!el) return;
     const rect = el.getBoundingClientRect();
-    const cx = rect.left + rect.width  / 2;
-    const cy = rect.top  + rect.height / 2;
-    const dx = (e.clientX - cx) / (rect.width  / 2);
-    const dy = (e.clientY - cy) / (rect.height / 2);
-    el.style.transform = `perspective(600px) rotateY(${dx * strength}deg) rotateX(${-dy * strength}deg) translateY(-4px) scale(1.02)`;
-    el.style.boxShadow = `${-dx * 8}px ${dy * 8}px 32px rgba(0,0,0,0.12)`;
+    const dx = (e.clientX - rect.left - rect.width  / 2) / (rect.width  / 2);
+    const dy = (e.clientY - rect.top  - rect.height / 2) / (rect.height / 2);
+    el.style.transform = `perspective(700px) rotateY(${dx * strength}deg) rotateX(${-dy * strength}deg) translateY(-3px) scale(1.018)`;
+    el.style.boxShadow = `${-dx * 6}px ${dy * 6}px 28px rgba(0,0,0,0.09), 0 0 0 1.5px rgba(249,115,22,0.22)`;
   }, [strength]);
   const onLeave = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
+    const el = ref.current; if (!el) return;
     el.style.transform = '';
     el.style.boxShadow = '';
   }, []);
   return { ref, onMouseMove: onMove, onMouseLeave: onLeave };
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Animated counter hook
-───────────────────────────────────────────────────────────────────────────── */
-function useCountUp(target, duration = 900, delay = 0) {
+/* ─── Count-up hook ─── */
+function useCountUp(target, duration = 1000, delay = 0) {
   const [value, setValue] = useState(0);
   useEffect(() => {
     if (typeof target !== 'number') { setValue(target); return; }
@@ -544,10 +254,10 @@ function useCountUp(target, duration = 900, delay = 0) {
     const t = setTimeout(() => {
       const step = (ts) => {
         if (!start) start = ts;
-        const progress = Math.min((ts - start) / duration, 1);
-        const ease = 1 - Math.pow(1 - progress, 4);
+        const p = Math.min((ts - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - p, 4);
         setValue(Math.floor(ease * target));
-        if (progress < 1) requestAnimationFrame(step);
+        if (p < 1) requestAnimationFrame(step);
         else setValue(target);
       };
       requestAnimationFrame(step);
@@ -557,78 +267,9 @@ function useCountUp(target, duration = 900, delay = 0) {
   return value;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Particle emitter on hover
-───────────────────────────────────────────────────────────────────────────── */
-function ParticleEmitter({ color, active }) {
-  const [particles, setParticles] = useState([]);
-  useEffect(() => {
-    if (!active) return;
-    const id = setInterval(() => {
-      const id = Math.random().toString(36).slice(2);
-      setParticles(p => [...p.slice(-6), {
-        id, x: 40 + Math.random() * 20, y: 50,
-        size: 3 + Math.random() * 4,
-      }]);
-    }, 180);
-    return () => clearInterval(id);
-  }, [active]);
-
-  useEffect(() => {
-    if (particles.length) {
-      const t = setTimeout(() => setParticles(p => p.slice(1)), 1300);
-      return () => clearTimeout(t);
-    }
-  }, [particles]);
-
-  return (
-    <>
-      {particles.map(p => (
-        <span key={p.id} className="particle" style={{
-          left: `${p.x}%`, top: `${p.y}%`,
-          width: p.size, height: p.size,
-          backgroundColor: color, opacity: 0.7,
-        }} />
-      ))}
-    </>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   Live Stats Ticker bar
-───────────────────────────────────────────────────────────────────────────── */
-function StatsTicker({ stats }) {
-  const items = [
-    { label: 'Received',    val: stats.received,            color: '#3b82f6' },
-    { label: 'In Progress', val: stats.inProgress,          color: '#f97316' },
-    { label: 'Waiting',     val: stats.waitingForParts,     color: '#f59e0b' },
-    { label: 'Completed',   val: stats.completedNotReturned,color: '#10b981' },
-    { label: 'Sales Today', val: stats.salesToday,           color: '#a855f7' },
-    { label: 'Revenue',     val: formatCurrency(stats.revenueToday), color: '#f97316' },
-  ];
-  const doubled = [...items, ...items]; // seamless loop
-
-  return (
-    <div className="ticker-wrapper relative rounded-2xl bg-gray-900/95 border border-white/10 px-4 py-2.5 overflow-hidden">
-      {/* grain on ticker */}
-      <div className="absolute inset-0 grain rounded-2xl pointer-events-none" />
-      <div className="ticker-content flex items-center gap-8">
-        {doubled.map((item, i) => (
-          <div key={i} className="flex items-center gap-2 shrink-0">
-            <span className="h-1.5 w-1.5 rounded-full animate-blink" style={{ backgroundColor: item.color }} />
-            <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">{item.label}</span>
-            <span className="text-[11px] font-extrabold" style={{ color: item.color }}>{item.val}</span>
-            <span className="text-white/20 text-xs ml-2">·</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   Main Dashboard Page
-───────────────────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   MAIN DASHBOARD
+═══════════════════════════════════════════════════════════════ */
 export default function DashboardPage() {
   const router = useRouter();
   const { profile } = useAuth();
@@ -646,306 +287,292 @@ export default function DashboardPage() {
   const [now, setNow] = useState(new Date());
   const [mounted, setMounted] = useState(false);
 
-  const ACTIVITIES_PER_PAGE = 5;
-  const MAX_ACTIVITIES = 50;
+  const PER_PAGE = 5;
+  const MAX_ACT  = 50;
 
   useEffect(() => {
-    fetchInitialDashboard();
-    const ticker = setInterval(() => setNow(new Date()), 60000);
-    // Trigger mount animations
+    fetchAll();
+    const t = setInterval(() => setNow(new Date()), 60000);
     setTimeout(() => setMounted(true), 50);
-    return () => clearInterval(ticker);
+    return () => clearInterval(t);
   }, []);
 
-  useEffect(() => { if (!loading) fetchRecentActivity(); }, [currentPage]);
+  useEffect(() => { if (!loading) fetchActivity(); }, [currentPage]);
 
-  async function fetchInitialDashboard() {
+  async function fetchAll() {
     try {
       setLoading(true);
-      const [statsData, activityResponse] = await Promise.all([
+      const [s, a] = await Promise.all([
         dashboardService.getDashboardStats(),
-        dashboardService.getRecentActivity(currentPage, ACTIVITIES_PER_PAGE, MAX_ACTIVITIES),
+        dashboardService.getRecentActivity(currentPage, PER_PAGE, MAX_ACT),
       ]);
-      setStats(statsData);
-      setRecentActivity(activityResponse.data || []);
-      setTotalActivities(activityResponse.total || 0);
-    } catch (err) { console.error(err); }
+      setStats(s);
+      setRecentActivity(a.data || []);
+      setTotalActivities(a.total || 0);
+    } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }
 
-  async function fetchRecentActivity() {
+  async function fetchActivity() {
     try {
       setActivityLoading(true);
-      const r = await dashboardService.getRecentActivity(currentPage, ACTIVITIES_PER_PAGE, MAX_ACTIVITIES);
+      const r = await dashboardService.getRecentActivity(currentPage, PER_PAGE, MAX_ACT);
       setRecentActivity(r.data || []);
       setTotalActivities(r.total || 0);
-    } catch (err) { console.error(err); }
+    } catch (e) { console.error(e); }
     finally { setActivityLoading(false); }
   }
 
   async function handleActivityClick(activity) {
-    const service = activity.services;
-    if (!service?.id) return;
-    if (service.status === 'Returned') {
+    const svc = activity.services;
+    if (!svc?.id) return;
+    if (svc.status === 'Returned') {
       if (profile?.role === 'admin' || profile?.role === 'owner') {
-        router.push(`/history?tab=services&serviceId=${service.id}`);
+        router.push(`/history?tab=services&serviceId=${svc.id}`);
       } else {
         try {
-          const historyData = await historyService.getServiceHistory(profile);
-          if (historyData.some(s => s.id === service.id)) {
-            router.push(`/history?tab=services&serviceId=${service.id}`);
-          } else {
-            toast.error("You do not have permission to view this returned service.");
-          }
-        } catch { toast.error("Error verifying access"); }
+          const h = await historyService.getServiceHistory(profile);
+          if (h.some(s => s.id === svc.id)) router.push(`/history?tab=services&serviceId=${svc.id}`);
+          else toast.error('You do not have permission to view this service.');
+        } catch { toast.error('Error verifying access'); }
       }
     } else {
-      router.push(`/services?serviceId=${service.id}`);
+      router.push(`/services?serviceId=${svc.id}`);
     }
   }
 
   if (loading) return <DashboardSkeleton />;
 
-  const totalPages = Math.ceil(Math.min(totalActivities, MAX_ACTIVITIES) / ACTIVITIES_PER_PAGE);
-  const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 17 ? 'Good afternoon' : 'Good evening';
-  const timeStr = formatTime(now);
-  const dateStr = formatDate(now);
+  const totalPages = Math.ceil(Math.min(totalActivities, MAX_ACT) / PER_PAGE);
+  const h = now.getHours();
+  const greeting = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+
+  const S = { // inline style helpers
+    panel: {
+      background: 'var(--surface-raise)',
+      border: '1px solid var(--border)',
+      borderRadius: '1.5rem',
+      padding: '1.5rem',
+      position: 'relative',
+      overflow: 'hidden',
+      boxShadow: '0 2px 16px rgba(0,0,0,0.04)',
+    },
+    topAccentBar: {
+      position: 'absolute', top: 0, left: '1.5rem', right: '1.5rem', height: 2,
+      background: 'linear-gradient(90deg, var(--accent), transparent)',
+      borderRadius: '0 0 3px 3px', opacity: 0.55,
+    },
+    panelTitle: {
+      display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1.25rem',
+    },
+    panelIcon: {
+      width: 32, height: 32, borderRadius: '0.625rem',
+      background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    },
+  };
 
   return (
     <>
       <StyleInjector />
-      <div className="mesh-bg dashboard-font min-h-screen space-y-6 p-1">
+      <div className="font-body" style={{ backgroundColor: 'var(--surface)', minHeight: '100vh', padding: '0.25rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-        {/* ── Hero Header — Aurora VFX + morph blobs + grain ── */}
-        <header
-          className={cn(
-            "aurora-bg grain relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-7 shadow-2xl",
-            mounted && "section-reveal"
-          )}
-          style={{ animationDelay: '0s' }}
-        >
-          {/* Original decorative orbs */}
-          <div className="orb w-64 h-64 bg-orange-500/20 -top-16 -left-16 animate-float" style={{animationDelay:'0s'}} />
-          <div className="orb w-48 h-48 bg-purple-500/20 -bottom-12 left-1/3 animate-float" style={{animationDelay:'1s'}} />
-          <div className="orb w-56 h-56 bg-blue-500/15 -top-8 right-10 animate-float" style={{animationDelay:'2s'}} />
+          {/* ══════════ HERO HEADER ══════════ */}
+          <header
+            className={cn(mounted && 'section-enter')}
+            style={{
+              background: 'linear-gradient(135deg, #0d0d0d 0%, #181818 60%, #0d0d0d 100%)',
+              borderRadius: '1.75rem',
+              padding: '1.75rem',
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: '0 24px 60px -16px rgba(0,0,0,0.45)',
+              animationDelay: '0s',
+            }}
+          >
+            {/* Morphing blobs — accent orange, very low opacity */}
+            <div className="blob" style={{ width: 280, height: 280, background: 'var(--accent)', opacity: 0.06, top: -70, right: -50 }} />
+            <div className="blob" style={{ width: 180, height: 180, background: 'var(--accent)', opacity: 0.04, bottom: -50, left: '25%', animationDelay: '4s' }} />
 
-          {/* NEW — morph blob accents */}
-          <div
-            className="morph-blob absolute w-32 h-32 opacity-10 pointer-events-none"
-            style={{ background: 'radial-gradient(circle, #f97316, #a855f7)', right: '15%', top: '10%', animationDelay: '0s' }}
-          />
-          <div
-            className="morph-blob absolute w-20 h-20 opacity-8 pointer-events-none"
-            style={{ background: 'radial-gradient(circle, #3b82f6, #06b6d4)', left: '40%', bottom: '5%', animationDelay: '3s' }}
-          />
-
-          {/* Original spinning rings */}
-          <div className="absolute right-6 top-6 h-20 w-20 rounded-full border-2 border-dashed border-white/10 animate-spin-slow" />
-          <div className="absolute right-10 top-10 h-12 w-12 rounded-full border border-orange-400/30 animate-spin-slow"
-            style={{animationDirection:'reverse',animationDuration:'5s'}} />
-
-          {/* NEW — extra concentric animated rings */}
-          <div className="absolute right-4 top-4 h-28 w-28 rounded-full border border-purple-400/10 animate-spin-slow"
-            style={{animationDuration:'14s'}} />
-          <div className="absolute right-8 top-8 h-16 w-16 rounded-full border border-cyan-400/15"
-            style={{animation:'spin-slow 6s linear infinite reverse'}} />
-
-          <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40 mb-1 text-reveal">{dateStr}</p>
-              <h1 className="display-font text-2xl sm:text-3xl font-bold text-white mb-1">
-                {greeting},{' '}
-                <span className="shimmer-text">{profile?.name?.split(' ')[0] || 'there'} 👋</span>
-              </h1>
-              <p className="text-sm text-white/50">Here's what's happening in your shop today.</p>
+            {/* Spinning orbit rings */}
+            <div style={{ position: 'absolute', right: 28, top: 28, width: 88, height: 88, animation: 'spin-slow 20s linear infinite', pointerEvents: 'none' }}>
+              <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: '1px dashed rgba(249,115,22,0.18)' }} />
+            </div>
+            <div style={{ position: 'absolute', right: 36, top: 36, width: 56, height: 56, animation: 'spin-slow 9s linear infinite reverse', pointerEvents: 'none' }}>
+              <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: '1px solid rgba(249,115,22,0.1)' }} />
+            </div>
+            {/* Orbiting dot */}
+            <div style={{ position: 'absolute', right: 50, top: 50, pointerEvents: 'none' }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', opacity: 0.65, animation: 'orbit 9s linear infinite' }} />
             </div>
 
-            <div className="flex items-center gap-3">
-              {/* NEW — animated ring around clock */}
-              <div className="relative">
-                <div className="absolute -inset-2 rounded-2xl border border-orange-400/20 animate-spin-slow" style={{animationDuration:'20s'}} />
-                <div className="glass rounded-2xl px-5 py-3 text-right relative z-10">
-                  <p className="display-font text-2xl font-bold text-gray-900">{timeStr}</p>
-                  <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-blink status-live" />
-                    <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Live</p>
-                  </div>
+            {/* Corner accent line */}
+            <div style={{ position: 'absolute', top: 0, left: '8%', width: 100, height: 2, background: 'linear-gradient(90deg, var(--accent), transparent)', opacity: 0.55 }} />
+
+            <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1.25rem' }}>
+              <div>
+                <p style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)', marginBottom: '0.5rem' }}>
+                  {formatDate(now)}
+                </p>
+                <h1 className="font-display" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 400, lineHeight: 1.1, color: 'rgba(255,255,255,0.94)', marginBottom: '0.5rem', fontStyle: 'italic' }}>
+                  {greeting},{' '}
+                  <span style={{ color: 'var(--accent)' }}>{profile?.name?.split(' ')[0] || 'there'}</span>
+                </h1>
+                <span className="accent-line" style={{ width: 56 }} />
+                <p style={{ marginTop: '0.7rem', fontSize: '0.8125rem', color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>
+                  Your shop's pulse, at a glance.
+                </p>
+              </div>
+
+              {/* Clock */}
+              <div style={{ background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '1.125rem', padding: '0.85rem 1.4rem', textAlign: 'right', minWidth: 128 }}>
+                <p style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.03em', color: '#fff', lineHeight: 1, margin: 0 }}>
+                  {formatTime(now)}
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem', marginTop: '0.4rem' }}>
+                  <span style={{ display: 'inline-block', position: 'relative', width: 7, height: 7, borderRadius: '50%', background: '#22c55e' }}>
+                    <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22c55e', animation: 'live-ring 2s ease-out infinite' }} />
+                  </span>
+                  <span style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>Live</span>
                 </div>
               </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* ── Stats Ticker (NEW) ── */}
-        <div className={cn(mounted && "section-reveal")} style={{ animationDelay: '0.08s' }}>
-          <StatsTicker stats={stats} />
-        </div>
-
-        {/* ── Quick Actions ── */}
-        <section className={cn(mounted && "section-reveal")} style={{ animationDelay: '0.15s' }}>
-          <SectionLabel icon={Zap} label="Quick Actions" />
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 stagger-enter">
-            {[
-              { name: 'Register New Service', desc: 'Create a service ticket', icon: PlusCircle, color: '#f97316', lightBg: '#fff7ed', borderColor: '#fed7aa', href: '/services?action=new', glowClass: 'glow-border-orange' },
-              { name: 'Add New Sale',         desc: 'Record parts / accessories', icon: ShoppingBag, color: '#a855f7', lightBg: '#faf5ff', borderColor: '#e9d5ff', href: '/sales?action=new',   glowClass: 'glow-border-purple' },
-              { name: 'View Services',        desc: 'Manage active repairs', icon: Wrench,      color: '#3b82f6', lightBg: '#eff6ff', borderColor: '#bfdbfe', href: '/services',            glowClass: 'glow-border-blue'   },
-            ].map((a) => (
-              <QuickActionButton key={a.name} action={a} onClick={() => router.push(a.href)} />
-            ))}
-          </div>
-        </section>
-
-        {/* ── Work Priority ── */}
-        <section className={cn(mounted && "section-reveal")} style={{ animationDelay: '0.22s' }}>
-          <SectionLabel icon={Activity} label="Work Priority" />
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 stagger-enter">
-            <PriorityCard title="Received"               count={stats.received || 0}           color="#3b82f6" gradClass="gradient-blue"    shadowColor="rgba(59,130,246,0.2)"  onClick={() => router.push('/services?status=Received')} />
-            <PriorityCard title="In Progress"            count={stats.inProgress}               color="#f97316" gradClass="gradient-orange"  shadowColor="rgba(249,115,22,0.2)"  onClick={() => router.push('/services?status=In Progress')} />
-            <PriorityCard title="Waiting for Parts"      count={stats.waitingForParts}          color="#f59e0b" gradClass="gradient-amber"   shadowColor="rgba(245,158,11,0.2)"  onClick={() => router.push('/services?status=Waiting for Parts')} />
-            <PriorityCard title="Completed (Unreturned)" count={stats.completedNotReturned}     color="#10b981" gradClass="gradient-emerald" shadowColor="rgba(16,185,129,0.2)"  onClick={() => router.push('/services?status=Completed')} />
-          </div>
-        </section>
-
-        {/* ── Today Summary ── */}
-        <section className={cn(mounted && "section-reveal")} style={{ animationDelay: '0.29s' }}>
-          <SectionLabel icon={Sparkles} label="Today Summary" />
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 stagger-enter">
-            <MetricDetailsDialog title="Registered Today" dataList={stats.registeredTodayList}>
-              <SummaryCard title="Registered"    count={stats.registeredToday}             icon={FileEdit}     color="#3b82f6" gradClass="gradient-blue"    />
-            </MetricDetailsDialog>
-            <SummaryCard title="Completed"      count={stats.completedToday}               icon={CheckCircle2} color="#10b981" gradClass="gradient-emerald" onClick={() => router.push('/services?filter=completedToday')} />
-            <SummaryCard title="Non Repairable" count={stats.notRepairableToday}           icon={XOctagon}     color="#ef4444" gradClass="gradient-red"     onClick={() => router.push('/services?filter=notRepairableToday')} />
-            <SummaryCard title="Returned"       count={stats.returnedToday}                icon={PackageCheck} color="#06b6d4" gradClass="gradient-cyan"    onClick={() => router.push('/history?tab=services&today=returned')} />
-            <SummaryCard title="Sales"          count={stats.salesToday}                   icon={ShoppingBag}  color="#a855f7" gradClass="gradient-purple"  onClick={() => router.push('/sales?today=true')} />
-            <SummaryCard title="Revenue"        count={formatCurrency(stats.revenueToday)} icon={IndianRupee}  color="#f97316" gradClass="gradient-orange"  isCurrency
-              onClick={() => { if (profile?.role === 'admin' || profile?.role === 'owner') setIsRevenueOpen(true); }} />
-          </div>
-        </section>
-
-        {/* ── Bottom grid ── */}
-        <div className={cn("grid grid-cols-1 gap-8 lg:grid-cols-2", mounted && "section-reveal")} style={{ animationDelay: '0.36s' }}>
-
-          {/* Recent Activity */}
-          <section className="glass rounded-3xl p-6 shadow-xl overflow-hidden relative">
-            <div className="orb w-40 h-40 bg-orange-400/10 -top-10 -right-10 pointer-events-none" />
-            <div className="orb w-32 h-32 bg-purple-400/10 -bottom-8 -left-8 pointer-events-none" />
-            {/* NEW morph accent */}
-            <div className="morph-blob absolute w-16 h-16 opacity-5 pointer-events-none"
-              style={{ background: 'radial-gradient(circle, #f97316, #a855f7)', right: '8%', top: '12%' }} />
-
-            <div className="relative mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-orange-400 to-purple-500 shadow-md">
-                  <Clock className="h-4 w-4 text-white" />
-                </div>
-                <h3 className="text-base font-semibold text-gray-900">Recent Activity</h3>
-              </div>
-              <span className="flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-green-600 border border-green-200">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-blink status-live" />
-                Live
-              </span>
+          {/* ══════════ QUICK ACTIONS ══════════ */}
+          <section className={cn(mounted && 'section-enter')} style={{ animationDelay: '0.12s' }}>
+            <SectionLabel icon={Zap} label="Quick Actions" />
+            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+              {[
+                { name: 'Register New Service', desc: 'Create a service ticket',    icon: PlusCircle,  href: '/services?action=new' },
+                { name: 'Add New Sale',         desc: 'Record parts / accessories', icon: ShoppingBag, href: '/sales?action=new' },
+                { name: 'View Services',        desc: 'Manage active repairs',       icon: Wrench,      href: '/services' },
+              ].map(a => <QuickActionButton key={a.name} action={a} onClick={() => router.push(a.href)} />)}
             </div>
+          </section>
 
-            {activityLoading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="animate-pulse rounded-2xl bg-gray-100/80 h-[72px]" />
-                ))}
+          {/* ══════════ WORK PRIORITY ══════════ */}
+          <section className={cn(mounted && 'section-enter')} style={{ animationDelay: '0.20s' }}>
+            <SectionLabel icon={Activity} label="Work Priority" />
+            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
+              <PriorityCard title="Received"               count={stats.received}            statusColor="#3b82f6" onClick={() => router.push('/services?status=Received')} />
+              <PriorityCard title="In Progress"            count={stats.inProgress}           statusColor="#f97316" onClick={() => router.push('/services?status=In Progress')} />
+              <PriorityCard title="Waiting for Parts"      count={stats.waitingForParts}      statusColor="#f59e0b" onClick={() => router.push('/services?status=Waiting for Parts')} />
+              <PriorityCard title="Completed (Unreturned)" count={stats.completedNotReturned} statusColor="#10b981" onClick={() => router.push('/services?status=Completed')} />
+            </div>
+          </section>
+
+          {/* ══════════ TODAY SUMMARY ══════════ */}
+          <section className={cn(mounted && 'section-enter')} style={{ animationDelay: '0.28s' }}>
+            <SectionLabel icon={Sparkles} label="Today Summary" />
+            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.875rem' }}>
+              <MetricDetailsDialog title="Registered Today" dataList={stats.registeredTodayList}>
+                <SummaryCard title="Registered"    value={stats.registeredToday}             icon={FileEdit}     dotColor="#3b82f6" />
+              </MetricDetailsDialog>
+              <SummaryCard title="Completed"      value={stats.completedToday}               icon={CheckCircle2} dotColor="#10b981" onClick={() => router.push('/services?filter=completedToday')} />
+              <SummaryCard title="Non Repairable" value={stats.notRepairableToday}           icon={XOctagon}     dotColor="#ef4444" onClick={() => router.push('/services?filter=notRepairableToday')} />
+              <SummaryCard title="Returned"       value={stats.returnedToday}                icon={PackageCheck} dotColor="#06b6d4" onClick={() => router.push('/history?tab=services&today=returned')} />
+              <SummaryCard title="Sales"          value={stats.salesToday}                   icon={ShoppingBag}  dotColor="#a855f7" onClick={() => router.push('/sales?today=true')} />
+              <SummaryCard title="Revenue"        value={formatCurrency(stats.revenueToday)} icon={IndianRupee}  dotColor="#f97316" isCurrency
+                onClick={() => { if (profile?.role === 'admin' || profile?.role === 'owner') setIsRevenueOpen(true); }} />
+            </div>
+          </section>
+
+          {/* ══════════ BOTTOM GRID ══════════ */}
+          <div className={cn(mounted && 'section-enter')} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', animationDelay: '0.36s' }}>
+
+            {/* Recent Activity */}
+            <section style={S.panel}>
+              <div style={S.topAccentBar} />
+              <div style={S.panelTitle}>
+                <div style={S.panelIcon}><Clock style={{ width: 15, height: 15, color: 'var(--accent)' }} /></div>
+                <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--ink)' }}>Recent Activity</span>
+                <span style={{
+                  marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.4rem',
+                  fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase',
+                  color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0',
+                  borderRadius: 100, padding: '0.25rem 0.75rem',
+                }}>
+                  <span style={{ position: 'relative', display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#22c55e', flexShrink: 0 }}>
+                    <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22c55e', animation: 'live-ring 2s ease-out infinite' }} />
+                  </span>
+                  Live
+                </span>
               </div>
-            ) : recentActivity.length === 0 ? (
-              <div className="flex h-40 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 gap-2">
-                <Clock className="h-7 w-7 text-gray-300" />
-                <p className="text-sm font-semibold text-gray-400">No activity yet today</p>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-3">
-                  {recentActivity.map((activity, i) => {
-                    const isMine = activity.updated_by === profile?.id;
-                    const ss = getStatusStyles(activity.status);
-                    return (
+
+              {activityLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} style={{ height: 72, borderRadius: '0.875rem', background: '#f3f4f6', animation: `fade-up 0.3s ease ${i * 0.05}s both` }} />
+                  ))}
+                </div>
+              ) : recentActivity.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 160, borderRadius: '0.875rem', border: '2px dashed var(--border)', background: 'var(--surface)', gap: '0.5rem' }}>
+                  <Clock style={{ width: 28, height: 28, color: 'var(--border-strong)' }} />
+                  <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--ink-faint)' }}>No activity yet today</p>
+                </div>
+              ) : (
+                <>
+                  <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                    {recentActivity.map((activity, i) => (
                       <ActivityRow
                         key={activity.id || i}
                         activity={activity}
-                        isMine={isMine}
-                        ss={ss}
+                        isMine={activity.updated_by === profile?.id}
+                        ss={getStatusStyles(activity.status)}
                         index={i}
                         onClickHandler={handleActivityClick}
-                        profile={profile}
                       />
-                    );
-                  })}
-                </div>
-
-                {totalPages > 1 && (
-                  <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
-                    <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}
-                      className="ripple-btn rounded-xl border border-gray-200 bg-white px-4 py-1.5 text-xs font-bold text-gray-600 shadow-sm transition hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
-                      ← Prev
-                    </button>
-                    <p className="text-xs font-semibold text-gray-500">
-                      Page <span className="font-black text-gray-900">{currentPage}</span> / <span className="font-black text-gray-900">{totalPages}</span>
-                    </p>
-                    <button onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}
-                      className="ripple-btn rounded-xl border border-gray-200 bg-white px-4 py-1.5 text-xs font-bold text-gray-600 shadow-sm transition hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
-                      Next →
-                    </button>
+                    ))}
                   </div>
-                )}
-              </>
-            )}
-          </section>
-
-          {/* Smart Alerts */}
-          <section className="glass rounded-3xl p-6 shadow-xl overflow-hidden relative">
-            <div className="orb w-40 h-40 bg-blue-400/10 -top-10 -right-10 pointer-events-none" />
-            {/* NEW morph blob */}
-            <div className="morph-blob absolute w-20 h-20 opacity-5 pointer-events-none"
-              style={{ background: 'radial-gradient(circle, #3b82f6, #a855f7)', left: '10%', bottom: '10%', animationDelay: '2s' }} />
-
-            <div className="relative mb-6 flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-400 to-purple-500 shadow-md">
-                <Bell className="h-4 w-4 text-white" />
-              </div>
-              <h3 className="text-base font-semibold text-gray-900">Smart Alerts</h3>
-            </div>
-
-            <div className="relative space-y-3">
-              {stats.alerts ? (
-                <>
-                  {stats.alerts.oldInProgress > 0 && (
-                    <AlertItem
-                      message={`${stats.alerts.oldInProgress} service${stats.alerts.oldInProgress > 1 ? 's have' : ' has'} been In Progress for over 3 days`}
-                      type="warning" index={0}
-                    />
-                  )}
-                  {stats.alerts.oldWaitingForParts > 0 && (
-                    <AlertItem
-                      message={`${stats.alerts.oldWaitingForParts} service${stats.alerts.oldWaitingForParts > 1 ? 's are' : ' is'} stuck waiting for parts (5+ days)`}
-                      type="danger" index={1}
-                    />
-                  )}
-                  {stats.alerts.oldCompletedNotReturned > 0 && (
-                    <AlertItem
-                      message={`${stats.alerts.oldCompletedNotReturned} completed service${stats.alerts.oldCompletedNotReturned > 1 ? 's have' : ' has'} not been picked up for over a week`}
-                      type="warning" index={2}
-                    />
-                  )}
-                  {stats.alerts.oldInProgress === 0 && stats.alerts.oldWaitingForParts === 0 && stats.alerts.oldCompletedNotReturned === 0 && (
-                    <AlertItem message="All systems operational — no pending bottlenecks 🎉" type="success" index={0} />
+                  {totalPages > 1 && (
+                    <div style={{ marginTop: '1.125rem', paddingTop: '1rem', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <PaginationBtn label="← Prev" disabled={currentPage === 1}          onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} />
+                      <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ink-faint)' }}>
+                        Page <strong style={{ color: 'var(--ink)' }}>{currentPage}</strong> / <strong style={{ color: 'var(--ink)' }}>{totalPages}</strong>
+                      </p>
+                      <PaginationBtn label="Next →" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} />
+                    </div>
                   )}
                 </>
-              ) : (
-                <div className="animate-pulse space-y-3">
-                  <div className="h-14 rounded-2xl bg-gray-100" />
-                  <div className="h-14 rounded-2xl bg-gray-100" />
-                </div>
               )}
-            </div>
-          </section>
+            </section>
+
+            {/* Smart Alerts */}
+            <section style={S.panel}>
+              <div style={S.topAccentBar} />
+              <div style={S.panelTitle}>
+                <div style={S.panelIcon}><Bell style={{ width: 15, height: 15, color: 'var(--accent)' }} /></div>
+                <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--ink)' }}>Smart Alerts</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                {stats.alerts ? (
+                  <>
+                    {stats.alerts.oldInProgress > 0 && (
+                      <AlertItem message={`${stats.alerts.oldInProgress} service${stats.alerts.oldInProgress > 1 ? 's have' : ' has'} been In Progress for over 3 days`} type="warning" index={0} />
+                    )}
+                    {stats.alerts.oldWaitingForParts > 0 && (
+                      <AlertItem message={`${stats.alerts.oldWaitingForParts} service${stats.alerts.oldWaitingForParts > 1 ? 's are' : ' is'} stuck waiting for parts (5+ days)`} type="danger" index={1} />
+                    )}
+                    {stats.alerts.oldCompletedNotReturned > 0 && (
+                      <AlertItem message={`${stats.alerts.oldCompletedNotReturned} completed service${stats.alerts.oldCompletedNotReturned > 1 ? 's have' : ' has'} not been picked up for over a week`} type="warning" index={2} />
+                    )}
+                    {stats.alerts.oldInProgress === 0 && stats.alerts.oldWaitingForParts === 0 && stats.alerts.oldCompletedNotReturned === 0 && (
+                      <AlertItem message="All systems clear — no pending bottlenecks 🎉" type="success" index={0} />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div style={{ height: 56, borderRadius: '0.75rem', background: '#f3f4f6', animation: 'fade-up 0.3s ease both' }} />
+                    <div style={{ height: 56, borderRadius: '0.75rem', background: '#f3f4f6', animation: 'fade-up 0.3s ease 0.06s both' }} />
+                  </>
+                )}
+              </div>
+            </section>
+          </div>
+
         </div>
 
-        {/* Revenue Modal */}
         {isRevenueOpen && (
           <RevenueBreakdownModal
             onClose={() => setIsRevenueOpen(false)}
@@ -959,34 +586,24 @@ export default function DashboardPage() {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Sub-components — all original logic preserved, VFX layered on top
-───────────────────────────────────────────────────────────────────────────── */
-
-/* SectionLabel — original, unchanged */
+/* ─── SectionLabel ─── */
 function SectionLabel({ icon: Icon, label }) {
   return (
-    <div className="mb-4 flex items-center gap-2.5">
-      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-orange-400 to-purple-500 shadow-sm">
-        <Icon className="h-3 w-3 text-white" strokeWidth={2.5} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.875rem' }}>
+      <div style={{ width: 24, height: 24, borderRadius: '0.375rem', background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <Icon style={{ width: 12, height: 12, color: 'var(--accent)' }} strokeWidth={2.5} />
       </div>
-      <h3 className="text-sm font-semibold text-gray-700">{label}</h3>
-      {/* NEW: animated gradient line */}
-      <div className="flex-1 h-px relative overflow-hidden rounded-full">
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-200 to-transparent animate-line-grow" />
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-300/40 via-purple-300/30 to-transparent"
-          style={{ backgroundSize: '200% 100%', animation: 'bg-pan 3s ease infinite' }} />
-      </div>
+      <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--ink-mid)', letterSpacing: '0.01em' }}>{label}</span>
+      <div style={{ flex: 1, height: 1, background: 'var(--border)', borderRadius: 2 }} />
     </div>
   );
 }
 
-/* QuickActionButton — original logic + magnetic tilt + shine + ripple + particles */
+/* ─── QuickActionButton ─── */
 function QuickActionButton({ action: a, onClick }) {
   const ripple = useRipple();
-  const { ref, onMouseMove, onMouseLeave } = useMagneticTilt(5);
+  const { ref, onMouseMove, onMouseLeave } = useTilt(4);
   const [hovered, setHovered] = useState(false);
-
   return (
     <button
       ref={ref}
@@ -994,97 +611,114 @@ function QuickActionButton({ action: a, onClick }) {
       onMouseMove={onMouseMove}
       onMouseLeave={() => { onMouseLeave(); setHovered(false); }}
       onMouseEnter={() => setHovered(true)}
-      className={cn(
-        "ripple-btn shine-on-hover gradient-border magnetic-card group relative flex items-center gap-4 rounded-2xl border-2 p-4 text-left",
-        a.glowClass
-      )}
-      style={{ borderColor: a.borderColor, backgroundColor: a.lightBg, transition: 'transform 0.3s var(--ease-spring), box-shadow 0.3s ease' }}
+      className="ripple-host shine-host"
+      style={{
+        position: 'relative', display: 'flex', alignItems: 'center', gap: '1rem',
+        padding: '1rem 1.1rem', borderRadius: '1.125rem', cursor: 'pointer', textAlign: 'left',
+        background: hovered ? 'var(--ink)' : 'var(--surface-raise)',
+        border: `1.5px solid ${hovered ? 'var(--ink)' : 'var(--border)'}`,
+        transition: 'background 0.25s, border-color 0.25s', willChange: 'transform',
+      }}
     >
-      {/* original left stripe */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ backgroundColor: a.color }} />
-
-      {/* NEW particle emitter */}
-      <ParticleEmitter color={a.color} active={hovered} />
-
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3"
-        style={{ backgroundColor: a.color + '20', border: `1.5px solid ${a.color}40` }}>
-        <a.icon className="h-5 w-5" style={{ color: a.color }} strokeWidth={2.5} />
+      {/* Accent stripe */}
+      <div style={{
+        position: 'absolute', left: 0, top: '20%', bottom: '20%', width: 3,
+        borderRadius: '0 3px 3px 0', background: 'var(--accent)',
+        transform: hovered ? 'scaleY(1)' : 'scaleY(0.35)',
+        transition: 'transform 0.3s var(--ease-spring)', transformOrigin: 'center',
+      }} />
+      <div style={{
+        width: 40, height: 40, borderRadius: '0.75rem', flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: hovered ? 'rgba(249,115,22,0.15)' : 'var(--surface)',
+        border: `1px solid ${hovered ? 'rgba(249,115,22,0.35)' : 'var(--border)'}`,
+        transition: 'background 0.25s, border-color 0.25s, transform 0.3s var(--ease-spring)',
+        transform: hovered ? 'scale(1.1) rotate(4deg)' : 'scale(1)',
+      }}>
+        <a.icon style={{ width: 18, height: 18, color: hovered ? 'var(--accent)' : 'var(--ink-mid)', transition: 'color 0.2s' }} strokeWidth={2.5} />
       </div>
-
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 truncate">{a.name}</p>
-        <p className="text-xs mt-0.5 font-medium" style={{ color: a.color + 'bb' }}>{a.desc}</p>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600, color: hovered ? '#fff' : 'var(--ink)', transition: 'color 0.2s', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</p>
+        <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: hovered ? 'rgba(255,255,255,0.42)' : 'var(--ink-faint)', transition: 'color 0.2s' }}>{a.desc}</p>
       </div>
-
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-sm"
-        style={{ backgroundColor: a.color + '15', border: `1px solid ${a.color}30` }}>
-        <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ color: a.color }} />
-      </div>
+      <ArrowUpRight style={{ width: 15, height: 15, flexShrink: 0, color: hovered ? 'var(--accent)' : 'var(--border-strong)', transform: hovered ? 'translate(2px,-2px)' : 'translate(0,0)', transition: 'transform 0.2s, color 0.2s' }} />
     </button>
   );
 }
 
-/* PriorityCard — original + animated count-up + magnetic tilt + shine */
-function PriorityCard({ title, count, color, gradClass, shadowColor, onClick }) {
-  const animatedCount = useCountUp(count, 900, 300);
-  const { ref, onMouseMove, onMouseLeave } = useMagneticTilt(6);
-
+/* ─── PriorityCard ─── */
+function PriorityCard({ title, count, statusColor, onClick }) {
+  const animated = useCountUp(count, 950, 280);
+  const { ref, onMouseMove, onMouseLeave } = useTilt(5);
+  const [hovered, setHovered] = useState(false);
   return (
     <button
-      ref={ref}
-      onClick={onClick}
+      ref={ref} onClick={onClick}
       onMouseMove={onMouseMove}
-      onMouseLeave={onMouseLeave}
-      className={cn("shine-on-hover gradient-border group relative overflow-hidden rounded-2xl border border-white/80 p-5 text-left shadow-md", gradClass)}
-      style={{ boxShadow: `0 4px 20px ${shadowColor}`, transition: 'transform 0.3s var(--ease-spring), box-shadow 0.3s ease' }}
+      onMouseLeave={() => { onMouseLeave(); setHovered(false); }}
+      onMouseEnter={() => setHovered(true)}
+      className="ripple-host shine-host"
+      style={{
+        textAlign: 'left', cursor: 'pointer',
+        borderRadius: '1.25rem', padding: '1.25rem',
+        background: 'var(--surface-raise)',
+        border: `1.5px solid ${hovered ? statusColor + '55' : 'var(--border)'}`,
+        position: 'relative', overflow: 'hidden',
+        transition: 'border-color 0.25s, box-shadow 0.25s',
+        boxShadow: hovered ? `0 8px 32px ${statusColor}22` : '0 2px 8px rgba(0,0,0,0.04)',
+        willChange: 'transform',
+      }}
     >
-      {/* original blobs */}
-      <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full blur-2xl opacity-20" style={{ backgroundColor: color }} />
-      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${color}80, ${color}20)` }} />
-
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-white shadow-sm"
-          style={{ background: `${color}15` }}>
-          <Activity className="h-4 w-4" style={{ color }} strokeWidth={2} />
-        </div>
-        <TrendingUp className="h-3.5 w-3.5 text-gray-300 transition-colors group-hover:text-gray-500" />
+      {/* Top bar reveal */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: statusColor, transform: hovered ? 'scaleX(1)' : 'scaleX(0)', transformOrigin: 'left', transition: 'transform 0.35s var(--ease-expo)' }} />
+      {/* Ambient glow spot */}
+      <div style={{ position: 'absolute', right: -20, bottom: -20, width: 80, height: 80, borderRadius: '50%', background: statusColor, opacity: hovered ? 0.09 : 0.04, transition: 'opacity 0.3s', filter: 'blur(20px)' }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem' }}>
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: statusColor, display: 'inline-block', boxShadow: `0 0 0 3px ${statusColor}22` }} />
+        <TrendingUp style={{ width: 13, height: 13, color: hovered ? statusColor : 'var(--border-strong)', transition: 'color 0.2s' }} />
       </div>
-
-      {/* Animated count-up replaces static number */}
-      <p className="text-4xl font-bold tabular-nums leading-none text-gray-900 count-animate">
-        {animatedCount}
+      <p style={{ fontSize: '2.625rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--ink)', margin: 0, animation: 'num-rise 0.5s var(--ease-spring) both' }}>
+        {animated}
       </p>
-      <p className="mt-2 text-[13px] font-medium text-gray-500">{title}</p>
+      <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-faint)', lineHeight: 1.3 }}>{title}</p>
     </button>
   );
 }
 
-/* SummaryCard — original + count-up + shine + hover glow */
-function SummaryCard({ title, count, isCurrency, onClick, icon: Icon, color, gradClass }) {
-  const animatedCount = typeof count === 'number' ? useCountUp(count, 800, 400) : count;
-
+/* ─── SummaryCard ─── */
+function SummaryCard({ title, value, isCurrency, onClick, icon: Icon, dotColor }) {
+  const animated = typeof value === 'number' ? useCountUp(value, 800, 380) : value;
+  const [hovered, setHovered] = useState(false);
   return (
     <button
       onClick={onClick}
-      className={cn("shine-on-hover gradient-border card-hover group relative w-full overflow-hidden rounded-2xl border border-white/80 p-4 text-left shadow-md", gradClass)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="ripple-host shine-host"
+      style={{
+        width: '100%', textAlign: 'left', cursor: 'pointer',
+        borderRadius: '1.125rem', padding: '1rem',
+        background: 'var(--surface-raise)',
+        border: `1.5px solid ${hovered ? dotColor + '50' : 'var(--border)'}`,
+        position: 'relative', overflow: 'hidden',
+        transition: 'border-color 0.2s, box-shadow 0.2s',
+        boxShadow: hovered ? `0 6px 24px ${dotColor}1a` : '0 2px 8px rgba(0,0,0,0.03)',
+        willChange: 'transform',
+      }}
     >
-      <div className="absolute -top-8 -right-8 h-20 w-20 rounded-full blur-2xl opacity-20" style={{ backgroundColor: color }} />
-      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${color}70, ${color}10)` }} />
-
-      <div className="relative mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-white shadow-sm transition-transform group-hover:scale-110 animate-icon-bounce"
-        style={{ background: `${color}15`, animationDelay: '0s', animationFillMode: 'both' }}>
-        {Icon && <Icon className="h-4 w-4" style={{ color }} strokeWidth={2} />}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: dotColor, transform: hovered ? 'scaleX(1)' : 'scaleX(0)', transformOrigin: 'left', transition: 'transform 0.3s var(--ease-expo)' }} />
+      <div style={{ width: 32, height: 32, borderRadius: '0.625rem', display: 'flex', alignItems: 'center', justifyContent: 'center', background: dotColor + '15', border: `1px solid ${dotColor}28`, marginBottom: '0.625rem', transform: hovered ? 'scale(1.1) rotate(-4deg)' : 'scale(1)', transition: 'transform 0.3s var(--ease-spring)' }}>
+        <Icon style={{ width: 15, height: 15, color: dotColor }} strokeWidth={2} />
       </div>
-
-      <p className="text-2xl font-bold tabular-nums leading-none text-gray-900 count-animate">
-        {isCurrency ? count : animatedCount}
+      <p style={{ fontSize: isCurrency ? '1.0625rem' : '1.625rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--ink)', margin: 0, animation: 'num-rise 0.5s var(--ease-spring) both' }}>
+        {isCurrency ? value : animated}
       </p>
-      <p className="mt-2 text-[11px] font-semibold text-gray-500">{title}</p>
+      <p style={{ marginTop: '0.375rem', fontSize: '0.6875rem', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{title}</p>
     </button>
   );
 }
 
-/* AlertItem — original + stagger entrance + left-stripe VFX */
+/* ─── AlertItem ─── */
 function AlertItem({ message, type, index = 0 }) {
   const cfg = {
     warning: { bg: '#fffbeb', border: '#fde68a', text: '#92400e', icon: TriangleAlert, iconColor: '#f59e0b', accent: '#f59e0b' },
@@ -1092,139 +726,102 @@ function AlertItem({ message, type, index = 0 }) {
     success: { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534', icon: CircleCheck,   iconColor: '#22c55e', accent: '#22c55e' },
   }[type];
   const Ic = cfg.icon;
-
   return (
-    <div
-      className="relative flex items-start gap-3 rounded-2xl border p-4 text-sm font-medium overflow-hidden animate-slide-up shine-on-hover"
-      style={{
-        backgroundColor: cfg.bg, borderColor: cfg.border, color: cfg.text,
-        animationDelay: `${index * 0.1}s`, animationFillMode: 'both',
-      }}
-    >
-      {/* animated left stripe */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl animate-line-grow"
-        style={{ backgroundColor: cfg.accent }} />
-      <Ic className="h-5 w-5 shrink-0 mt-0.5" style={{ color: cfg.iconColor }} />
-      <span className="leading-snug">{message}</span>
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', borderRadius: '0.875rem', padding: '0.875rem 1rem', background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.text, fontSize: '0.8125rem', fontWeight: 500, lineHeight: 1.4, position: 'relative', overflow: 'hidden', animation: `slide-right 0.4s var(--ease-expo) ${index * 0.08}s both` }}>
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: cfg.accent, borderRadius: '0.875rem 0 0 0.875rem' }} />
+      <Ic style={{ width: 17, height: 17, color: cfg.iconColor, flexShrink: 0, marginTop: 1 }} />
+      <span>{message}</span>
     </div>
   );
 }
 
-/* ActivityRow — original logic extracted as component + VFX */
-function ActivityRow({ activity, isMine, ss, index, onClickHandler, profile }) {
+/* ─── ActivityRow ─── */
+function ActivityRow({ activity, isMine, ss, index, onClickHandler }) {
   const ripple = useRipple();
-
+  const [hovered, setHovered] = useState(false);
   return (
     <button
       onClick={(e) => { ripple(e); onClickHandler(activity); }}
-      className={cn(
-        "ripple-btn shine-on-hover group w-full relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-300 card-hover",
-        "animate-slide-up",
-        isMine
-          ? "border-orange-300/60 bg-gradient-to-r from-orange-50 via-white to-purple-50/30 shadow-md ring-1 ring-orange-200/50"
-          : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
-      )}
-      style={{ animationDelay: `${index * 0.06}s` }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="ripple-host shine-host"
+      style={{
+        width: '100%', textAlign: 'left', cursor: 'pointer',
+        borderRadius: '0.875rem', padding: '0.875rem 1rem',
+        border: `1.5px solid ${isMine ? 'rgba(249,115,22,0.28)' : hovered ? 'var(--border-strong)' : 'var(--border)'}`,
+        background: isMine ? 'linear-gradient(135deg,#fff7ed 0%,#fff 100%)' : hovered ? 'var(--surface)' : 'var(--surface-raise)',
+        display: 'flex', alignItems: 'center', gap: '0.75rem',
+        position: 'relative', overflow: 'hidden',
+        transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s',
+        boxShadow: hovered ? '0 4px 16px rgba(0,0,0,0.07)' : 'none',
+        animation: `card-in 0.45s var(--ease-expo) ${index * 0.06}s both`,
+      }}
     >
-      {isMine && <div className="absolute top-0 left-0 h-full w-1 rounded-l-2xl bg-gradient-to-b from-orange-400 to-purple-500" />}
-
-      <div className="flex items-center gap-3 pl-1">
-        {/* status dot with pulse ring */}
-        <div className="relative shrink-0">
-          <span className="block h-3 w-3 rounded-full shadow-sm" style={{ backgroundColor: ss.dotColor }} />
-          <span className="absolute inset-0 rounded-full" style={{ backgroundColor: ss.dotColor, animation: 'pulse-ring 2s cubic-bezier(0.215,0.61,0.355,1) infinite' }} />
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <p className="display-font text-sm font-bold text-gray-900 truncate">
-              {activity.services?.customer_name || 'Unknown Customer'}
-            </p>
-            <div className="flex items-center gap-2 shrink-0">
-              {isMine && (
-                <span className="animate-pop-in rounded-full bg-gradient-to-r from-orange-400 to-purple-500 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-white shadow-sm">
-                  You
-                </span>
-              )}
-              <span className="text-[10px] font-semibold text-gray-400">
-                {formatTime(activity.created_at)}
-              </span>
-            </div>
-          </div>
-
-          <p className="text-xs text-gray-400 mt-0.5 truncate">
-            {[activity.services?.device_brand, activity.services?.device_model].filter(Boolean).join(' ') || 'Device'}
-          </p>
-
-          <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 border text-[10px] font-bold uppercase tracking-wider"
-            style={{ backgroundColor: ss.badgeBg, borderColor: ss.badgeBorder, color: ss.badgeText }}>
-            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: ss.dotColor }} />
-            {activity.status}
-          </div>
-        </div>
-
-        <ChevronRight className="h-4 w-4 text-gray-300 shrink-0 transition-transform group-hover:translate-x-0.5" />
+      {isMine && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: 'var(--accent)', borderRadius: '0.875rem 0 0 0.875rem' }} />}
+      {/* Status dot with pulse */}
+      <div style={{ position: 'relative', flexShrink: 0 }}>
+        <span style={{ display: 'block', width: 10, height: 10, borderRadius: '50%', background: ss.dotColor }} />
+        <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: ss.dotColor, opacity: 0.35, animation: 'live-ring 2.5s ease-out infinite' }} />
       </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {activity.services?.customer_name || 'Unknown Customer'}
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
+            {isMine && (
+              <span style={{ borderRadius: 100, padding: '0.2rem 0.5rem', background: 'var(--accent)', color: '#fff', fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>You</span>
+            )}
+            <span style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--ink-faint)' }}>{formatTime(activity.created_at)}</span>
+          </div>
+        </div>
+        <p style={{ fontSize: '0.75rem', color: 'var(--ink-faint)', margin: '0.2rem 0 0.4rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {[activity.services?.device_brand, activity.services?.device_model].filter(Boolean).join(' ') || 'Device'}
+        </p>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.2rem 0.6rem', borderRadius: '0.375rem', background: ss.dotColor + '12', border: `1px solid ${ss.dotColor}28`, color: ss.dotColor, fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: ss.dotColor, display: 'inline-block' }} />
+          {activity.status}
+        </span>
+      </div>
+      <ChevronRight style={{ width: 15, height: 15, flexShrink: 0, color: hovered ? 'var(--ink-mid)' : 'var(--border-strong)', transform: hovered ? 'translateX(2px)' : 'translateX(0)', transition: 'transform 0.2s, color 0.2s' }} />
     </button>
   );
 }
 
-/* CurrencyDisplay — original, unchanged */
-function CurrencyDisplay({ amount, color }) {
-  const number = formatNumber(amount);
+/* ─── PaginationBtn ─── */
+function PaginationBtn({ label, disabled, onClick }) {
+  const ripple = useRipple();
   return (
-    <p className="flex items-center gap-1.5 tabular-nums font-bold" style={{ color }}>
-      <span className="text-sm font-semibold opacity-70">₹</span>
-      <span className="text-2xl tracking-tight leading-none">{number}</span>
-    </p>
+    <button
+      onClick={(e) => { ripple(e); onClick(); }}
+      disabled={disabled}
+      className="ripple-host"
+      style={{ padding: '0.375rem 0.875rem', borderRadius: '0.625rem', border: '1.5px solid var(--border)', background: 'var(--surface-raise)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--ink-mid)', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.4 : 1, transition: 'opacity 0.2s' }}
+    >{label}</button>
   );
 }
 
-/* RevenueBreakdownModal — original + VFX entrance + grain */
+/* ─── RevenueBreakdownModal ─── */
 function RevenueBreakdownModal({ onClose, serviceRevenue, salesRevenue, router }) {
+  const ripple = useRipple();
+  const total = (serviceRevenue || 0) + (salesRevenue || 0);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-      style={{ animation: 'slide-up 0.3s var(--ease-out-expo) both' }}>
-      <div className="w-full max-w-sm rounded-3xl bg-white shadow-2xl overflow-hidden border border-white/80 animate-pop-in">
-        {/* modal header */}
-        <div className="aurora-bg grain relative overflow-hidden bg-gradient-to-br from-gray-900 to-gray-800 px-6 py-5">
-          <div className="orb w-32 h-32 bg-orange-500/20 -top-8 -right-8" />
-          <div className="orb w-24 h-24 bg-purple-500/20 -bottom-8 left-4" />
-          <div className="relative flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/40 mb-1">Breakdown</p>
-              <h3 className="text-base font-semibold text-white">Today's Revenue</h3>
-            </div>
-            <button onClick={onClose}
-              className="ripple-btn flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition text-white text-sm font-bold">
-              ✕
-            </button>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', padding: '1rem', animation: 'fade-up 0.25s var(--ease-expo) both' }}>
+      <div style={{ width: '100%', maxWidth: 360, borderRadius: '1.5rem', background: 'var(--surface-raise)', overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.3)', animation: 'num-rise 0.35s var(--ease-spring) both', border: '1px solid var(--border)' }}>
+        <div style={{ background: 'var(--ink)', padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'var(--accent)' }} />
+          <div>
+            <p style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)', marginBottom: '0.25rem' }}>Breakdown</p>
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#fff', margin: 0 }}>Today's Revenue</h3>
           </div>
+          <button onClick={(e) => { ripple(e); onClose(); }} className="ripple-host" style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: '0.8125rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
         </div>
-
-        <div className="p-5 space-y-3 bg-white">
-          <button onClick={() => router.push('/history?tab=services&today=returned')}
-            className="shine-on-hover card-hover w-full flex justify-between items-center px-5 py-4 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200/60 text-left glow-blue">
-            <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-blue-500 mb-0.5">Services</p>
-              <p className="text-[10px] text-blue-400/80 font-medium">View history →</p>
-            </div>
-            <CurrencyDisplay amount={serviceRevenue || 0} color="#1d4ed8" />
-          </button>
-
-          <button onClick={() => router.push('/history?tab=sales&today=true')}
-            className="shine-on-hover card-hover w-full flex justify-between items-center px-5 py-4 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100/50 border border-purple-200/60 text-left glow-purple">
-            <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-purple-500 mb-0.5">Sales</p>
-              <p className="text-[10px] text-purple-400/80 font-medium">View history →</p>
-            </div>
-            <CurrencyDisplay amount={salesRevenue || 0} color="#7e22ce" />
-          </button>
-
-          {/* total */}
-          <div className="shine-on-hover rounded-2xl bg-gradient-to-r from-orange-400 to-purple-500 p-4 flex justify-between items-center shadow-lg animate-glow-pulse">
-            <p className="text-sm font-semibold text-white">Total Revenue</p>
-            <CurrencyDisplay amount={(serviceRevenue || 0) + (salesRevenue || 0)} color="#ffffff" />
+        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+          <RevenueRow label="Services" sublabel="View history →" amount={serviceRevenue || 0} onClick={() => router.push('/history?tab=services&today=returned')} accentColor="#3b82f6" />
+          <RevenueRow label="Sales"    sublabel="View history →" amount={salesRevenue   || 0} onClick={() => router.push('/history?tab=sales&today=true')}       accentColor="#a855f7" />
+          <div className="accent-glow" style={{ borderRadius: '0.875rem', background: 'var(--ink)', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'rgba(255,255,255,0.65)', margin: 0 }}>Total Revenue</p>
+            <p style={{ fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--accent)', margin: 0 }}>{formatCurrency(total)}</p>
           </div>
         </div>
       </div>
@@ -1232,35 +829,53 @@ function RevenueBreakdownModal({ onClose, serviceRevenue, salesRevenue, router }
   );
 }
 
-/* DashboardSkeleton — original, unchanged */
+function RevenueRow({ label, sublabel, amount, onClick, accentColor }) {
+  const [hovered, setHovered] = useState(false);
+  const ripple = useRipple();
+  return (
+    <button onClick={(e) => { ripple(e); onClick(); }} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} className="ripple-host shine-host"
+      style={{ width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: '0.875rem', padding: '1rem 1.25rem', border: `1.5px solid ${hovered ? accentColor + '50' : 'var(--border)'}`, background: hovered ? accentColor + '08' : 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'border-color 0.2s, background 0.2s' }}>
+      <div>
+        <p style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: accentColor, margin: 0 }}>{label}</p>
+        <p style={{ fontSize: '0.6875rem', color: 'var(--ink-faint)', margin: '0.2rem 0 0', fontWeight: 500 }}>{sublabel}</p>
+      </div>
+      <p style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.03em', color: accentColor, margin: 0 }}>{formatCurrency(amount)}</p>
+    </button>
+  );
+}
+
+/* ─── DashboardSkeleton ─── */
 function DashboardSkeleton() {
   return (
-    <div className="mesh-bg dashboard-font min-h-screen space-y-8 p-1 animate-pulse">
-      <div className="h-28 rounded-3xl bg-gray-200" />
-      <div className="h-10 rounded-2xl bg-gray-200" />
-      <div className="grid grid-cols-3 gap-4">
-        {[...Array(3)].map((_, i) => <div key={i} className="h-20 rounded-2xl bg-gray-200" />)}
-      </div>
-      <div className="grid grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-2xl bg-gray-200" />)}
-      </div>
-      <div className="grid grid-cols-6 gap-4">
-        {[...Array(6)].map((_, i) => <div key={i} className="h-24 rounded-2xl bg-gray-200" />)}
+    <div className="font-body" style={{ backgroundColor: 'var(--surface)', minHeight: '100vh', padding: '0.25rem' }}>
+      <style>{STYLES}</style>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ height: 128, borderRadius: '1.75rem', background: '#e5e7eb', animation: 'fade-up 0.3s ease both' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.75rem' }}>
+          {[...Array(3)].map((_,i) => <div key={i} style={{ height: 72, borderRadius: '1.125rem', background: '#f3f4f6' }} />)}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '1rem' }}>
+          {[...Array(4)].map((_,i) => <div key={i} style={{ height: 104, borderRadius: '1.25rem', background: '#f3f4f6' }} />)}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: '0.875rem' }}>
+          {[...Array(6)].map((_,i) => <div key={i} style={{ height: 96, borderRadius: '1.125rem', background: '#f3f4f6' }} />)}
+        </div>
       </div>
     </div>
   );
 }
 
-/* ── status style helper — original, unchanged ── */
+/* ─── Status styles helper ─── */
 function getStatusStyles(status = '') {
   const s = status.toLowerCase();
-  const make = (dot, badge) => ({ dotColor: dot, badgeBg: badge + '18', badgeBorder: badge + '40', badgeText: badge });
-  if (s.includes('received'))                                                             return make('#3b82f6', '#3b82f6');
-  if (s.includes('diagnosed'))                                                            return make('#8b5cf6', '#8b5cf6');
-  if (s.includes('repair started')||s.includes('repairing')||s.includes('in repair'))    return make('#f97316', '#f97316');
-  if (s.includes('waiting'))                                                              return make('#f59e0b', '#f59e0b');
-  if (s.includes('completed'))                                                            return make('#10b981', '#10b981');
-  if (s.includes('returned'))                                                             return make('#22c55e', '#22c55e');
-  if (s.includes('cancel')||s.includes('non repairable')||s.includes('rejected'))        return make('#ef4444', '#ef4444');
-  return make('#6b7280', '#6b7280');
+  const c = (color) => ({ dotColor: color });
+  if (s.includes('received'))                                                                  return c('#3b82f6');
+  if (s.includes('diagnosed'))                                                                 return c('#8b5cf6');
+  if (s.includes('repair started')||s.includes('repairing')||s.includes('in repair'))         return c('#f97316');
+  if (s.includes('in progress'))                                                               return c('#f97316');
+  if (s.includes('waiting'))                                                                   return c('#f59e0b');
+  if (s.includes('completed'))                                                                 return c('#10b981');
+  if (s.includes('returned'))                                                                  return c('#22c55e');
+  if (s.includes('cancel')||s.includes('non repairable')||s.includes('rejected'))             return c('#ef4444');
+  return c('#6b7280');
 }
