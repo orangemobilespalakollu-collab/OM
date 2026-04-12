@@ -17,8 +17,10 @@ import {
   LogOut,
   History,
   ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'motion/react';
 
 /* ─── Styles ─── */
 const STYLES = `
@@ -265,7 +267,7 @@ export default function Layout({ children }) {
             </div>
 
             {/* ── Nav ── */}
-            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto">
               {navigation.map((item, i) => {
                 const isActive = pathname === item.href;
                 const nc = NAV_COLORS[item.href] || NAV_COLORS['/dashboard'];
@@ -274,25 +276,41 @@ export default function Layout({ children }) {
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      'lyt-nav-item group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all',
+                      'lyt-nav-item group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all overflow-hidden',
                       isActive
                         ? 'text-white'
-                        : 'text-white/50 hover:text-white/90'
+                        : 'text-white/40 hover:text-white/90'
                     )}
                     style={isActive ? {
                       backgroundColor: nc.color + '20',
-                      border: `1.5px solid ${nc.color}35`,
-                    } : { border: '1.5px solid transparent' }}
+                      boxShadow: `0 8px 20px -6px ${nc.color}40`,
+                    } : {}}
                   >
+                    {/* Active Glint Effect */}
+                    {isActive && (
+                      <motion.div
+                        className="absolute inset-0 z-0 opacity-20"
+                        initial={{ x: '-100%' }}
+                        animate={{ x: '100%' }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
+                        style={{
+                          background: `linear-gradient(90deg, transparent, ${nc.color}, transparent)`,
+                        }}
+                      />
+                    )}
+
                     {/* active left bar */}
                     {isActive && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full"
-                        style={{ backgroundColor: nc.color }} />
+                      <motion.span 
+                        layoutId="activeNavIndicator"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full z-10"
+                        style={{ backgroundColor: nc.color }} 
+                      />
                     )}
 
                     <div className={cn(
-                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all',
-                      isActive ? 'shadow-md' : 'group-hover:bg-white/8'
+                      'relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all',
+                      isActive ? 'shadow-md scale-110' : 'group-hover:bg-white/8'
                     )}
                       style={isActive ? { backgroundColor: nc.color + '25', border: `1px solid ${nc.color}40` } : {}}>
                       <item.icon className="h-4 w-4 transition-colors"
@@ -300,13 +318,18 @@ export default function Layout({ children }) {
                         strokeWidth={isActive ? 2.5 : 2} />
                     </div>
 
-                    <span className={cn('flex-1 text-[13px]', isActive && 'lyt-display font-bold')}
+                    <span className={cn('relative z-10 flex-1 text-[13px]', isActive && 'lyt-display font-bold')}
                       style={isActive ? { color: '#fff' } : {}}>
                       {item.name}
                     </span>
 
                     {isActive && (
-                      <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" style={{ color: nc.color }} />
+                      <motion.div
+                        initial={{ x: -5, opacity: 0 }}
+                        animate={{ x: 0, opacity: 0.6 }}
+                      >
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0" style={{ color: nc.color }} />
+                      </motion.div>
                     )}
                   </Link>
                 );
@@ -352,111 +375,137 @@ export default function Layout({ children }) {
         {/* ════════════════════════════════════════
             MOBILE SIDEBAR OVERLAY
         ════════════════════════════════════════ */}
-        {/* Backdrop */}
-        <div
-          className={cn(
-            'fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden',
-            isSidebarOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
-          )}
-          onClick={() => setIsSidebarOpen(false)}
-        />
-
-        {/* Drawer */}
-        <aside className={cn(
-          'fixed inset-y-0 left-0 z-50 w-72 flex flex-col transition-transform duration-300 ease-in-out lg:hidden',
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        )}>
-          <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800" />
-          <div className="lyt-orb w-48 h-48 bg-orange-500/15 -top-12 -left-12" />
-          <div className="lyt-orb w-32 h-32 bg-purple-500/12 bottom-20 -right-8" />
-
-          <div className="relative flex flex-col h-full">
-            {/* Brand + close */}
-            <div className="flex items-center justify-between px-5 py-5 border-b border-white/8">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 shadow-lg shadow-orange-500/30">
-                  <span className="lyt-display text-sm font-bold text-white">O</span>
-                </div>
-                <div>
-                  <h1 className="lyt-display text-base font-bold">
-                    <span className="lyt-shimmer-text">Orange Mobile</span>
-                  </h1>
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/30">Service Center</p>
-                </div>
-              </div>
-              <button
+        <AnimatePresence>
+          {isSidebarOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-40 bg-black/40 backdrop-blur-md lg:hidden"
                 onClick={() => setIsSidebarOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 transition"
+              />
+
+              {/* Drawer */}
+              <motion.aside
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="fixed inset-y-0 left-0 z-50 w-72 flex flex-col lg:hidden"
               >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+                <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800" />
+                {/* mesh background inside drawer */}
+                <div className="absolute inset-0 opacity-30">
+                  <div className="lyt-orb w-64 h-64 bg-orange-500/20 -top-20 -left-20" />
+                  <div className="lyt-orb w-48 h-48 bg-purple-500/20 bottom-10 -right-10" />
+                </div>
 
-            {/* Nav */}
-            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-              {navigation.map((item) => {
-                const isActive = pathname === item.href;
-                const nc = NAV_COLORS[item.href] || NAV_COLORS['/dashboard'];
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={cn(
-                      'lyt-nav-item group flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all',
-                      isActive ? 'text-white' : 'text-white/50 hover:text-white/90'
-                    )}
-                    style={isActive ? {
-                      backgroundColor: nc.color + '20',
-                      border: `1.5px solid ${nc.color}35`,
-                    } : { border: '1.5px solid transparent' }}
-                  >
-                    {isActive && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full"
-                        style={{ backgroundColor: nc.color }} />
-                    )}
-                    <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all', isActive ? 'shadow-md' : 'group-hover:bg-white/8')}
-                      style={isActive ? { backgroundColor: nc.color + '25', border: `1px solid ${nc.color}40` } : {}}>
-                      <item.icon className="h-4 w-4" style={{ color: isActive ? nc.color : undefined }} strokeWidth={isActive ? 2.5 : 2} />
+                <div className="relative flex flex-col h-full">
+                  {/* Brand + close */}
+                  <div className="flex items-center justify-between px-5 py-5 border-b border-white/8">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 shadow-lg shadow-orange-500/30">
+                        <span className="lyt-display text-sm font-bold text-white">O</span>
+                      </div>
+                      <div>
+                        <h1 className="lyt-display text-base font-bold text-white">
+                          <span className="lyt-shimmer-text">Orange Mobile</span>
+                        </h1>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/30">Service Center</p>
+                      </div>
                     </div>
-                    <span className={cn('flex-1', isActive && 'lyt-display font-bold')} style={isActive ? { color: '#fff' } : {}}>
-                      {item.name}
-                    </span>
-                    {isActive && <ChevronRight className="h-3.5 w-3.5 opacity-60 shrink-0" style={{ color: nc.color }} />}
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* User + logout */}
-            <div className="px-3 pb-6 pt-3 border-t border-white/8">
-              <div className="relative overflow-hidden rounded-2xl p-3 mb-3"
-                style={{ backgroundColor: roleConfig.color + '15', border: `1.5px solid ${roleConfig.color}25` }}>
-                <div className="flex items-center gap-3">
-                  <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white lyt-display text-sm font-bold shadow-md', roleConfig.grad)}>
-                    {initials}
+                    <button
+                      onClick={() => setIsSidebarOpen(false)}
+                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-white/60 hover:text-white transition-colors"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{profile?.full_name || profile?.name}</p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-green-400 lyt-blink" />
-                      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: roleConfig.color + 'cc' }}>
-                        {roleConfig.label}
-                      </p>
+
+                  {/* Nav */}
+                  <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
+                    {navigation.map((item, i) => {
+                      const isActive = pathname === item.href;
+                      const nc = NAV_COLORS[item.href] || NAV_COLORS['/dashboard'];
+                      return (
+                        <motion.div
+                          key={item.name}
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: i * 0.05 }}
+                        >
+                          <Link
+                            href={item.href}
+                            className={cn(
+                              'lyt-nav-item group relative flex items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-medium transition-all overflow-hidden',
+                              isActive ? 'text-white' : 'text-white/40 hover:text-white/90'
+                            )}
+                            style={isActive ? {
+                              backgroundColor: nc.color + '20',
+                              boxShadow: `0 8px 30px -4px ${nc.color}40`,
+                            } : {}}
+                          >
+                            {/* Glint */}
+                            {isActive && (
+                              <motion.div
+                                className="absolute inset-0 z-0 opacity-20"
+                                initial={{ x: '-100%' }}
+                                animate={{ x: '100%' }}
+                                transition={{ duration: 1.5, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
+                                style={{
+                                  background: `linear-gradient(90deg, transparent, white, transparent)`,
+                                }}
+                              />
+                            )}
+
+                            <div className={cn('relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all', isActive ? 'shadow-lg scale-110' : 'bg-white/5')}
+                              style={isActive ? { backgroundColor: nc.color } : {}}>
+                              <item.icon className="h-5 w-5" style={{ color: isActive ? '#fff' : undefined }} strokeWidth={isActive ? 2.5 : 2} />
+                            </div>
+                            <span className={cn('relative z-10 flex-1 text-sm', isActive && 'lyt-display font-black')} style={isActive ? { color: '#fff' } : {}}>
+                              {item.name}
+                            </span>
+                            {isActive && <ChevronRight className="relative z-10 h-4 w-4 opacity-50 shrink-0" style={{ color: nc.color }} />}
+                          </Link>
+                        </motion.div>
+                      );
+                    })}
+                  </nav>
+
+                  {/* User + logout */}
+                  <div className="px-4 pb-8 pt-4 border-t border-white/8">
+                    <div className="relative overflow-hidden rounded-2xl p-4 mb-4"
+                      style={{ backgroundColor: roleConfig.color + '15', border: `1px solid ${roleConfig.color}25` }}>
+                      <div className="flex items-center gap-3">
+                        <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white lyt-display text-base font-bold shadow-lg', roleConfig.grad)}>
+                          {initials}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-white truncate">{profile?.full_name || profile?.name}</p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-400 lyt-blink" />
+                            <p className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: roleConfig.color }}>
+                              {roleConfig.label}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                    <button onClick={handleLogout}
+                      className="group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-500/10 group-hover:bg-red-500/20 transition-all">
+                        <LogOut className="h-4 w-4" strokeWidth={2.5} />
+                      </div>
+                      <span>Logout Account</span>
+                    </button>
                   </div>
                 </div>
-              </div>
-              <button onClick={handleLogout}
-                className="lyt-nav-item group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-red-400/80 hover:text-red-300 transition-all"
-                style={{ border: '1.5px solid transparent' }}>
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl group-hover:bg-red-500/15 transition-all">
-                  <LogOut className="h-4 w-4" strokeWidth={2} />
-                </div>
-                <span>Logout</span>
-              </button>
-            </div>
-          </div>
-        </aside>
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* ════════════════════════════════════════
             MAIN CONTENT AREA

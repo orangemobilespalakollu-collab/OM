@@ -29,6 +29,7 @@ import { cn, formatCurrency, formatDate, formatTime, formatNumber } from '@/lib/
 import { MetricDetailsDialog } from '@/components/MetricDetailsDialog';
 import { toast } from 'sonner';
 import { historyService } from '@/services/historyService';
+import { motion, AnimatePresence } from 'motion/react';
 
 /* ─── tiny keyframes injected once ─── */
 const STYLES = `
@@ -313,7 +314,11 @@ export default function DashboardPage() {
       <div className="mesh-bg dashboard-font min-h-screen space-y-8 p-1">
 
         {/* ── Hero Header ── */}
-        <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-7 shadow-2xl">
+        <motion.header 
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-7 shadow-2xl"
+        >
           {/* decorative orbs */}
           <div className="orb w-64 h-64 bg-orange-500/20 -top-16 -left-16 animate-float" style={{animationDelay:'0s'}} />
           <div className="orb w-48 h-48 bg-purple-500/20 -bottom-12 left-1/3 animate-float" style={{animationDelay:'1s'}} />
@@ -324,14 +329,23 @@ export default function DashboardPage() {
           <div className="absolute right-10 top-10 h-12 w-12 rounded-full border border-orange-400/30 animate-spin-slow" style={{animationDirection:'reverse',animationDuration:'5s'}} />
 
           <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
+            <motion.div
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40 mb-1">{dateStr}</p>
               <h1 className="display-font text-2xl sm:text-3xl font-bold text-white mb-1">
                 {greeting}, <span className="shimmer-text">{profile?.name?.split(' ')[0] || 'there'} 👋</span>
               </h1>
               <p className="text-sm text-white/50">Here's what's happening in your shop today.</p>
-            </div>
-            <div className="flex items-center gap-3">
+            </motion.div>
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3, type: 'spring' }}
+              className="flex items-center gap-3"
+            >
               <div className="glass rounded-2xl px-5 py-3 text-right">
                 <p className="display-font text-2xl font-bold text-gray-900">{timeStr}</p>
                 <div className="flex items-center justify-end gap-1.5 mt-0.5">
@@ -339,39 +353,46 @@ export default function DashboardPage() {
                   <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Live</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
-        </header>
+        </motion.header>
 
         {/* ── Quick Actions ── */}
         <section>
           <SectionLabel icon={Zap} label="Quick Actions" />
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
               { name: 'Register New Service', desc: 'Create a service ticket', icon: PlusCircle, color: '#f97316', lightBg: '#fff7ed', borderColor: '#fed7aa', href: '/services?action=new' },
               { name: 'Add New Sale', desc: 'Record parts / accessories', icon: ShoppingBag, color: '#a855f7', lightBg: '#faf5ff', borderColor: '#e9d5ff', href: '/sales?action=new' },
               { name: 'View Services', desc: 'Manage active repairs', icon: Wrench, color: '#3b82f6', lightBg: '#eff6ff', borderColor: '#bfdbfe', href: '/services' },
             ].map((a, i) => (
-              <button
+              <motion.button
                 key={a.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 * i, type: 'spring', stiffness: 300, damping: 20 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={() => router.push(a.href)}
-                className="card-hover group relative flex items-center gap-4 rounded-2xl border-2 p-4 text-left shadow-sm transition-all"
-                style={{ borderColor: a.borderColor, backgroundColor: a.lightBg }}
+                className="group relative flex items-center gap-4 rounded-3xl border border-white/80 p-5 text-left shadow-lg backdrop-blur-md transition-all active:shadow-inner overflow-hidden"
+                style={{ backgroundColor: a.lightBg + 'cc' }}
               >
-                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ backgroundColor: a.color }} />
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3"
-                  style={{ backgroundColor: a.color + '20', border: `1.5px solid ${a.color}40` }}>
-                  <a.icon className="h-5 w-5" style={{ color: a.color }} strokeWidth={2.5} />
+                <div className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-full" style={{ backgroundColor: a.color }} />
+                
+                {/* Visual Glow */}
+                <div className="absolute -right-4 -top-4 w-20 h-20 blur-3xl opacity-20 transition-opacity group-hover:opacity-40" style={{ backgroundColor: a.color }} />
+
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-all group-hover:scale-110 group-hover:rotate-3"
+                  style={{ backgroundColor: a.color, color: '#fff' }}>
+                  <a.icon className="h-6 w-6" strokeWidth={2.5} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{a.name}</p>
-                  <p className="text-xs mt-0.5 font-medium" style={{ color: a.color + 'bb' }}>{a.desc}</p>
+                  <p className="text-base font-bold text-gray-900 truncate">{a.name}</p>
+                  <p className="text-[11px] mt-0.5 font-bold uppercase tracking-wider" style={{ color: a.color }}>{a.desc}</p>
                 </div>
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-sm"
-                  style={{ backgroundColor: a.color + '15', border: `1px solid ${a.color}30` }}>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/50 backdrop-blur-sm border border-white shadow-sm">
                   <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ color: a.color }} />
                 </div>
-              </button>
+              </motion.button>
             ))}
           </div>
         </section>
@@ -595,48 +616,83 @@ function SectionLabel({ icon: Icon, label }) {
 
 function PriorityCard({ title, count, color, gradClass, shadowColor, onClick }) {
   return (
-    <button
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
       onClick={onClick}
-      className={cn("card-hover group relative overflow-hidden rounded-2xl border border-white/80 p-5 text-left shadow-md", gradClass)}
-      style={{ boxShadow: `0 4px 20px ${shadowColor}` }}
+      className={cn("group relative overflow-hidden rounded-[2rem] border border-white/80 p-6 text-left shadow-xl backdrop-blur-md transition-all active:shadow-inner", gradClass)}
+      style={{ boxShadow: `0 12px 24px -10px ${shadowColor}` }}
     >
-      <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full blur-2xl opacity-20" style={{ backgroundColor: color }} />
+      <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full blur-2xl opacity-30" style={{ backgroundColor: color }} />
       {/* top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${color}80, ${color}20)` }} />
+      <div className="absolute top-0 left-0 right-0 h-1.5 rounded-t-2xl opacity-40" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
 
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-white shadow-sm"
-          style={{ background: `${color}15` }}>
-          <Activity className="h-4 w-4" style={{ color }} strokeWidth={2} />
+      <div className="flex items-center justify-between mb-4 relative z-10">
+        <div className="relative">
+          {/* Health Ring Motion Graphic */}
+          <motion.svg
+            className="absolute -inset-1.5 h-[calc(100%+0.75rem)] w-[calc(100%+0.75rem)]"
+            viewBox="0 0 40 40"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+          >
+            <circle
+              cx="20"
+              cy="20"
+              r="18"
+              fill="none"
+              stroke={color}
+              strokeWidth="2"
+              strokeDasharray="4 8"
+              opacity="0.2"
+            />
+          </motion.svg>
+          <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-white bg-white/40 shadow-sm backdrop-blur-sm">
+            <Activity className="h-4 w-4" style={{ color }} strokeWidth={3} />
+          </div>
         </div>
-        <TrendingUp className="h-3.5 w-3.5 text-gray-300 transition-colors group-hover:text-gray-500" />
+        <TrendingUp className="h-4 w-4 text-gray-300 transition-colors group-hover:text-gray-500" />
       </div>
 
-      <p className="text-4xl font-bold tabular-nums leading-none text-gray-900 animate-count-in">{count}</p>
-      <p className="mt-2 text-[13px] font-medium text-gray-500">{title}</p>
-    </button>
+      <motion.p 
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.1 }}
+        className="text-4xl font-black tabular-nums leading-none text-gray-900 tracking-tight"
+      >
+        {count}
+      </motion.p>
+      <p className="mt-2 text-[13px] font-bold text-gray-400 uppercase tracking-widest">{title}</p>
+    </motion.button>
   );
 }
 
 function SummaryCard({ title, count, isCurrency, onClick, icon: Icon, color, gradClass }) {
   return (
-    <button
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
       onClick={onClick}
-      className={cn("card-hover group relative w-full overflow-hidden rounded-2xl border border-white/80 p-4 text-left shadow-md", gradClass)}
+      className={cn("group relative w-full overflow-hidden rounded-[1.75rem] border border-white/80 p-4 text-left shadow-lg backdrop-blur-md transition-all active:shadow-inner", gradClass)}
     >
-      <div className="absolute -top-8 -right-8 h-20 w-20 rounded-full blur-2xl opacity-20" style={{ backgroundColor: color }} />
-      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${color}70, ${color}10)` }} />
-
-      <div className="relative mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-white shadow-sm transition-transform group-hover:scale-110"
-        style={{ background: `${color}15` }}>
-        {Icon && <Icon className="h-4 w-4" style={{ color }} strokeWidth={2} />}
+      <div className="absolute -top-8 -right-8 h-16 w-16 rounded-full blur-2xl opacity-30" style={{ backgroundColor: color }} />
+      
+      <div className="relative mb-3 flex h-9 w-9 items-center justify-center rounded-xl border border-white bg-white/40 shadow-sm backdrop-blur-sm transition-transform group-hover:scale-110">
+        {Icon && <Icon className="h-5 w-5" style={{ color }} strokeWidth={2.5} />}
       </div>
 
-      <p className="text-2xl font-bold tabular-nums leading-none text-gray-900 animate-count-in">
+      <motion.p 
+        initial={{ x: -10, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ delay: 0.1 }}
+        className="text-2xl font-black tabular-nums leading-none text-gray-900 tracking-tight"
+      >
         {count}
-      </p>
-      <p className="mt-2 text-[11px] font-semibold text-gray-500">{title}</p>
-    </button>
+      </motion.p>
+      <p className="mt-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.1em]">{title}</p>
+    </motion.button>
   );
 }
 
