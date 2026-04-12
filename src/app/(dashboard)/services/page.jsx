@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { serviceService } from '@/services/serviceService';
 import { useAuth } from '@/components/AuthProvider';
@@ -172,121 +172,6 @@ const SVC_STYLES = `
 
 /* photo aspect ratio helper */
 .photo-aspect { aspect-ratio: 1/1; }
-
-:root {
-  --accent:        #f97316;
-  --accent-dim:    rgba(249,115,22,0.12);
-  --ink:           #0d0d0d;
-  --ink-mid:       #4b5563;
-  --ink-faint:     #9ca3af;
-  --surface:       #f9fafb;
-  --surface-raise: #ffffff;
-  --border:        #e5e7eb;
-  --border-strong: #d1d5db;
-  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-expo:     cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.font-display { font-family: 'Instrument Serif', Georgia, serif; }
-.font-body    { font-family: 'Geist', system-ui, sans-serif; }
-
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(22px); filter: blur(4px); }
-  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
-}
-@keyframes num-rise {
-  from { opacity: 0; transform: translateY(10px) scale(0.92); }
-  to   { opacity: 1; transform: translateY(0)    scale(1); }
-}
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-@keyframes live-ring {
-  0%   { transform: scale(1);   opacity: 0.5; }
-  70%  { transform: scale(2.4); opacity: 0; }
-  100% { transform: scale(2.4); opacity: 0; }
-}
-@keyframes card-in {
-  from { opacity: 0; transform: translateY(18px) scale(0.97); filter: blur(3px); }
-  to   { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0); }
-}
-@keyframes shine {
-  from { left: -80%; }
-  to   { left: 130%; }
-}
-@keyframes ripple-out {
-  from { transform: scale(0); opacity: 0.35; }
-  to   { transform: scale(3.5); opacity: 0; }
-}
-@keyframes slide-right {
-  from { opacity: 0; transform: translateX(-14px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes underline-grow {
-  from { transform: scaleX(0); transform-origin: left; }
-  to   { transform: scaleX(1); transform-origin: left; }
-}
-@keyframes blob-morph {
-  0%,100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-  33%      { border-radius: 30% 70% 60% 40% / 50% 60% 30% 60%; }
-  66%      { border-radius: 50% 30% 70% 40% / 40% 70% 30% 60%; }
-}
-@keyframes glow-breathe {
-  0%,100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); }
-  50%      { box-shadow: 0 0 28px 8px rgba(249,115,22,0.2); }
-}
-@keyframes orbit {
-  from { transform: rotate(0deg) translateX(44px) rotate(0deg); }
-  to   { transform: rotate(360deg) translateX(44px) rotate(-360deg); }
-}
-@keyframes top-bar-in {
-  from { transform: scaleX(0); transform-origin: left; }
-  to   { transform: scaleX(1); transform-origin: left; }
-}
-
-.stagger > *:nth-child(1) { animation: card-in 0.55s var(--ease-expo) 0.04s both; }
-.stagger > *:nth-child(2) { animation: card-in 0.55s var(--ease-expo) 0.10s both; }
-.stagger > *:nth-child(3) { animation: card-in 0.55s var(--ease-expo) 0.16s both; }
-.stagger > *:nth-child(4) { animation: card-in 0.55s var(--ease-expo) 0.22s both; }
-.stagger > *:nth-child(5) { animation: card-in 0.55s var(--ease-expo) 0.28s both; }
-.stagger > *:nth-child(6) { animation: card-in 0.55s var(--ease-expo) 0.34s both; }
-
-.section-enter { animation: fade-up 0.65s var(--ease-expo) both; }
-
-.shine-host { position: relative; overflow: hidden; }
-.shine-host::before {
-  content: '';
-  position: absolute;
-  top: -50%; left: -80%;
-  width: 50%; height: 200%;
-  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.5) 50%, transparent 70%);
-  transform: skewX(-20deg);
-  pointer-events: none; z-index: 2;
-}
-.shine-host:hover::before { animation: shine 0.5s ease forwards; }
-
-.ripple-host { position: relative; overflow: hidden; }
-.ripple-circle {
-  position: absolute; border-radius: 50%;
-  background: rgba(255,255,255,0.28);
-  transform: scale(0);
-  animation: ripple-out 0.6s linear forwards;
-  pointer-events: none;
-}
-
-.blob {
-  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-  animation: blob-morph 10s ease-in-out infinite;
-  position: absolute; pointer-events: none;
-}
-
-.accent-line {
-  display: block; height: 2px; background: var(--accent);
-  animation: underline-grow 0.8s var(--ease-expo) 0.3s both;
-}
-
-.accent-glow { animation: glow-breathe 3s ease-in-out infinite; }
 `;
 
 function SvcStyleInjector() {
@@ -298,41 +183,6 @@ function SvcStyleInjector() {
     document.head.appendChild(el);
   }, []);
   return null;
-}
-
-function useRipple() {
-  return useCallback((e) => {
-    const btn = e.currentTarget;
-    const circle = document.createElement('span');
-    const d = Math.max(btn.clientWidth, btn.clientHeight);
-    const r = btn.getBoundingClientRect();
-    circle.className = 'ripple-circle';
-    Object.assign(circle.style, {
-      width: `${d}px`, height: `${d}px`,
-      left: `${e.clientX - r.left - d / 2}px`,
-      top: `${e.clientY - r.top - d / 2}px`,
-    });
-    btn.appendChild(circle);
-    setTimeout(() => circle.remove(), 700);
-  }, []);
-}
-
-function useTilt(strength = 6) {
-  const ref = useRef(null);
-  const onMove = useCallback((e) => {
-    const el = ref.current; if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const dx = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-    const dy = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-    el.style.transform = `perspective(700px) rotateY(${dx * strength}deg) rotateX(${-dy * strength}deg) translateY(-3px) scale(1.018)`;
-    el.style.boxShadow = `${-dx * 6}px ${dy * 6}px 28px rgba(0,0,0,0.09), 0 0 0 1.5px rgba(249,115,22,0.22)`;
-  }, [strength]);
-  const onLeave = useCallback(() => {
-    const el = ref.current; if (!el) return;
-    el.style.transform = '';
-    el.style.boxShadow = '';
-  }, []);
-  return { ref, onMouseMove: onMove, onMouseLeave: onLeave };
 }
 
 /* ══════════════════════════════════════════════════════
@@ -370,71 +220,6 @@ function SvcSectionLabel({ icon: Icon, label, color = '' }) {
   );
 }
 
-function ServiceCard({ service, onSelect, index }) {
-  const ripple = useRipple();
-  const { ref, onMouseMove, onMouseLeave } = useTilt(4);
-  const [hovered, setHovered] = useState(false);
-  const cfg = STATUS_CFG[service.status] || { color:'#6b7280', bg:'#f9fafb', border:'#e5e7eb', dot:'#6b7280', grad:'', shadow:'rgba(0,0,0,0.08)', icon:Clock };
-  const StatusIcon = cfg.icon || Clock;
-
-  return (
-    <button
-      ref={ref}
-      onMouseMove={onMouseMove}
-      onMouseLeave={() => { onMouseLeave(); setHovered(false); }}
-      onMouseEnter={() => setHovered(true)}
-      onClick={(e) => { ripple(e); onSelect(service); }}
-      className={cn('ripple-host shine-host relative w-full overflow-hidden rounded-2xl border border-white/80 text-left shadow-md svc-slide-up', cfg.grad)}
-      style={{
-        boxShadow: hovered ? `0 18px 42px ${cfg.shadow}` : `0 4px 20px ${cfg.shadow}`,
-        animationDelay: `${index * 0.05}s`,
-      }}
-    >
-      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
-        style={{ background:`linear-gradient(90deg,${cfg.color}90,${cfg.color}10)` }} />
-      <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
-        style={{ background:`linear-gradient(180deg,${cfg.color}80,${cfg.color}20)` }} />
-      <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full blur-2xl opacity-15"
-        style={{ backgroundColor:cfg.color }} />
-
-      <div className="p-5 pl-6">
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <div>
-            <p className="text-[10px] font-extrabold uppercase tracking-widest mb-1" style={{color:cfg.color}}>
-              {service.ticket_number}
-            </p>
-            <h4 className="display-font text-base font-bold text-gray-900 truncate leading-tight">
-              {service.customer_name}
-            </h4>
-            <p className="text-xs text-gray-500 mt-0.5 truncate">{service.device_brand} {service.device_model}</p>
-          </div>
-          <StatusPill status={service.status} />
-        </div>
-
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{background:`${cfg.color}15`}}>
-            <StatusIcon className="h-3 w-3" style={{color:cfg.color}} strokeWidth={2} />
-          </div>
-          <span className="text-xs text-gray-500 truncate flex-1">{service.issue_type}</span>
-        </div>
-
-        <div className="flex items-center justify-between border-t pt-3" style={{borderColor:`${cfg.color}15`}}>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-bold" style={{color:cfg.color}}>
-              {formatCurrency(service.estimated_cost)}
-            </span>
-            <span className="text-[10px] text-gray-400">est.</span>
-          </div>
-          <div className="flex h-7 w-7 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-            style={{background:`${cfg.color}15`}}>
-            <ArrowUpRight className="h-3.5 w-3.5" style={{color:cfg.color}} />
-          </div>
-        </div>
-      </div>
-    </button>
-  );
-}
-
 /* ══════════════════════════════════════════════════════
    MAIN PAGE
 ══════════════════════════════════════════════════════ */
@@ -454,8 +239,6 @@ export default function ServicesPage() {
   const [specialFilter, setSpecialFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [mounted, setMounted] = useState(false);
-  const ripple = useRipple();
 
   useEffect(() => {
     const action = searchParams.get('action');
@@ -465,11 +248,6 @@ export default function ServicesPage() {
     else setView('list');
     fetchServices(serviceId);
   }, [searchParams]);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setMounted(true), 50);
-    return () => clearTimeout(timeout);
-  }, []);
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -560,7 +338,7 @@ export default function ServicesPage() {
       <div className="svc-mesh-bg svc-font min-h-screen space-y-7 p-1">
 
         {/* ── Hero Header ── */}
-        <header className={cn('relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-7 shadow-2xl', mounted && 'section-enter')} style={{ animationDelay: '0.05s' }}>
+        <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-7 shadow-2xl">
           <div className="svc-orb w-64 h-64 bg-orange-500/20 -top-16 -left-16 svc-float" style={{animationDelay:'0s'}} />
           <div className="svc-orb w-48 h-48 bg-blue-500/15 -bottom-12 left-1/3 svc-float" style={{animationDelay:'1.2s'}} />
           <div className="svc-orb w-52 h-52 bg-purple-500/12 -top-8 right-10 svc-float" style={{animationDelay:'2s'}} />
@@ -597,7 +375,7 @@ export default function ServicesPage() {
         </header>
 
         {/* ── Search + Actions ── */}
-        <div className={cn('flex items-center gap-3', mounted && 'section-enter')} style={{ animationDelay: '0.1s' }}>
+        <div className="flex items-center gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
@@ -616,22 +394,22 @@ export default function ServicesPage() {
           </div>
 
           <button
-            onClick={(e) => { ripple(e); setView('register'); }}
-            className="ripple-host svc-card-hover flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold text-white shadow-lg"
+            onClick={() => setView('register')}
+            className="svc-card-hover flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold text-white shadow-lg"
             style={{background:'linear-gradient(135deg,#f97316,#ea580c)',boxShadow:'0 8px 24px rgba(249,115,22,0.35)'}}
           >
             <Plus className="h-4 w-4" strokeWidth={2.5} />
             <span className="hidden sm:inline">New Service</span>
           </button>
 
-          <button onClick={(e) => { ripple(e); router.push('/history?tab=services'); }}
-            className="ripple-host svc-card-hover flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-gray-200 bg-white text-gray-500 shadow-sm hover:border-orange-300 hover:text-orange-600 transition">
+          <button onClick={() => router.push('/history?tab=services')}
+            className="svc-card-hover flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-gray-200 bg-white text-gray-500 shadow-sm hover:border-orange-300 hover:text-orange-600 transition">
             <History className="h-4 w-4" />
           </button>
 
-          <button onClick={(e) => { ripple(e); setShowFilters(!showFilters); }}
+          <button onClick={() => setShowFilters(!showFilters)}
             className={cn(
-              "ripple-host svc-card-hover relative flex h-11 w-11 items-center justify-center rounded-2xl border-2 transition",
+              "svc-card-hover relative flex h-11 w-11 items-center justify-center rounded-2xl border-2 transition",
               showFilters||hasActiveFilters
                 ? "border-orange-400/60 bg-orange-50 text-orange-600"
                 : "border-gray-200 bg-white text-gray-500 hover:border-orange-300 hover:text-orange-600"
@@ -643,7 +421,7 @@ export default function ServicesPage() {
 
         {/* ── Filters Panel ── */}
         {showFilters && (
-          <div className={cn('svc-glass rounded-3xl p-5 shadow-xl svc-slide-up', mounted && 'section-enter')} style={{ animationDelay: '0.15s' }}>
+          <div className="svc-glass rounded-3xl p-5 shadow-xl svc-slide-up">
             <SvcSectionLabel icon={SlidersHorizontal} label="Advanced Filters" />
             <div className="flex flex-wrap items-end gap-4">
               <div className="space-y-1.5">
@@ -669,8 +447,8 @@ export default function ServicesPage() {
                 <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} className="svc-input w-auto text-xs py-2 px-3" />
               </div>
               {hasActiveFilters && (
-                <button onClick={(e)=>{ ripple(e); setIssueFilter('all'); setBrandFilter('all'); setDateFrom(''); setDateTo(''); }}
-                  className="ripple-host flex items-center gap-1.5 rounded-2xl bg-red-50 border border-red-200 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-100 transition">
+                <button onClick={()=>{setIssueFilter('all');setBrandFilter('all');setDateFrom('');setDateTo('');}}
+                  className="flex items-center gap-1.5 rounded-2xl bg-red-50 border border-red-200 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-100 transition">
                   <X className="h-3.5 w-3.5" /> Clear All
                 </button>
               )}
@@ -679,7 +457,7 @@ export default function ServicesPage() {
         )}
 
         {/* ── Status Tabs — with mini count badges ── */}
-        <div className={cn('flex flex-wrap gap-2.5', mounted && 'section-enter')} style={{ animationDelay: '0.18s' }}>
+        <div className="flex flex-wrap gap-2.5">
           {STATUS_TABS.map(tab => {
             const active = statusFilter === tab.key;
             const cfg = tab.color ? STATUS_CFG[tab.key] : null;
@@ -687,8 +465,8 @@ export default function ServicesPage() {
             return (
               <button
                 key={tab.key}
-                onClick={(e) => { ripple(e); setStatusFilter(tab.key); }}
-                className="ripple-host svc-card-hover relative flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold border-2 transition-all"
+                onClick={() => setStatusFilter(tab.key)}
+                className="svc-card-hover relative flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold border-2 transition-all"
                 style={active
                   ? { backgroundColor: cfg?.color||'#111827', color:'#fff', borderColor: cfg?.color||'#111827', boxShadow:`0 4px 14px ${cfg?.color||'#111'}35` }
                   : { backgroundColor:'#fff', color:'#6b7280', borderColor:'#e5e7eb' }
@@ -714,23 +492,75 @@ export default function ServicesPage() {
 
         {/* ── Services Grid ── */}
         {loading ? (
-          <div className={cn('grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3', mounted && 'section-enter')} style={{ animationDelay: '0.22s' }}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_,i) => <div key={i} className="h-44 animate-pulse rounded-2xl bg-white border border-gray-100" style={{animationDelay:`${i*0.05}s`}} />)}
           </div>
         ) : filteredServices.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredServices.map((service, i) => (
-              <ServiceCard
-                key={service.id}
-                service={service}
-                index={i}
-                onSelect={(svc) => { setSelectedService(svc); setView('details'); }}
-              />
-            ))}
+            {filteredServices.map((service, i) => {
+              const cfg = STATUS_CFG[service.status] || { color:'#6b7280', bg:'#f9fafb', border:'#e5e7eb', dot:'#6b7280', grad:'', shadow:'rgba(0,0,0,0.08)' };
+              const StatusIcon = cfg.icon || Clock;
+              return (
+                <button
+                  key={service.id}
+                  onClick={() => { setSelectedService(service); setView('details'); }}
+                  className={cn('svc-card-hover group relative w-full overflow-hidden rounded-2xl border border-white/80 text-left shadow-md svc-slide-up', cfg.grad)}
+                  style={{ boxShadow:`0 4px 20px ${cfg.shadow}`, animationDelay:`${i*0.05}s` }}
+                >
+                  {/* top accent stripe */}
+                  <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
+                    style={{ background:`linear-gradient(90deg,${cfg.color}90,${cfg.color}10)` }} />
+                  {/* left accent bar */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
+                    style={{ background:`linear-gradient(180deg,${cfg.color}80,${cfg.color}20)` }} />
+                  {/* ambient glow blob */}
+                  <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full blur-2xl opacity-15"
+                    style={{ backgroundColor:cfg.color }} />
+
+                  <div className="p-5 pl-6">
+                    {/* ticket + status */}
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div>
+                        <p className="text-[10px] font-extrabold uppercase tracking-widest mb-1" style={{color:cfg.color}}>
+                          {service.ticket_number}
+                        </p>
+                        <h4 className="display-font text-base font-bold text-gray-900 truncate leading-tight">
+                          {service.customer_name}
+                        </h4>
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">{service.device_brand} {service.device_model}</p>
+                      </div>
+                      <StatusPill status={service.status} />
+                    </div>
+
+                    {/* issue row */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{background:`${cfg.color}15`}}>
+                        <StatusIcon className="h-3 w-3" style={{color:cfg.color}} strokeWidth={2} />
+                      </div>
+                      <span className="text-xs text-gray-500 truncate flex-1">{service.issue_type}</span>
+                    </div>
+
+                    {/* bottom row */}
+                    <div className="flex items-center justify-between border-t pt-3" style={{borderColor:`${cfg.color}15`}}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] font-bold" style={{color:cfg.color}}>
+                          {formatCurrency(service.estimated_cost)}
+                        </span>
+                        <span className="text-[10px] text-gray-400">est.</span>
+                      </div>
+                      <div className="flex h-7 w-7 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                        style={{background:`${cfg.color}15`}}>
+                        <ArrowUpRight className="h-3.5 w-3.5" style={{color:cfg.color}} />
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         ) : (
           /* ── Empty State ── */
-          <div className={cn('flex flex-col items-center justify-center py-24 gap-5 svc-scale-in', mounted && 'section-enter')} style={{ animationDelay: '0.22s' }}>
+          <div className="flex flex-col items-center justify-center py-24 gap-5 svc-scale-in">
             <div className="relative">
               <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-orange-100 to-blue-50 border-2 border-dashed border-orange-200">
                 <Wrench className="h-10 w-10 text-orange-300" />
@@ -743,8 +573,8 @@ export default function ServicesPage() {
               <p className="display-font text-lg font-bold text-gray-800">No services found</p>
               <p className="text-sm text-gray-400 mt-1">{searchQuery ? 'Try a different search' : 'Register your first service to get started.'}</p>
             </div>
-            <button onClick={(e) => { ripple(e); setView('register'); }}
-              className="ripple-host svc-card-hover flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-white shadow-lg"
+            <button onClick={() => setView('register')}
+              className="svc-card-hover flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-white shadow-lg"
               style={{background:'linear-gradient(135deg,#f97316,#ea580c)'}}>
               <Plus className="h-4 w-4" strokeWidth={2.5} />
               Register New Service
@@ -770,7 +600,6 @@ function ServiceRegistration({ onCancel, onComplete }) {
   });
   const [photos, setPhotos] = useState({ customer:null, front:null, back:null });
   const isRefreshRef = useRef(false);
-  const ripple = useRipple();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -839,8 +668,8 @@ function ServiceRegistration({ onCancel, onComplete }) {
 
           <div className="relative flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <button onClick={(e) => { ripple(e); deleteCookie(COOKIE_KEY); onCancel(); }}
-                className="ripple-host flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white hover:bg-white/20 transition">
+              <button onClick={() => { deleteCookie(COOKIE_KEY); onCancel(); }}
+                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white hover:bg-white/20 transition">
                 <ArrowLeft className="h-4 w-4" />
               </button>
               <div>
@@ -969,8 +798,7 @@ function ServiceRegistration({ onCancel, onComplete }) {
 
           {/* ── Submit ── */}
           <button type="submit" disabled={loading}
-            onClick={(e) => { ripple(e); }}
-            className="ripple-host svc-card-hover w-full relative overflow-hidden rounded-3xl py-4 text-sm font-bold text-white shadow-xl transition-all disabled:opacity-50"
+            className="svc-card-hover w-full relative overflow-hidden rounded-3xl py-4 text-sm font-bold text-white shadow-xl transition-all disabled:opacity-50"
             style={{background:'linear-gradient(135deg,#f97316,#ea580c,#c2410c)',boxShadow:'0 8px 28px rgba(249,115,22,0.30)'}}>
             {!loading && (
               <div className="absolute inset-0 -skew-x-12 pointer-events-none"
@@ -1094,7 +922,6 @@ function ServiceDetails({ service, onBack, onUpdate }) {
   const cfg = STATUS_CFG[service.status]||{color:'#6b7280',bg:'#f9fafb',border:'#e5e7eb',dot:'#6b7280',grad:'',shadow:'rgba(0,0,0,0.08)'};
   const photoList = [service.customer_photo_url,service.device_front_photo_url,service.device_back_photo_url].filter(Boolean);
   const canReturn = service.status==='Completed'||service.status==='Not Repairable';
-  const ripple = useRipple();
 
   function goToPrev(){ setPreviewIndex(p=>p===0?photoList.length-1:p-1); }
   function goToNext(){ setPreviewIndex(p=>p===photoList.length-1?0:p+1); }
@@ -1145,8 +972,8 @@ function ServiceDetails({ service, onBack, onUpdate }) {
 
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <button onClick={(e) => { ripple(e); onBack(); }}
-                className="ripple-host flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white hover:bg-white/20 transition">
+              <button onClick={onBack}
+                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white hover:bg-white/20 transition">
                 <ArrowLeft className="h-4 w-4" />
               </button>
               <div>
@@ -1253,9 +1080,9 @@ function ServiceDetails({ service, onBack, onUpdate }) {
                     </div>
                   )}
 
-                  <button onClick={(e) => { ripple(e); updateStatus(); }}
+                  <button onClick={updateStatus}
                     disabled={loading||selectedStatus===service.status}
-                    className="ripple-host svc-card-hover w-full relative overflow-hidden rounded-2xl py-3 text-sm font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
+                    className="svc-card-hover w-full relative overflow-hidden rounded-2xl py-3 text-sm font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
                     style={{
                       background: selectedStatus!==service.status
                         ? 'linear-gradient(135deg,#1f2937,#111827)'
@@ -1397,12 +1224,12 @@ function ServiceDetails({ service, onBack, onUpdate }) {
                 </div>
 
                 <div className="flex gap-3 pt-1">
-                  <button onClick={(e)=>{ ripple(e); setShowReturn(false); }}
-                    className="ripple-host flex-1 rounded-2xl border-2 border-gray-200 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 transition">
+                  <button onClick={()=>setShowReturn(false)}
+                    className="flex-1 rounded-2xl border-2 border-gray-200 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 transition">
                     Cancel
                   </button>
-                  <button onClick={(e)=>{ ripple(e); handleReturn(); }} disabled={loading}
-                    className="ripple-host svc-card-hover flex-1 relative overflow-hidden rounded-2xl py-3 text-sm font-bold text-white transition-all disabled:opacity-50"
+                  <button onClick={handleReturn} disabled={loading}
+                    className="svc-card-hover flex-1 relative overflow-hidden rounded-2xl py-3 text-sm font-bold text-white transition-all disabled:opacity-50"
                     style={{background:'linear-gradient(135deg,#f97316,#ea580c)',boxShadow:'0 4px 16px rgba(249,115,22,0.30)'}}>
                     <span className="relative flex items-center justify-center gap-2">
                       {loading?'Processing…':'Confirm Return'}
