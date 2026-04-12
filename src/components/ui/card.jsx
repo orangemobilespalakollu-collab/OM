@@ -18,13 +18,17 @@ function Card({
     <motion.div
       data-slot="card"
       data-size={size}
-      initial="initial"
-      whileInView="animate"
-      whileHover="hover"
-      viewport={{ once: true, margin: "-20px" }}
-      variants={cardVariants}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      whileHover={{ 
+        y: -5, 
+        scale: 1.01,
+        boxShadow: "0 20px 40px -15px rgba(0,0,0,0.1)"
+      }}
+      viewport={{ once: true, margin: "-10px" }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
-        "group/card flex flex-col gap-4 overflow-hidden rounded-xl bg-card py-4 text-sm text-card-foreground ring-1 ring-foreground/10 has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl transition-shadow hover:shadow-lg",
+        "group/card vfx-glass-premium vfx-beam relative flex flex-col gap-4 overflow-hidden rounded-3xl p-5 text-sm transition-all duration-300",
         className
       )}
       {...props} />

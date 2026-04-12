@@ -297,7 +297,7 @@ export default function DashboardPage() {
   return (
     <PageTransition>
       <StyleInjector />
-      <div className="mesh-bg dashboard-font min-h-screen space-y-8 p-1">
+      <div className="relative dashboard-font min-h-screen space-y-8 p-1">
 
         {/* ── Hero Header ── */}
         <header className="vfx-aura relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-7 shadow-2xl">
@@ -312,11 +312,25 @@ export default function DashboardPage() {
 
           <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40 mb-1">{dateStr}</p>
+              <motion.p 
+                initial={{ opacity: 0, x: -10 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40 mb-1"
+              >
+                {dateStr}
+              </motion.p>
               <h1 className="display-font text-2xl sm:text-3xl font-bold text-white mb-1">
-                {greeting}, <span className="shimmer-text">{profile?.name?.split(' ')[0] || 'there'} 👋</span>
+                <TextReveal text={`${greeting},`} className="inline-block" />
+                <span className="shimmer-text ml-2">{profile?.name?.split(' ')[0] || 'there'} 👋</span>
               </h1>
-              <p className="text-sm text-white/50">Here's what's happening in your shop today.</p>
+              <motion.p 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                transition={{ delay: 0.8 }}
+                className="text-sm text-white/50"
+              >
+                Here's what's happening in your shop today.
+              </motion.p>
             </div>
             <div className="flex items-center gap-3">
               <div className="glass rounded-2xl px-5 py-3 text-right">
@@ -369,18 +383,18 @@ export default function DashboardPage() {
         {/* ── Work Priority ── */}
         <section>
           <SectionLabel icon={Activity} label="Work Priority" />
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <MagicalGrid className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <PriorityCard title="Received"            count={stats.received || 0}          color="#3b82f6" gradClass="gradient-blue"    shadowColor="rgba(59,130,246,0.2)"   onClick={() => router.push('/services?status=Received')} />
             <PriorityCard title="In Progress"         count={stats.inProgress}              color="#f97316" gradClass="gradient-orange"  shadowColor="rgba(249,115,22,0.2)"   onClick={() => router.push('/services?status=In Progress')} />
             <PriorityCard title="Waiting for Parts"   count={stats.waitingForParts}         color="#f59e0b" gradClass="gradient-amber"   shadowColor="rgba(245,158,11,0.2)"   onClick={() => router.push('/services?status=Waiting for Parts')} />
             <PriorityCard title="Completed (Unreturned)" count={stats.completedNotReturned} color="#10b981" gradClass="gradient-emerald" shadowColor="rgba(16,185,129,0.2)"   onClick={() => router.push('/services?status=Completed')} />
-          </div>
+          </MagicalGrid>
         </section>
 
         {/* ── Today Summary ── */}
         <section>
           <SectionLabel icon={Sparkles} label="Today Summary" />
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          <MagicalGrid className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
             <MetricDetailsDialog title="Registered Today" dataList={stats.registeredTodayList}>
               <SummaryCard title="Registered"    count={stats.registeredToday}               icon={FileEdit}      color="#3b82f6" gradClass="gradient-blue"    />
             </MetricDetailsDialog>
@@ -390,11 +404,11 @@ export default function DashboardPage() {
             <SummaryCard title="Sales"         count={stats.salesToday}                      icon={ShoppingBag}   color="#a855f7" gradClass="gradient-purple"  onClick={() => router.push('/sales?today=true')} />
             <SummaryCard title="Revenue"       count={formatCurrency(stats.revenueToday)}    icon={IndianRupee}   color="#f97316" gradClass="gradient-orange"  isCurrency
               onClick={() => { if (profile?.role === 'admin' || profile?.role === 'owner') setIsRevenueOpen(true); }} />
-          </div>
+          </MagicalGrid>
         </section>
 
         {/* ── Bottom grid ── */}
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <MagicalGrid className="grid grid-cols-1 gap-8 lg:grid-cols-2">
 
           {/* Recent Activity */}
           <section className="glass rounded-3xl p-6 shadow-xl overflow-hidden relative">
@@ -433,59 +447,58 @@ export default function DashboardPage() {
                     const isMine = activity.updated_by === profile?.id;
                     const ss = getStatusStyles(activity.status);
                     return (
-                      <button
-                        key={activity.id || i}
-                        onClick={() => handleActivityClick(activity)}
-                        className={cn(
-                          "group w-full relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-300 card-hover",
-                          "animate-slide-up",
-                          isMine
-                            ? "border-orange-300/60 bg-gradient-to-r from-orange-50 via-white to-purple-50/30 shadow-md ring-1 ring-orange-200/50"
-                            : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
-                        )}
-                        style={{ animationDelay: `${i * 0.06}s` }}
-                      >
-                        {/* glow accent */}
-                        {isMine && <div className="absolute top-0 left-0 h-full w-1 rounded-l-2xl bg-gradient-to-b from-orange-400 to-purple-500" />}
+                      <ScaleIn key={activity.id || i} delay={i * 0.05}>
+                        <button
+                          onClick={() => handleActivityClick(activity)}
+                          className={cn(
+                            "group w-full relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-300 card-hover",
+                            isMine
+                              ? "border-orange-300/60 bg-gradient-to-r from-orange-50 via-white to-purple-50/30 shadow-md ring-1 ring-orange-200/50"
+                              : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                          )}
+                        >
+                          {/* glow accent */}
+                          {isMine && <div className="absolute top-0 left-0 h-full w-1 rounded-l-2xl bg-gradient-to-b from-orange-400 to-purple-500" />}
 
-                        <div className="flex items-center gap-3 pl-1">
-                          {/* status dot with pulse ring */}
-                          <div className="relative shrink-0">
-                            <span className="block h-3 w-3 rounded-full shadow-sm" style={{ backgroundColor: ss.dotColor }} />
-                            <span className="absolute inset-0 rounded-full" style={{ backgroundColor: ss.dotColor, animation: 'pulse-ring 2s cubic-bezier(0.215,0.61,0.355,1) infinite' }} />
-                          </div>
+                          <div className="flex items-center gap-3 pl-1">
+                            {/* status dot with pulse ring */}
+                            <div className="relative shrink-0">
+                              <span className="block h-3 w-3 rounded-full shadow-sm" style={{ backgroundColor: ss.dotColor }} />
+                              <span className="absolute inset-0 rounded-full" style={{ backgroundColor: ss.dotColor, animation: 'pulse-ring 2s cubic-bezier(0.215,0.61,0.355,1) infinite' }} />
+                            </div>
 
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2 flex-wrap">
-                              <p className="display-font text-sm font-bold text-gray-900 truncate">
-                                {activity.services?.customer_name || 'Unknown Customer'}
-                              </p>
-                              <div className="flex items-center gap-2 shrink-0">
-                                {isMine && (
-                                  <span className="rounded-full bg-gradient-to-r from-orange-400 to-purple-500 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-white shadow-sm">
-                                    You
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                <p className="display-font text-sm font-bold text-gray-900 truncate">
+                                  {activity.services?.customer_name || 'Unknown Customer'}
+                                </p>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {isMine && (
+                                    <span className="rounded-full bg-gradient-to-r from-orange-400 to-purple-500 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-white shadow-sm">
+                                      You
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] font-semibold text-gray-400">
+                                    {formatTime(activity.created_at)}
                                   </span>
-                                )}
-                                <span className="text-[10px] font-semibold text-gray-400">
-                                  {formatTime(activity.created_at)}
-                                </span>
+                                </div>
+                              </div>
+
+                              <p className="text-xs text-gray-400 mt-0.5 truncate">
+                                {[activity.services?.device_brand, activity.services?.device_model].filter(Boolean).join(' ') || 'Device'}
+                              </p>
+
+                              <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 border text-[10px] font-bold uppercase tracking-wider"
+                                style={{ backgroundColor: ss.badgeBg, borderColor: ss.badgeBorder, color: ss.badgeText }}>
+                                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: ss.dotColor }} />
+                                {activity.status}
                               </div>
                             </div>
 
-                            <p className="text-xs text-gray-400 mt-0.5 truncate">
-                              {[activity.services?.device_brand, activity.services?.device_model].filter(Boolean).join(' ') || 'Device'}
-                            </p>
-
-                            <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 border text-[10px] font-bold uppercase tracking-wider"
-                              style={{ backgroundColor: ss.badgeBg, borderColor: ss.badgeBorder, color: ss.badgeText }}>
-                              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: ss.dotColor }} />
-                              {activity.status}
-                            </div>
+                            <ChevronRight className="h-4 w-4 text-gray-300 shrink-0 transition-transform group-hover:translate-x-0.5" />
                           </div>
-
-                          <ChevronRight className="h-4 w-4 text-gray-300 shrink-0 transition-transform group-hover:translate-x-0.5" />
-                        </div>
-                      </button>
+                        </button>
+                      </ScaleIn>
                     );
                   })}
                 </div>
@@ -553,7 +566,7 @@ export default function DashboardPage() {
               )}
             </div>
           </section>
-        </div>
+        </MagicalGrid>
 
         {/* Revenue Modal */}
         {isRevenueOpen && (

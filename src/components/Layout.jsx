@@ -236,7 +236,39 @@ export default function Layout({ children }) {
   return (
     <>
       <StyleInjector />
-      <div className="lyt-font flex min-h-screen" style={{ backgroundColor: '#fafafa' }}>
+      <div className="vfx-magic-bg" />
+      
+      {/* ── Floating Magical Orbs ── */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-[-1]">
+        <motion.div
+          animate={{ 
+            x: [0, 100, 0], 
+            y: [0, 50, 0],
+            scale: [1, 1.2, 1] 
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-20 -left-20 w-96 h-96 bg-orange-500/10 blur-[100px] rounded-full"
+        />
+        <motion.div
+          animate={{ 
+            x: [0, -80, 0], 
+            y: [0, 120, 0],
+            scale: [1, 1.3, 1] 
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="absolute top-1/2 -right-20 w-[500px] h-[500px] bg-purple-500/10 blur-[120px] rounded-full"
+        />
+        <motion.div
+          animate={{ 
+            x: [0, 60, 0], 
+            y: [0, -90, 0] 
+          }}
+          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+          className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-blue-500/10 blur-[80px] rounded-full"
+        />
+      </div>
+
+      <div className="lyt-font flex min-h-screen">
 
         {/* ════════════════════════════════════════
             DESKTOP SIDEBAR
@@ -478,14 +510,7 @@ export default function Layout({ children }) {
           {/* ══════════════════════════════════════
               PREMIUM TOP HEADER
           ══════════════════════════════════════ */}
-          <header className="sticky top-0 z-20 flex h-[68px] items-center justify-between px-4 lg:px-6"
-            style={{
-              background: 'rgba(250,250,250,0.92)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              borderBottom: '1px solid rgba(0,0,0,0.055)',
-              boxShadow: '0 1px 24px rgba(0,0,0,0.04)',
-            }}>
+          <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between px-4 lg:px-6 transition-all duration-500 vfx-glass-premium border-b border-white/20 shadow-sm shadow-black/5">
 
             {/* ── Left: hamburger + page identity ── */}
             <div className="flex items-center gap-3">
