@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { cn, formatCurrency, formatTime, formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
+import { PageTransition, MagicalGrid, ScaleIn } from '@/components/MotionWrappers';
 
 /* ─── Styles (same token system as dashboard) ─── */
 const SALES_STYLES = `
@@ -90,7 +91,7 @@ const SALES_STYLES = `
 }
 
 .sales-mesh-bg {
-  background-color: #fafafa;
+  background-color: transparent;
   background-image:
     radial-gradient(at 10% 10%, rgba(168,85,247,0.09) 0px, transparent 50%),
     radial-gradient(at 85% 5%,  rgba(249,115,22,0.07) 0px, transparent 50%),
@@ -230,7 +231,7 @@ export default function SalesPage() {
   );
 
   return (
-    <>
+    <PageTransition>
       <SalesStyleInjector />
       <div className="sales-mesh-bg sales-font min-h-screen space-y-7 p-1">
 
@@ -345,21 +346,22 @@ export default function SalesPage() {
             ))}
           </div>
         ) : filteredSales.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <MagicalGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredSales.map((sale, i) => (
-              <SaleCard
-                key={sale.id}
-                sale={sale}
-                index={i}
-                onClick={() => { setSelectedSale(sale); setView('details'); }}
-              />
+              <ScaleIn key={sale.id} delay={i * 0.05}>
+                <SaleCard
+                  sale={sale}
+                  index={i}
+                  onClick={() => { setSelectedSale(sale); setView('details'); }}
+                />
+              </ScaleIn>
             ))}
-          </div>
+          </MagicalGrid>
         ) : (
           <EmptyState onNewSale={() => setView('record')} />
         )}
       </div>
-    </>
+    </PageTransition>
   );
 }
 

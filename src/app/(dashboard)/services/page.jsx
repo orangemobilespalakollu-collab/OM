@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { cn, formatCurrency, formatDateTime, setCookie, getCookie, deleteCookie } from '@/lib/utils';
 import { toast } from 'sonner';
+import { PageTransition, MagicalGrid, ScaleIn } from '@/components/MotionWrappers';
 
 /* ══════════════════════════════════════════════════════
    STYLES — full dashboard token system
@@ -57,7 +58,7 @@ const SVC_STYLES = `
 }
 
 .svc-mesh-bg {
-  background-color: #fafafa;
+  background-color: transparent;
   background-image:
     radial-gradient(at 15% 10%, rgba(249,115,22,0.08) 0px, transparent 50%),
     radial-gradient(at 85% 5%,  rgba(168,85,247,0.07) 0px, transparent 50%),
@@ -333,7 +334,7 @@ export default function ServicesPage() {
   ];
 
   return (
-    <>
+    <PageTransition>
       <SvcStyleInjector />
       <div className="svc-mesh-bg svc-font min-h-screen space-y-7 p-1">
 
@@ -496,68 +497,69 @@ export default function ServicesPage() {
             {[...Array(6)].map((_,i) => <div key={i} className="h-44 animate-pulse rounded-2xl bg-white border border-gray-100" style={{animationDelay:`${i*0.05}s`}} />)}
           </div>
         ) : filteredServices.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <MagicalGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredServices.map((service, i) => {
               const cfg = STATUS_CFG[service.status] || { color:'#6b7280', bg:'#f9fafb', border:'#e5e7eb', dot:'#6b7280', grad:'', shadow:'rgba(0,0,0,0.08)' };
               const StatusIcon = cfg.icon || Clock;
               return (
-                <button
-                  key={service.id}
-                  onClick={() => { setSelectedService(service); setView('details'); }}
-                  className={cn('svc-card-hover group relative w-full overflow-hidden rounded-2xl border border-white/80 text-left shadow-md svc-slide-up', cfg.grad)}
-                  style={{ boxShadow:`0 4px 20px ${cfg.shadow}`, animationDelay:`${i*0.05}s` }}
-                >
-                  {/* top accent stripe */}
-                  <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
-                    style={{ background:`linear-gradient(90deg,${cfg.color}90,${cfg.color}10)` }} />
-                  {/* left accent bar */}
-                  <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
-                    style={{ background:`linear-gradient(180deg,${cfg.color}80,${cfg.color}20)` }} />
-                  {/* ambient glow blob */}
-                  <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full blur-2xl opacity-15"
-                    style={{ backgroundColor:cfg.color }} />
+                <ScaleIn key={service.id} delay={i * 0.04}>
+                  <button
+                    onClick={() => { setSelectedService(service); setView('details'); }}
+                    className={cn('svc-card-hover group relative w-full overflow-hidden rounded-2xl border border-white/80 text-left shadow-md', cfg.grad)}
+                    style={{ boxShadow:`0 4px 20px ${cfg.shadow}` }}
+                  >
+                    {/* top accent stripe */}
+                    <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
+                      style={{ background:`linear-gradient(90deg,${cfg.color}90,${cfg.color}10)` }} />
+                    {/* left accent bar */}
+                    <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
+                      style={{ background:`linear-gradient(180deg,${cfg.color}80,${cfg.color}20)` }} />
+                    {/* ambient glow blob */}
+                    <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full blur-2xl opacity-15"
+                      style={{ backgroundColor:cfg.color }} />
 
-                  <div className="p-5 pl-6">
-                    {/* ticket + status */}
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div>
-                        <p className="text-[10px] font-extrabold uppercase tracking-widest mb-1" style={{color:cfg.color}}>
-                          {service.ticket_number}
-                        </p>
-                        <h4 className="display-font text-base font-bold text-gray-900 truncate leading-tight">
-                          {service.customer_name}
-                        </h4>
-                        <p className="text-xs text-gray-500 mt-0.5 truncate">{service.device_brand} {service.device_model}</p>
+                    <div className="p-5 pl-6">
+                      {/* ticket + status */}
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div>
+                          <p className="text-[10px] font-extrabold uppercase tracking-widest mb-1" style={{color:cfg.color}}>
+                            {service.ticket_number}
+                          </p>
+                          <h4 className="display-font text-base font-bold text-gray-900 truncate leading-tight">
+                            {service.customer_name}
+                          </h4>
+                          <p className="text-xs text-gray-500 mt-0.5 truncate">{service.device_brand} {service.device_model}</p>
+                        </div>
+                        <StatusPill status={service.status} />
                       </div>
-                      <StatusPill status={service.status} />
-                    </div>
 
-                    {/* issue row */}
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{background:`${cfg.color}15`}}>
-                        <StatusIcon className="h-3 w-3" style={{color:cfg.color}} strokeWidth={2} />
+                      {/* issue row */}
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-lg" style={{background:`${cfg.color}15`}}>
+                          <StatusIcon className="h-3 w-3" style={{color:cfg.color}} strokeWidth={2} />
+                        </div>
+                        <span className="text-xs text-gray-500 truncate flex-1">{service.issue_type}</span>
                       </div>
-                      <span className="text-xs text-gray-500 truncate flex-1">{service.issue_type}</span>
-                    </div>
 
-                    {/* bottom row */}
-                    <div className="flex items-center justify-between border-t pt-3" style={{borderColor:`${cfg.color}15`}}>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-bold" style={{color:cfg.color}}>
-                          {formatCurrency(service.estimated_cost)}
-                        </span>
-                        <span className="text-[10px] text-gray-400">est.</span>
-                      </div>
-                      <div className="flex h-7 w-7 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                        style={{background:`${cfg.color}15`}}>
-                        <ArrowUpRight className="h-3.5 w-3.5" style={{color:cfg.color}} />
+                      {/* bottom row */}
+                      <div className="flex items-center justify-between border-t pt-3" style={{borderColor:`${cfg.color}15`}}>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px] font-bold" style={{color:cfg.color}}>
+                            {formatCurrency(service.estimated_cost)}
+                          </span>
+                          <span className="text-[10px] text-gray-400">est.</span>
+                        </div>
+                        <div className="flex h-7 w-7 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                          style={{background:`${cfg.color}15`}}>
+                          <ArrowUpRight className="h-3.5 w-3.5" style={{color:cfg.color}} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+                </ScaleIn>
               );
             })}
-          </div>
+          </MagicalGrid>
         ) : (
           /* ── Empty State ── */
           <div className="flex flex-col items-center justify-center py-24 gap-5 svc-scale-in">
@@ -582,7 +584,7 @@ export default function ServicesPage() {
           </div>
         )}
       </div>
-    </>
+    </PageTransition>
   );
 }
 

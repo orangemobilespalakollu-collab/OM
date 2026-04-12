@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/utils';
+import { PageTransition, MagicalGrid, ScaleIn } from '@/components/MotionWrappers';
 
 /* ─── Styles ─── */
 const STYLES = `
@@ -82,12 +83,7 @@ const STYLES = `
 }
 
 .em-mesh {
-  background-color: #fafafa;
-  background-image:
-    radial-gradient(at 20% 10%, rgba(249,115,22,0.08) 0px, transparent 50%),
-    radial-gradient(at 80% 0%,  rgba(168,85,247,0.07) 0px, transparent 50%),
-    radial-gradient(at 0%  60%, rgba(59,130,246,0.06) 0px, transparent 50%),
-    radial-gradient(at 90% 80%, rgba(34,197,94,0.05)  0px, transparent 50%);
+  background-color: transparent;
 }
 
 .em-card-hover {
@@ -306,56 +302,57 @@ export default function EmployeesPage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <MagicalGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {employees.map((emp, i) => {
                 const color = EMP_COLORS[i % EMP_COLORS.length];
                 const gradClass = EMP_GRADS[i % EMP_GRADS.length];
                 return (
-                  <button
-                    key={emp.id}
-                    onClick={() => { setSelectedEmployee(emp); setSelectedIndex(i); setView('details'); }}
-                    className={`em-card-hover group relative overflow-hidden rounded-2xl border border-white/80 p-5 text-left shadow-md em-slide-up ${gradClass}`}
-                    style={{ animationDelay: `${i * 0.07}s`, boxShadow: `0 4px 20px ${color}22` }}
-                  >
-                    {/* top accent */}
-                    <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
-                      style={{ background: `linear-gradient(90deg, ${color}80, ${color}20)` }} />
-                    {/* glow blob */}
-                    <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full blur-2xl opacity-20"
-                      style={{ backgroundColor: color }} />
+                  <ScaleIn key={emp.id} delay={i * 0.05}>
+                    <button
+                      onClick={() => { setSelectedEmployee(emp); setSelectedIndex(i); setView('details'); }}
+                      className={`em-card-hover group relative overflow-hidden rounded-2xl border border-white/80 p-5 text-left shadow-md em-slide-up ${gradClass}`}
+                      style={{ boxShadow: `0 4px 20px ${color}22` }}
+                    >
+                      {/* top accent */}
+                      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl"
+                        style={{ background: `linear-gradient(90deg, ${color}80, ${color}20)` }} />
+                      {/* glow blob */}
+                      <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full blur-2xl opacity-20"
+                        style={{ backgroundColor: color }} />
 
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="relative">
-                        <Avatar name={emp.full_name} color={color} />
-                        <span className="absolute -bottom-0.5 -right-0.5">
-                          <StatusDot />
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="relative">
+                          <Avatar name={emp.full_name} color={color} />
+                          <span className="absolute -bottom-0.5 -right-0.5">
+                            <StatusDot />
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="em-display text-sm font-bold text-gray-900 truncate">{emp.full_name}</p>
+                          <p className="text-xs text-gray-400 mt-0.5 truncate">{emp.mobile}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-widest"
+                          style={{ backgroundColor: color + '15', borderColor: color + '30', color }}>
+                          <Shield className="h-2.5 w-2.5" />
+                          Staff
                         </span>
+                        <div className="flex h-7 w-7 items-center justify-center rounded-xl transition-transform group-hover:translate-x-0.5"
+                          style={{ backgroundColor: color + '12' }}>
+                          <ChevronRight className="h-3.5 w-3.5" style={{ color }} />
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="em-display text-sm font-bold text-gray-900 truncate">{emp.full_name}</p>
-                        <p className="text-xs text-gray-400 mt-0.5 truncate">{emp.mobile}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-widest"
-                        style={{ backgroundColor: color + '15', borderColor: color + '30', color }}>
-                        <Shield className="h-2.5 w-2.5" />
-                        Staff
-                      </span>
-                      <div className="flex h-7 w-7 items-center justify-center rounded-xl transition-transform group-hover:translate-x-0.5"
-                        style={{ backgroundColor: color + '12' }}>
-                        <ChevronRight className="h-3.5 w-3.5" style={{ color }} />
-                      </div>
-                    </div>
-                  </button>
+                    </button>
+                  </ScaleIn>
                 );
               })}
-            </div>
+            </MagicalGrid>
           )}
         </section>
       </div>
-    </>
+    </PageTransition>
   );
 }
 

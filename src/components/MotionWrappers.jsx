@@ -1,3 +1,5 @@
+'use client';
+
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'framer-motion';
 
 /**
