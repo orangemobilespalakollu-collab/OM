@@ -18,6 +18,7 @@ import {
   History,
   ChevronRight,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 /* ─── Styles ─── */
@@ -353,19 +354,28 @@ export default function Layout({ children }) {
             MOBILE SIDEBAR OVERLAY
         ════════════════════════════════════════ */}
         {/* Backdrop */}
-        <div
-          className={cn(
-            'fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden',
-            isSidebarOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+        <AnimatePresence>
+          {isSidebarOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+              onClick={() => setIsSidebarOpen(false)}
+            />
           )}
-          onClick={() => setIsSidebarOpen(false)}
-        />
+        </AnimatePresence>
 
         {/* Drawer */}
-        <aside className={cn(
-          'fixed inset-y-0 left-0 z-50 w-72 flex flex-col transition-transform duration-300 ease-in-out lg:hidden',
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        )}>
+        <AnimatePresence>
+          {isSidebarOpen && (
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 z-50 w-72 flex flex-col lg:hidden"
+            >
           <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800" />
           <div className="lyt-orb w-48 h-48 bg-orange-500/15 -top-12 -left-12" />
           <div className="lyt-orb w-32 h-32 bg-purple-500/12 bottom-20 -right-8" />
@@ -456,7 +466,9 @@ export default function Layout({ children }) {
               </button>
             </div>
           </div>
-        </aside>
+        </motion.aside>
+      )}
+    </AnimatePresence>
 
         {/* ════════════════════════════════════════
             MAIN CONTENT AREA
@@ -646,8 +658,19 @@ export default function Layout({ children }) {
           </header>
 
           {/* ── Page Content ── */}
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-            {children}
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6 relative">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={pathname}
+                initial={{ opacity: 0, scale: 0.99, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.99, y: -8 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full"
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
           </main>
         </div>
       </div>

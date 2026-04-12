@@ -1,6 +1,13 @@
+import { motion } from "framer-motion"
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+
+const cardVariants = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  hover: { y: -2, transition: { duration: 0.2 } }
+}
 
 function Card({
   className,
@@ -8,11 +15,16 @@ function Card({
   ...props
 }) {
   return (
-    <div
+    <motion.div
       data-slot="card"
       data-size={size}
+      initial="initial"
+      whileInView="animate"
+      whileHover="hover"
+      viewport={{ once: true, margin: "-20px" }}
+      variants={cardVariants}
       className={cn(
-        "group/card flex flex-col gap-4 overflow-hidden rounded-xl bg-card py-4 text-sm text-card-foreground ring-1 ring-foreground/10 has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
+        "group/card flex flex-col gap-4 overflow-hidden rounded-xl bg-card py-4 text-sm text-card-foreground ring-1 ring-foreground/10 has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl transition-shadow hover:shadow-lg",
         className
       )}
       {...props} />

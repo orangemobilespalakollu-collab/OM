@@ -111,4 +111,48 @@
   input.pr-10, div.pr-10 > input { padding-right: 2.5rem !important; }
   input.pr-12, div.pr-12 > input { padding-right: 3rem !important; }
   input.pr-14, div.pr-14 > input { padding-right: 3.5rem !important; }
+
+  /* ─── Premium VFX Utilities ─── */
+  .vfx-glass {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(12px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07) !important;
+  }
+
+  .vfx-aura {
+    position: relative;
+    overflow: hidden;
+  }
+  .vfx-aura::before {
+    content: '';
+    position: absolute;
+    inset: -50%;
+    z-index: -1;
+    background: radial-gradient(circle at center, rgba(249, 115, 22, 0.08) 0%, transparent 70%);
+    animation: aura-pulse 8s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+
+  @keyframes aura-pulse {
+    from { transform: scale(1) translate(0, 0); }
+    to { transform: scale(1.2) translate(5%, 5%); }
+  }
+
+  .vfx-shimmer-bg {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: vfx-shimmer 2s infinite;
+  }
+
+  @keyframes vfx-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
 }

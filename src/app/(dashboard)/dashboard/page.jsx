@@ -4,27 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { dashboardService } from '@/services/dashboardService';
-import {
-  PlusCircle,
-  ShoppingBag,
-  Wrench,
-  AlertCircle,
-  TrendingUp,
-  Clock,
-  ChevronRight,
-  FileEdit,
-  CheckCircle2,
-  XOctagon,
-  PackageCheck,
-  IndianRupee,
-  Activity,
-  Zap,
-  ArrowUpRight,
-  Sparkles,
-  Bell,
-  TriangleAlert,
-  CircleCheck,
-} from 'lucide-react';
+import { 
+  PageTransition, 
+  StaggerContainer, 
+  Reveal, 
+  ScaleIn 
+} from '@/components/MotionWrappers';
+import { motion } from 'framer-motion';
+import { IndianRupee, Activity, Zap, ArrowUpRight, Sparkles, Bell, TriangleAlert, CircleCheck, PlusCircle, ShoppingBag, Wrench, AlertCircle, TrendingUp, Clock, ChevronRight, FileEdit, CheckCircle2, XOctagon, PackageCheck } from 'lucide-react';
 import { cn, formatCurrency, formatDate, formatTime, formatNumber } from '@/lib/utils';
 import { MetricDetailsDialog } from '@/components/MetricDetailsDialog';
 import { toast } from 'sonner';
@@ -308,12 +295,12 @@ export default function DashboardPage() {
   const dateStr = formatDate(now);
 
   return (
-    <>
+    <PageTransition>
       <StyleInjector />
       <div className="mesh-bg dashboard-font min-h-screen space-y-8 p-1">
 
         {/* ── Hero Header ── */}
-        <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-7 shadow-2xl">
+        <header className="vfx-aura relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-7 shadow-2xl">
           {/* decorative orbs */}
           <div className="orb w-64 h-64 bg-orange-500/20 -top-16 -left-16 animate-float" style={{animationDelay:'0s'}} />
           <div className="orb w-48 h-48 bg-purple-500/20 -bottom-12 left-1/3 animate-float" style={{animationDelay:'1s'}} />
@@ -346,34 +333,37 @@ export default function DashboardPage() {
         {/* ── Quick Actions ── */}
         <section>
           <SectionLabel icon={Zap} label="Quick Actions" />
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {[
-              { name: 'Register New Service', desc: 'Create a service ticket', icon: PlusCircle, color: '#f97316', lightBg: '#fff7ed', borderColor: '#fed7aa', href: '/services?action=new' },
-              { name: 'Add New Sale', desc: 'Record parts / accessories', icon: ShoppingBag, color: '#a855f7', lightBg: '#faf5ff', borderColor: '#e9d5ff', href: '/sales?action=new' },
-              { name: 'View Services', desc: 'Manage active repairs', icon: Wrench, color: '#3b82f6', lightBg: '#eff6ff', borderColor: '#bfdbfe', href: '/services' },
-            ].map((a, i) => (
-              <button
-                key={a.name}
-                onClick={() => router.push(a.href)}
-                className="card-hover group relative flex items-center gap-4 rounded-2xl border-2 p-4 text-left shadow-sm transition-all"
-                style={{ borderColor: a.borderColor, backgroundColor: a.lightBg }}
-              >
-                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ backgroundColor: a.color }} />
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3"
-                  style={{ backgroundColor: a.color + '20', border: `1.5px solid ${a.color}40` }}>
-                  <a.icon className="h-5 w-5" style={{ color: a.color }} strokeWidth={2.5} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{a.name}</p>
-                  <p className="text-xs mt-0.5 font-medium" style={{ color: a.color + 'bb' }}>{a.desc}</p>
-                </div>
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-sm"
-                  style={{ backgroundColor: a.color + '15', border: `1px solid ${a.color}30` }}>
-                  <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ color: a.color }} />
-                </div>
-              </button>
-            ))}
-          </div>
+          <StaggerContainer>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {[
+                { name: 'Register New Service', desc: 'Create a service ticket', icon: PlusCircle, color: '#f97316', lightBg: '#fff7ed', borderColor: '#fed7aa', href: '/services?action=new' },
+                { name: 'Add New Sale', desc: 'Record parts / accessories', icon: ShoppingBag, color: '#a855f7', lightBg: '#faf5ff', borderColor: '#e9d5ff', href: '/sales?action=new' },
+                { name: 'View Services', desc: 'Manage active repairs', icon: Wrench, color: '#3b82f6', lightBg: '#eff6ff', borderColor: '#bfdbfe', href: '/services' },
+              ].map((a, i) => (
+                <ScaleIn key={a.name} delay={i * 0.1}>
+                  <button
+                    onClick={() => router.push(a.href)}
+                    className="card-hover group relative flex items-center gap-4 rounded-2xl border-2 p-4 text-left shadow-sm transition-all w-full"
+                    style={{ borderColor: a.borderColor, backgroundColor: a.lightBg }}
+                  >
+                    <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ backgroundColor: a.color }} />
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3"
+                      style={{ backgroundColor: a.color + '20', border: `1.5px solid ${a.color}40` }}>
+                      <a.icon className="h-5 w-5" style={{ color: a.color }} strokeWidth={2.5} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{a.name}</p>
+                      <p className="text-xs mt-0.5 font-medium" style={{ color: a.color + 'bb' }}>{a.desc}</p>
+                    </div>
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-sm"
+                      style={{ backgroundColor: a.color + '15', border: `1px solid ${a.color}30` }}>
+                      <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ color: a.color }} />
+                    </div>
+                  </button>
+                </ScaleIn>
+              ))}
+            </div>
+          </StaggerContainer>
         </section>
 
         {/* ── Work Priority ── */}
@@ -575,7 +565,7 @@ export default function DashboardPage() {
           />
         )}
       </div>
-    </>
+    </PageTransition>
   );
 }
 
@@ -595,9 +585,11 @@ function SectionLabel({ icon: Icon, label }) {
 
 function PriorityCard({ title, count, color, gradClass, shadowColor, onClick }) {
   return (
-    <button
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      whileHover={{ y: -4, scale: 1.01 }}
       onClick={onClick}
-      className={cn("card-hover group relative overflow-hidden rounded-2xl border border-white/80 p-5 text-left shadow-md", gradClass)}
+      className={cn("group relative overflow-hidden rounded-2xl border border-white/80 p-5 text-left shadow-md", gradClass)}
       style={{ boxShadow: `0 4px 20px ${shadowColor}` }}
     >
       <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full blur-2xl opacity-20" style={{ backgroundColor: color }} />
@@ -612,17 +604,19 @@ function PriorityCard({ title, count, color, gradClass, shadowColor, onClick }) 
         <TrendingUp className="h-3.5 w-3.5 text-gray-300 transition-colors group-hover:text-gray-500" />
       </div>
 
-      <p className="text-4xl font-bold tabular-nums leading-none text-gray-900 animate-count-in">{count}</p>
+      <p className="text-4xl font-bold tabular-nums leading-none text-gray-900">{count}</p>
       <p className="mt-2 text-[13px] font-medium text-gray-500">{title}</p>
-    </button>
+    </motion.button>
   );
 }
 
 function SummaryCard({ title, count, isCurrency, onClick, icon: Icon, color, gradClass }) {
   return (
-    <button
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      whileHover={{ y: -2, scale: 1.02 }}
       onClick={onClick}
-      className={cn("card-hover group relative w-full overflow-hidden rounded-2xl border border-white/80 p-4 text-left shadow-md", gradClass)}
+      className={cn("group relative w-full overflow-hidden rounded-2xl border border-white/80 p-4 text-left shadow-md", gradClass)}
     >
       <div className="absolute -top-8 -right-8 h-20 w-20 rounded-full blur-2xl opacity-20" style={{ backgroundColor: color }} />
       <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${color}70, ${color}10)` }} />
@@ -632,11 +626,11 @@ function SummaryCard({ title, count, isCurrency, onClick, icon: Icon, color, gra
         {Icon && <Icon className="h-4 w-4" style={{ color }} strokeWidth={2} />}
       </div>
 
-      <p className="text-2xl font-bold tabular-nums leading-none text-gray-900 animate-count-in">
+      <p className="text-2xl font-bold tabular-nums leading-none text-gray-900">
         {count}
       </p>
       <p className="mt-2 text-[11px] font-semibold text-gray-500">{title}</p>
-    </button>
+    </motion.button>
   );
 }
 
