@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/AuthProvider';
@@ -20,160 +20,244 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-/* ─── Styles ─── */
-const STYLES = `
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN SYSTEM — exact mirror of dashboard + services + sales + history + reports
+   ─ Single accent: #f97316  |  Ink: #0d0d0d  |  Surface: #f9fafb
+   ─ Fonts: Instrument Serif (display) + Geist (body)
+   ─ Motion: tilt, stagger, morph, shine, ripple, orbit
+═══════════════════════════════════════════════════════════════ */
 
-@keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position:  200% center; }
-}
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-6px); }
-}
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-@keyframes blink {
-  0%,100% { opacity: 1; }
-  50%      { opacity: 0.3; }
-}
-@keyframes count-in {
-  from { opacity: 0; transform: scale(0.5); }
-  to   { opacity: 1; transform: scale(1); }
+const ACCOUNT_STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --accent:        #f97316;
+  --accent-dim:    rgba(249,115,22,0.12);
+  --accent-mid:    rgba(249,115,22,0.22);
+  --ink:           #0d0d0d;
+  --ink-mid:       #4b5563;
+  --ink-faint:     #9ca3af;
+  --surface:       #f9fafb;
+  --surface-raise: #ffffff;
+  --border:        #e5e7eb;
+  --border-strong: #d1d5db;
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-expo:     cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.ac-slide-up   { animation: slide-up 0.45s ease forwards; }
-.ac-float      { animation: float 3s ease-in-out infinite; }
-.ac-spin-slow  { animation: spin-slow 8s linear infinite; }
-.ac-blink      { animation: blink 2s ease-in-out infinite; }
+.ac-font-display { font-family: 'Instrument Serif', Georgia, serif; }
+.ac-font-body    { font-family: 'Geist', system-ui, sans-serif; }
 
-.ac-shimmer-text {
-  background: linear-gradient(90deg, #f97316, #a855f7, #3b82f6, #f97316);
-  background-size: 300% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: shimmer 4s linear infinite;
+/* ── Keyframes ── */
+@keyframes ac-fade-up {
+  from { opacity:0; transform:translateY(20px); filter:blur(4px); }
+  to   { opacity:1; transform:translateY(0);    filter:blur(0); }
+}
+@keyframes ac-card-in {
+  from { opacity:0; transform:translateY(16px) scale(0.97); filter:blur(3px); }
+  to   { opacity:1; transform:translateY(0)    scale(1);    filter:blur(0); }
+}
+@keyframes ac-spin-slow  { from { transform:rotate(0deg); }  to { transform:rotate(360deg); } }
+@keyframes ac-spin-rev   { from { transform:rotate(0deg); }  to { transform:rotate(-360deg); } }
+@keyframes ac-blink      { 0%,100%{ opacity:1; } 50%{ opacity:0.2; } }
+@keyframes ac-live-ring  {
+  0%   { transform:scale(1);   opacity:0.5; }
+  70%  { transform:scale(2.4); opacity:0; }
+  100% { transform:scale(2.4); opacity:0; }
+}
+@keyframes ac-blob-morph {
+  0%,100% { border-radius:60% 40% 30% 70% / 60% 30% 70% 40%; }
+  33%      { border-radius:30% 70% 60% 40% / 50% 60% 30% 60%; }
+  66%      { border-radius:50% 30% 70% 40% / 40% 70% 30% 60%; }
+}
+@keyframes ac-shine      { from { left:-80%; } to { left:130%; } }
+@keyframes ac-ripple-out { from { transform:scale(0); opacity:0.35; } to { transform:scale(3.5); opacity:0; } }
+@keyframes ac-orbit {
+  from { transform:rotate(0deg) translateX(44px) rotate(0deg); }
+  to   { transform:rotate(360deg) translateX(44px) rotate(-360deg); }
+}
+@keyframes ac-underline {
+  from { transform:scaleX(0); transform-origin:left; }
+  to   { transform:scaleX(1); transform-origin:left; }
 }
 
-.ac-glass {
-  background: rgba(255,255,255,0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.9);
+/* ── Stagger ── */
+.ac-stagger > *:nth-child(1) { animation:ac-card-in 0.52s var(--ease-expo) 0.04s both; }
+.ac-stagger > *:nth-child(2) { animation:ac-card-in 0.52s var(--ease-expo) 0.10s both; }
+.ac-stagger > *:nth-child(3) { animation:ac-card-in 0.52s var(--ease-expo) 0.16s both; }
+.ac-stagger > *:nth-child(4) { animation:ac-card-in 0.52s var(--ease-expo) 0.22s both; }
+
+.ac-section-enter { animation:ac-fade-up 0.65s var(--ease-expo) both; }
+
+/* ── Shine ── */
+.ac-shine { position:relative; overflow:hidden; }
+.ac-shine::before {
+  content:'';
+  position:absolute; top:-50%; left:-80%;
+  width:50%; height:200%;
+  background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,0.5) 50%,transparent 70%);
+  transform:skewX(-20deg);
+  pointer-events:none; z-index:2;
+}
+.ac-shine:hover::before { animation:ac-shine 0.5s ease forwards; }
+
+/* ── Ripple ── */
+.ac-ripple { position:relative; overflow:hidden; }
+.ac-ripple-circle {
+  position:absolute; border-radius:50%;
+  background:rgba(255,255,255,0.28);
+  transform:scale(0);
+  animation:ac-ripple-out 0.6s linear forwards;
+  pointer-events:none;
 }
 
-.ac-mesh {
-  background-color: #fafafa;
-  background-image:
-    radial-gradient(at 20% 10%, rgba(249,115,22,0.08) 0px, transparent 50%),
-    radial-gradient(at 80% 0%,  rgba(168,85,247,0.07) 0px, transparent 50%),
-    radial-gradient(at 0%  60%, rgba(59,130,246,0.06) 0px, transparent 50%),
-    radial-gradient(at 90% 80%, rgba(34,197,94,0.05)  0px, transparent 50%);
+/* ── Blob ── */
+.ac-blob {
+  border-radius:60% 40% 30% 70% / 60% 30% 70% 40%;
+  animation:ac-blob-morph 10s ease-in-out infinite;
+  position:absolute; pointer-events:none;
 }
 
-.ac-card-hover {
-  transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s ease;
+/* ── Password input ── */
+.ac-pwd-input {
+  width:100%;
+  background:transparent;
+  border:none;
+  outline:none;
+  font-size:0.9375rem;
+  font-weight:600;
+  color:var(--ink);
+  font-family:'Geist', system-ui, sans-serif;
+  letter-spacing:0.05em;
 }
-.ac-card-hover:hover {
-  transform: translateY(-3px) scale(1.01);
-  box-shadow: 0 16px 32px -8px rgba(0,0,0,0.10);
-}
+.ac-pwd-input::placeholder { color:var(--ink-faint); letter-spacing:0.1em; }
 
-.ac-orb {
-  border-radius: 50%;
-  filter: blur(40px);
-  position: absolute;
-  pointer-events: none;
-}
-
-.ac-font   { font-family: 'DM Sans', sans-serif; }
-.ac-display{ font-family: 'Syne', sans-serif; }
-
-.ac-input {
-  width: 100%;
-  border-radius: 1rem;
-  border: 2px solid #e5e7eb;
-  background: #fff;
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 500;
-  color: #111827;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.ac-input:focus {
-  border-color: #f97316;
-  box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
-}
-
-/* password strength bar */
-.strength-bar {
-  height: 4px;
-  border-radius: 999px;
-  transition: width 0.4s ease, background-color 0.4s ease;
+/* ── Strength bar ── */
+.ac-strength-bar {
+  height:3px;
+  border-radius:999px;
+  transition:background-color 0.3s, flex 0.3s;
+  flex:1;
 }
 `;
 
 function StyleInjector() {
-  if (typeof document !== 'undefined' && !document.getElementById('account-styles')) {
+  useEffect(() => {
+    if (document.getElementById('ac-v2-styles')) return;
     const el = document.createElement('style');
-    el.id = 'account-styles';
-    el.textContent = STYLES;
+    el.id = 'ac-v2-styles';
+    el.textContent = ACCOUNT_STYLES;
     document.head.appendChild(el);
-  }
+  }, []);
   return null;
 }
 
-/* ─── Section Label ─── */
-function SectionLabel({ icon: Icon, label }) {
+/* ── Ripple hook ── */
+function useRipple() {
+  return useCallback((e) => {
+    const btn = e.currentTarget;
+    const circle = document.createElement('span');
+    const d = Math.max(btn.clientWidth, btn.clientHeight);
+    const r = btn.getBoundingClientRect();
+    circle.className = 'ac-ripple-circle';
+    Object.assign(circle.style, {
+      width:`${d}px`, height:`${d}px`,
+      left:`${e.clientX - r.left - d/2}px`,
+      top:`${e.clientY - r.top  - d/2}px`,
+    });
+    btn.appendChild(circle);
+    setTimeout(() => circle.remove(), 700);
+  }, []);
+}
+
+/* ── 3D Tilt hook ── */
+function useTilt(strength = 5) {
+  const ref = useRef(null);
+  const onMove = useCallback((e) => {
+    const el = ref.current; if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const dx = (e.clientX - rect.left - rect.width/2)  / (rect.width/2);
+    const dy = (e.clientY - rect.top  - rect.height/2) / (rect.height/2);
+    el.style.transform = `perspective(700px) rotateY(${dx*strength}deg) rotateX(${-dy*strength}deg) translateY(-3px) scale(1.015)`;
+    el.style.boxShadow = `${-dx*5}px ${dy*5}px 24px rgba(0,0,0,0.09), 0 0 0 1.5px rgba(249,115,22,0.18)`;
+  }, [strength]);
+  const onLeave = useCallback(() => {
+    const el = ref.current; if (!el) return;
+    el.style.transform = ''; el.style.boxShadow = '';
+  }, []);
+  return { ref, onMouseMove: onMove, onMouseLeave: onLeave };
+}
+
+/* ── Password strength ── */
+function getStrength(pwd) {
+  if (!pwd) return { score:0, label:'', color:'' };
+  let score = 0;
+  if (pwd.length >= 6)           score++;
+  if (pwd.length >= 10)          score++;
+  if (/[A-Z]/.test(pwd))         score++;
+  if (/[0-9]/.test(pwd))         score++;
+  if (/[^A-Za-z0-9]/.test(pwd))  score++;
+  if (score <= 1) return { score, label:'Weak',   color:'#ef4444' };
+  if (score <= 3) return { score, label:'Fair',   color:'#f59e0b' };
+  if (score === 4) return { score, label:'Good',   color:'#3b82f6' };
+  return              { score, label:'Strong', color:'#10b981' };
+}
+
+/* ── Shared panel style ── */
+const panelStyle = {
+  background:'var(--surface-raise)', border:'1px solid var(--border)',
+  borderRadius:'1.5rem', padding:'1.5rem',
+  position:'relative', overflow:'hidden',
+  boxShadow:'0 2px 16px rgba(0,0,0,0.04)',
+};
+const topAccentBar = {
+  position:'absolute', top:0, left:'1.5rem', right:'1.5rem', height:2,
+  background:'linear-gradient(90deg, var(--accent), transparent)',
+  borderRadius:'0 0 3px 3px', opacity:0.5,
+};
+
+/* ── Section Label — identical to dashboard ── */
+function AcSectionLabel({ icon: Icon, label }) {
   return (
-    <div className="mb-4 flex items-center gap-2.5">
-      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-orange-400 to-purple-500 shadow-sm">
-        <Icon className="h-3 w-3 text-white" strokeWidth={2.5} />
+    <div style={{ display:'flex', alignItems:'center', gap:'0.625rem', marginBottom:'0.875rem' }}>
+      <div style={{ width:24, height:24, borderRadius:'0.375rem', background:'var(--ink)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+        <Icon style={{ width:12, height:12, color:'var(--accent)' }} strokeWidth={2.5} />
       </div>
-      <h3 className="ac-font text-sm font-semibold text-gray-700">{label}</h3>
-      <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent" />
+      <span style={{ fontSize:'0.8125rem', fontWeight:600, color:'var(--ink-mid)', letterSpacing:'0.01em' }}>{label}</span>
+      <div style={{ flex:1, height:1, background:'var(--border)', borderRadius:2 }} />
     </div>
   );
 }
 
-/* ─── Password strength helper ─── */
-function getStrength(pwd) {
-  if (!pwd) return { score: 0, label: '', color: '' };
-  let score = 0;
-  if (pwd.length >= 6) score++;
-  if (pwd.length >= 10) score++;
-  if (/[A-Z]/.test(pwd)) score++;
-  if (/[0-9]/.test(pwd)) score++;
-  if (/[^A-Za-z0-9]/.test(pwd)) score++;
-  if (score <= 1) return { score, label: 'Weak', color: '#ef4444' };
-  if (score <= 3) return { score, label: 'Fair', color: '#f59e0b' };
-  if (score === 4) return { score, label: 'Good', color: '#3b82f6' };
-  return { score, label: 'Strong', color: '#10b981' };
-}
-
-/* ─── Main Page ─── */
+/* ═══════════════════════════════════════════════════════════════
+   MAIN ACCOUNT PAGE
+═══════════════════════════════════════════════════════════════ */
 export default function AccountPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router       = useRouter();
   const { profile, logout } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [view, setView] = useState(
     searchParams.get('forceChange') === 'true' ? 'password' : 'info'
   );
-  const [showPwd, setShowPwd] = useState({ current: false, new: false, confirm: false });
-  const [passwordData, setPasswordData] = useState({ current: '', new: '', confirm: '' });
+  const [showPwd, setShowPwd]       = useState({ current:false, new:false, confirm:false });
+  const [passwordData, setPasswordData] = useState({ current:'', new:'', confirm:'' });
+
+  useEffect(() => { setTimeout(() => setMounted(true), 50); }, []);
 
   const isForced = searchParams.get('forceChange') === 'true';
   const strength = getStrength(passwordData.new);
+
+  const roleConfig = {
+    admin:      { color:'#f97316', label:'Admin' },
+    owner:      { color:'#8b5cf6', label:'Owner' },
+    technician: { color:'#3b82f6', label:'Technician' },
+    staff:      { color:'#10b981', label:'Staff' },
+  }[profile?.role] || { color:'#6b7280', label: profile?.role || 'User' };
+
+  const initials = (profile?.full_name || profile?.name || '')
+    .split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2) || '?';
 
   async function handleLogout() {
     logout();
@@ -182,11 +266,8 @@ export default function AccountPage() {
 
   async function handleChangePassword(e) {
     e.preventDefault();
-    if (passwordData.new !== passwordData.confirm)
-      return toast.error('New passwords do not match');
-    if (passwordData.current !== profile?.password)
-      return toast.error('Current password is incorrect');
-
+    if (passwordData.new !== passwordData.confirm) return toast.error('New passwords do not match');
+    if (passwordData.current !== profile?.password)  return toast.error('Current password is incorrect');
     setLoading(true);
     try {
       const { error } = await supabase
@@ -196,279 +277,230 @@ export default function AccountPage() {
       if (error) throw error;
       toast.success('Password updated! Please login again.');
       handleLogout();
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { toast.error(err.message); }
+    finally { setLoading(false); }
   }
-
-  const roleColor = {
-    admin: { color: '#f97316', bg: '#fff7ed', border: '#fed7aa', label: 'Admin' },
-    owner: { color: '#a855f7', bg: '#faf5ff', border: '#e9d5ff', label: 'Owner' },
-    staff: { color: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe', label: 'Staff' },
-  }[profile?.role] || { color: '#6b7280', bg: '#f9fafb', border: '#e5e7eb', label: profile?.role };
-
-  const initials = (profile?.full_name || profile?.name || '')
-    .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
 
   return (
     <>
       <StyleInjector />
-      <div className="ac-mesh ac-font min-h-screen p-1">
-        <div className="mx-auto max-w-xl space-y-8">
+      <div className="ac-font-body" style={{ backgroundColor:'var(--surface)', minHeight:'100vh', padding:'0.25rem' }}>
+        <div style={{ maxWidth:560, margin:'0 auto', display:'flex', flexDirection:'column', gap:'1.5rem' }}>
 
-          {/* ── Hero Header ── */}
-          <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-7 shadow-2xl">
-            <div className="ac-orb w-56 h-56 bg-orange-500/20 -top-16 -left-16 ac-float" style={{ animationDelay: '0s' }} />
-            <div className="ac-orb w-40 h-40 bg-purple-500/20 -bottom-10 right-8 ac-float" style={{ animationDelay: '1.2s' }} />
-            <div className="absolute right-6 top-6 h-16 w-16 rounded-full border-2 border-dashed border-white/10 ac-spin-slow" />
-            <div className="absolute right-9 top-9 h-10 w-10 rounded-full border border-orange-400/30 ac-spin-slow" style={{ animationDirection: 'reverse', animationDuration: '5s' }} />
+          {/* ═══ HERO HEADER ═══ */}
+          <header
+            className={mounted ? 'ac-section-enter' : ''}
+            style={{ background:'linear-gradient(135deg,#0d0d0d 0%,#181818 60%,#0d0d0d 100%)', borderRadius:'1.75rem', padding:'1.75rem', position:'relative', overflow:'hidden', boxShadow:'0 24px 60px -16px rgba(0,0,0,0.45)', animationDelay:'0s' }}
+          >
+            {/* Morphing blobs */}
+            <div className="ac-blob" style={{ width:220, height:220, background:'var(--accent)', opacity:0.06, top:-50, right:-30 }} />
+            <div className="ac-blob" style={{ width:140, height:140, background:'var(--accent)', opacity:0.04, bottom:-35, left:'18%', animationDelay:'4s' }} />
 
-            <div className="relative flex items-center gap-5">
+            {/* Spinning rings */}
+            <div style={{ position:'absolute', right:28, top:28, width:80, height:80, animation:'ac-spin-slow 20s linear infinite', pointerEvents:'none' }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', border:'1px dashed rgba(249,115,22,0.18)' }} />
+            </div>
+            <div style={{ position:'absolute', right:36, top:36, width:50, height:50, animation:'ac-spin-rev 9s linear infinite', pointerEvents:'none' }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', border:'1px solid rgba(249,115,22,0.10)' }} />
+            </div>
+            {/* Orbiting dot */}
+            <div style={{ position:'absolute', right:46, top:46, pointerEvents:'none' }}>
+              <div style={{ width:6, height:6, borderRadius:'50%', background:'var(--accent)', opacity:0.65, animation:'ac-orbit 9s linear infinite' }} />
+            </div>
+            {/* Corner accent line */}
+            <div style={{ position:'absolute', top:0, left:'8%', width:100, height:2, background:'linear-gradient(90deg,var(--accent),transparent)', opacity:0.55 }} />
+
+            <div style={{ position:'relative', display:'flex', alignItems:'center', gap:'1.25rem' }}>
               {/* Avatar */}
-              <div className="relative shrink-0">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-purple-500 shadow-xl text-white ac-display text-2xl font-bold">
-                  {initials}
+              <div style={{ position:'relative', flexShrink:0 }}>
+                <div style={{
+                  width:64, height:64, borderRadius:'1.125rem',
+                  background:'linear-gradient(135deg, var(--accent), #c2410c)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  boxShadow:'0 8px 24px rgba(249,115,22,0.35)',
+                }}>
+                  <span className="ac-font-display" style={{ fontSize:'1.5rem', fontWeight:400, color:'#fff', fontStyle:'italic' }}>
+                    {initials}
+                  </span>
                 </div>
-                <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-green-400 border-2 border-gray-900">
-                  <span className="h-2 w-2 rounded-full bg-white ac-blink" />
+                {/* Online indicator */}
+                <span style={{ position:'absolute', bottom:-3, right:-3, width:18, height:18, borderRadius:'50%', background:'#22c55e', border:'2.5px solid #0d0d0d', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <span style={{ width:7, height:7, borderRadius:'50%', background:'#fff', animation:'ac-blink 2s ease-in-out infinite', display:'inline-block' }} />
                 </span>
               </div>
 
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40 mb-0.5">My Account</p>
-                <h1 className="ac-display text-xl sm:text-2xl font-bold text-white truncate">
-                  <span className="ac-shimmer-text">{profile?.full_name || profile?.name || 'User'}</span>
+              <div style={{ flex:1, minWidth:0 }}>
+                <p style={{ fontSize:'0.625rem', fontWeight:700, letterSpacing:'0.22em', textTransform:'uppercase', color:'rgba(255,255,255,0.28)', marginBottom:'0.375rem' }}>
+                  My Account
+                </p>
+                <h1 className="ac-font-display" style={{ fontSize:'clamp(1.375rem,3vw,1.875rem)', fontWeight:400, lineHeight:1.1, color:'rgba(255,255,255,0.94)', fontStyle:'italic', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                  {profile?.full_name || profile?.name || 'User'}
                 </h1>
-                <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-widest"
-                  style={{ borderColor: roleColor.border, backgroundColor: roleColor.bg + 'cc', color: roleColor.color }}>
-                  <Shield className="h-2.5 w-2.5" />
-                  {roleColor.label}
-                </div>
+                {/* Animated underline */}
+                <div style={{ height:2, width:48, background:'var(--accent)', animation:'ac-underline 0.8s var(--ease-expo) 0.3s both', borderRadius:2, marginTop:'0.4rem', marginBottom:'0.5rem' }} />
+                {/* Role badge */}
+                <span style={{ display:'inline-flex', alignItems:'center', gap:'0.35rem', padding:'0.25rem 0.75rem', borderRadius:'9999px', background:`${roleConfig.color}18`, border:`1px solid ${roleConfig.color}35`, fontSize:'0.625rem', fontWeight:800, letterSpacing:'0.12em', textTransform:'uppercase', color:roleConfig.color }}>
+                  <Shield style={{ width:10, height:10 }} strokeWidth={2.5} />
+                  {roleConfig.label}
+                </span>
               </div>
             </div>
           </header>
 
+          {/* ═══ INFO VIEW ═══ */}
           {view === 'info' ? (
-            <div className="space-y-6 ac-slide-up">
-
-              {/* ── Profile Info ── */}
-              <section>
-                <SectionLabel icon={User} label="Profile Information" />
-                <div className="ac-glass rounded-3xl p-6 shadow-xl overflow-hidden relative space-y-3">
-                  <div className="ac-orb w-36 h-36 bg-orange-400/08 -top-8 -right-8" />
-
-                  {[
-                    { label: 'Full Name', value: profile?.full_name || profile?.name || '—', icon: User, color: '#f97316', bg: '#fff7ed', border: '#fed7aa' },
-                    { label: 'Mobile Number', value: profile?.mobile || '—', icon: Smartphone, color: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe' },
-                    { label: 'Role', value: roleColor.label, icon: Shield, color: roleColor.color, bg: roleColor.bg, border: roleColor.border },
-                  ].map((field, i) => (
-                    <div
-                      key={field.label}
-                      className="relative flex items-center gap-4 rounded-2xl border-2 p-4"
-                      style={{ borderColor: field.border, backgroundColor: field.bg + '80', animationDelay: `${i * 0.08}s` }}
-                    >
-                      <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ backgroundColor: field.color }} />
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white shadow-sm"
-                        style={{ backgroundColor: field.color + '18' }}>
-                        <field.icon className="h-4 w-4" style={{ color: field.color }} strokeWidth={2} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-extrabold uppercase tracking-widest mb-0.5" style={{ color: field.color + 'bb' }}>{field.label}</p>
-                        <p className="ac-display text-sm font-bold text-gray-900 truncate">{field.value}</p>
-                      </div>
-                    </div>
-                  ))}
+            <>
+              {/* Profile Info */}
+              <section className={mounted ? 'ac-section-enter' : ''} style={{ animationDelay:'0.1s' }}>
+                <AcSectionLabel icon={User} label="Profile Information" />
+                <div style={panelStyle}>
+                  <div style={topAccentBar} />
+                  <div className="ac-stagger" style={{ display:'flex', flexDirection:'column', gap:'0.75rem' }}>
+                    <ProfileInfoRow
+                      label="Full Name"
+                      value={profile?.full_name || profile?.name || '—'}
+                      icon={User}
+                      dotColor="#3b82f6"
+                    />
+                    <ProfileInfoRow
+                      label="Mobile Number"
+                      value={profile?.mobile || '—'}
+                      icon={Smartphone}
+                      dotColor="#10b981"
+                    />
+                    <ProfileInfoRow
+                      label="Role"
+                      value={roleConfig.label}
+                      icon={Shield}
+                      dotColor={roleConfig.color}
+                    />
+                  </div>
                 </div>
               </section>
 
-              {/* ── Actions ── */}
-              <section>
-                <SectionLabel icon={Sparkles} label="Account Actions" />
-                <div className="space-y-3">
-
-                  {/* Change Password */}
-                  <button
+              {/* Account Actions */}
+              <section className={mounted ? 'ac-section-enter' : ''} style={{ animationDelay:'0.18s' }}>
+                <AcSectionLabel icon={Sparkles} label="Account Actions" />
+                <div className="ac-stagger" style={{ display:'flex', flexDirection:'column', gap:'0.75rem' }}>
+                  <ActionBtn
+                    icon={KeyRound}
+                    label="Change Password"
+                    desc="Update your login credentials"
+                    dotColor="#8b5cf6"
                     onClick={() => setView('password')}
-                    className="ac-card-hover group relative w-full flex items-center gap-4 rounded-2xl border-2 p-4 text-left shadow-sm transition-all"
-                    style={{ borderColor: '#e9d5ff', backgroundColor: '#faf5ff' }}
-                  >
-                    <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-purple-500" />
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3"
-                      style={{ backgroundColor: '#a855f718', border: '1.5px solid #a855f740' }}>
-                      <KeyRound className="h-5 w-5 text-purple-500" strokeWidth={2.5} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900">Change Password</p>
-                      <p className="text-xs mt-0.5 font-medium text-purple-400">Update your login credentials</p>
-                    </div>
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-                      style={{ backgroundColor: '#a855f715', border: '1px solid #a855f730' }}>
-                      <ChevronRight className="h-4 w-4 text-purple-400 transition-transform group-hover:translate-x-0.5" />
-                    </div>
-                  </button>
-
-                  {/* Logout */}
-                  <button
+                  />
+                  <ActionBtn
+                    icon={LogOut}
+                    label="Logout"
+                    desc="Sign out of your account"
+                    dotColor="#ef4444"
                     onClick={handleLogout}
-                    className="ac-card-hover group relative w-full flex items-center gap-4 rounded-2xl border-2 p-4 text-left shadow-sm transition-all"
-                    style={{ borderColor: '#fecaca', backgroundColor: '#fef2f2' }}
-                  >
-                    <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-red-500" />
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3"
-                      style={{ backgroundColor: '#ef444418', border: '1.5px solid #ef444440' }}>
-                      <LogOut className="h-5 w-5 text-red-500" strokeWidth={2.5} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-red-700">Logout</p>
-                      <p className="text-xs mt-0.5 font-medium text-red-400">Sign out of your account</p>
-                    </div>
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-                      style={{ backgroundColor: '#ef444415', border: '1px solid #ef444430' }}>
-                      <ChevronRight className="h-4 w-4 text-red-400 transition-transform group-hover:translate-x-0.5" />
-                    </div>
-                  </button>
+                    danger
+                  />
                 </div>
               </section>
-            </div>
+            </>
 
           ) : (
-            /* ── Password View ── */
-            <div className="ac-slide-up space-y-6">
-
+            /* ═══ PASSWORD VIEW ═══ */
+            <>
               {!isForced && (
-                <button
-                  onClick={() => setView('info')}
-                  className="ac-card-hover group inline-flex items-center gap-2 rounded-2xl border-2 border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 shadow-sm transition-all hover:border-orange-300"
-                >
-                  <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-                  Back to Info
-                </button>
+                <div className={mounted ? 'ac-section-enter' : ''} style={{ animationDelay:'0.05s' }}>
+                  <BackToInfoBtn onClick={() => setView('info')} />
+                </div>
               )}
 
-              <section>
-                <SectionLabel icon={KeyRound} label="Update Password" />
+              <section className={mounted ? 'ac-section-enter' : ''} style={{ animationDelay:'0.12s' }}>
+                <AcSectionLabel icon={KeyRound} label="Update Password" />
+                <div style={panelStyle}>
+                  <div style={topAccentBar} />
 
-                <div className="ac-glass rounded-3xl overflow-hidden shadow-xl">
-                  {/* section header */}
-                  <div className="relative overflow-hidden bg-gradient-to-br from-gray-900 to-gray-800 px-6 py-5">
-                    <div className="ac-orb w-28 h-28 bg-purple-500/20 -top-6 -right-6" />
-                    <div className="ac-orb w-20 h-20 bg-orange-500/20 -bottom-6 left-4" />
-                    <div className="relative flex items-center gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-400 to-blue-500 shadow-lg">
-                        <Lock className="h-6 w-6 text-white" />
+                  {/* Section sub-header */}
+                  <div style={{
+                    background:'var(--ink)', borderRadius:'1.125rem', padding:'1.125rem 1.25rem',
+                    marginBottom:'1.25rem', position:'relative', overflow:'hidden',
+                  }}>
+                    <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:'var(--accent)', opacity:0.7 }} />
+                    <div className="ac-blob" style={{ width:100, height:100, background:'var(--accent)', opacity:0.06, top:-25, right:-15 }} />
+                    <div style={{ position:'relative', display:'flex', alignItems:'center', gap:'0.875rem' }}>
+                      <div style={{ width:40, height:40, borderRadius:'0.75rem', background:'rgba(249,115,22,0.15)', border:'1px solid rgba(249,115,22,0.3)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                        <Lock style={{ width:18, height:18, color:'var(--accent)' }} strokeWidth={2.5} />
                       </div>
                       <div>
-                        <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/40 mb-0.5">Security</p>
-                        <h3 className="ac-display text-base font-bold text-white">
+                        <p style={{ fontSize:'0.625rem', fontWeight:700, letterSpacing:'0.2em', textTransform:'uppercase', color:'rgba(255,255,255,0.28)', marginBottom:'0.2rem' }}>Security</p>
+                        <p style={{ fontSize:'0.9375rem', fontWeight:600, color:'rgba(255,255,255,0.92)', margin:0 }}>
                           {isForced ? 'Set New Password' : 'Change Password'}
-                        </h3>
+                        </p>
                         {isForced && (
-                          <p className="text-xs text-orange-300/80 mt-0.5">You must update your default password to continue.</p>
+                          <p style={{ fontSize:'0.75rem', color:'rgba(249,115,22,0.7)', marginTop:'0.2rem' }}>
+                            You must update your default password to continue.
+                          </p>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <form onSubmit={handleChangePassword} className="p-6 space-y-5 bg-white">
+                  <form onSubmit={handleChangePassword} style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
 
-                    {/* Current Password */}
                     <PasswordField
                       label="Current Password"
                       value={passwordData.current}
                       show={showPwd.current}
-                      onToggle={() => setShowPwd(s => ({ ...s, current: !s.current }))}
-                      onChange={v => setPasswordData(d => ({ ...d, current: v }))}
-                      color="#3b82f6"
-                      bg="#eff6ff"
-                      border="#bfdbfe"
+                      onToggle={() => setShowPwd(s => ({ ...s, current:!s.current }))}
+                      onChange={v => setPasswordData(d => ({ ...d, current:v }))}
+                      dotColor="#3b82f6"
                     />
 
-                    {/* New Password */}
-                    <div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:'0.625rem' }}>
                       <PasswordField
                         label="New Password"
                         value={passwordData.new}
                         show={showPwd.new}
-                        onToggle={() => setShowPwd(s => ({ ...s, new: !s.new }))}
-                        onChange={v => setPasswordData(d => ({ ...d, new: v }))}
-                        color="#a855f7"
-                        bg="#faf5ff"
-                        border="#e9d5ff"
+                        onToggle={() => setShowPwd(s => ({ ...s, new:!s.new }))}
+                        onChange={v => setPasswordData(d => ({ ...d, new:v }))}
+                        dotColor="#8b5cf6"
                       />
                       {/* Strength meter */}
                       {passwordData.new && (
-                        <div className="mt-2.5 px-1">
-                          <div className="flex gap-1 mb-1">
-                            {[1, 2, 3, 4, 5].map(i => (
-                              <div key={i} className="flex-1 h-1 rounded-full transition-all duration-300"
-                                style={{ backgroundColor: i <= strength.score ? strength.color : '#e5e7eb' }} />
+                        <div style={{ paddingLeft:'0.25rem' }}>
+                          <div style={{ display:'flex', gap:'0.25rem', marginBottom:'0.375rem' }}>
+                            {[1,2,3,4,5].map(i => (
+                              <div key={i} className="ac-strength-bar"
+                                style={{ background: i <= strength.score ? strength.color : 'var(--border)' }} />
                             ))}
                           </div>
-                          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: strength.color }}>
+                          <p style={{ fontSize:'0.625rem', fontWeight:800, letterSpacing:'0.14em', textTransform:'uppercase', color:strength.color, margin:0 }}>
                             {strength.label}
                           </p>
                         </div>
                       )}
                     </div>
 
-                    {/* Confirm Password */}
-                    <div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:'0.625rem' }}>
                       <PasswordField
                         label="Confirm New Password"
                         value={passwordData.confirm}
                         show={showPwd.confirm}
-                        onToggle={() => setShowPwd(s => ({ ...s, confirm: !s.confirm }))}
-                        onChange={v => setPasswordData(d => ({ ...d, confirm: v }))}
-                        color="#10b981"
-                        bg="#f0fdf4"
-                        border="#bbf7d0"
+                        onToggle={() => setShowPwd(s => ({ ...s, confirm:!s.confirm }))}
+                        onChange={v => setPasswordData(d => ({ ...d, confirm:v }))}
+                        dotColor="#10b981"
                       />
                       {/* Match indicator */}
                       {passwordData.confirm && (
-                        <div className="mt-2 px-1 flex items-center gap-1.5">
-                          <CheckCircle2 className="h-3.5 w-3.5"
-                            style={{ color: passwordData.new === passwordData.confirm ? '#10b981' : '#ef4444' }} />
-                          <p className="text-[10px] font-bold uppercase tracking-widest"
-                            style={{ color: passwordData.new === passwordData.confirm ? '#10b981' : '#ef4444' }}>
+                        <div style={{ paddingLeft:'0.25rem', display:'flex', alignItems:'center', gap:'0.4rem' }}>
+                          <CheckCircle2 style={{ width:13, height:13, color: passwordData.new === passwordData.confirm ? '#10b981' : '#ef4444', flexShrink:0 }} />
+                          <p style={{ fontSize:'0.625rem', fontWeight:800, letterSpacing:'0.14em', textTransform:'uppercase', color: passwordData.new === passwordData.confirm ? '#10b981' : '#ef4444', margin:0 }}>
                             {passwordData.new === passwordData.confirm ? 'Passwords match' : 'Passwords do not match'}
                           </p>
                         </div>
                       )}
                     </div>
 
-                    {/* Submit */}
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="ac-card-hover relative w-full overflow-hidden rounded-2xl py-4 font-bold text-white shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{
-                        background: loading
-                          ? '#9ca3af'
-                          : 'linear-gradient(135deg, #f97316, #a855f7)',
-                        boxShadow: loading ? 'none' : '0 8px 24px rgba(249,115,22,0.35)',
-                      }}
-                    >
-                      {/* shimmer overlay on idle */}
-                      {!loading && (
-                        <span className="pointer-events-none absolute inset-0 opacity-20"
-                          style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)', backgroundSize: '200% auto', animation: 'shimmer 2s linear infinite' }} />
-                      )}
-                      <span className="relative ac-display text-sm tracking-wide">
-                        {loading ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                            Updating…
-                          </span>
-                        ) : 'Update Password'}
-                      </span>
-                    </button>
-
+                    <UpdatePasswordBtn loading={loading} />
                   </form>
                 </div>
               </section>
-            </div>
+            </>
           )}
         </div>
       </div>
@@ -476,40 +508,192 @@ export default function AccountPage() {
   );
 }
 
-/* ─── Password Input Field ─── */
-function PasswordField({ label, value, show, onToggle, onChange, color, bg, border }) {
-  return (
-    <div className="relative flex items-center gap-4 rounded-2xl border-2 p-4 transition-all"
-      style={{ borderColor: value ? border : '#e5e7eb', backgroundColor: value ? bg + '80' : '#fafafa' }}>
-      <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl transition-all"
-        style={{ backgroundColor: value ? color : '#e5e7eb' }} />
+/* ═══════════════════════════════════════════════════════════════
+   SUB-COMPONENTS
+═══════════════════════════════════════════════════════════════ */
 
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white shadow-sm"
-        style={{ backgroundColor: value ? color + '18' : '#f3f4f6' }}>
-        <Lock className="h-4 w-4 transition-colors" style={{ color: value ? color : '#9ca3af' }} strokeWidth={2} />
+/* ── Profile Info Row ── */
+function ProfileInfoRow({ label, value, icon: Icon, dotColor }) {
+  const { ref, onMouseMove, onMouseLeave } = useTilt(3);
+  return (
+    <div
+      ref={ref}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      style={{
+        position:'relative', display:'flex', alignItems:'center', gap:'0.875rem',
+        padding:'1rem', borderRadius:'1rem',
+        border:`1.5px solid ${dotColor}22`,
+        background:`${dotColor}06`,
+        willChange:'transform',
+      }}
+    >
+      {/* Left accent stripe */}
+      <div style={{ position:'absolute', left:0, top:'20%', bottom:'20%', width:3, borderRadius:'0 3px 3px 0', background:dotColor }} />
+      {/* Icon */}
+      <div style={{ width:38, height:38, borderRadius:'0.75rem', display:'flex', alignItems:'center', justifyContent:'center', background:`${dotColor}15`, border:`1.5px solid ${dotColor}28`, flexShrink:0 }}>
+        <Icon style={{ width:16, height:16, color:dotColor }} strokeWidth={2} />
+      </div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <p style={{ fontSize:'0.625rem', fontWeight:700, letterSpacing:'0.14em', textTransform:'uppercase', color:dotColor, marginBottom:'0.25rem' }}>{label}</p>
+        <p className="ac-font-display" style={{ fontSize:'1rem', fontWeight:400, color:'var(--ink)', fontStyle:'italic', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', margin:0 }}>
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Action Button ── */
+function ActionBtn({ icon: Icon, label, desc, dotColor, onClick, danger }) {
+  const ripple = useRipple();
+  const { ref, onMouseMove, onMouseLeave } = useTilt(4);
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      ref={ref}
+      onClick={(e) => { ripple(e); onClick(); }}
+      onMouseMove={onMouseMove}
+      onMouseLeave={() => { onMouseLeave(); setHovered(false); }}
+      onMouseEnter={() => setHovered(true)}
+      className="ac-ripple ac-shine"
+      style={{
+        width:'100%', textAlign:'left', cursor:'pointer',
+        display:'flex', alignItems:'center', gap:'0.875rem',
+        padding:'1rem', borderRadius:'1.125rem',
+        border:`1.5px solid ${hovered ? dotColor+'55' : 'var(--border)'}`,
+        background: hovered ? 'var(--ink)' : 'var(--surface-raise)',
+        position:'relative', transition:'background 0.25s, border-color 0.25s',
+        willChange:'transform',
+      }}
+    >
+      {/* Accent stripe */}
+      <div style={{ position:'absolute', left:0, top:'20%', bottom:'20%', width:3, borderRadius:'0 3px 3px 0', background:dotColor, transform:hovered?'scaleY(1)':'scaleY(0.35)', transition:'transform 0.3s var(--ease-spring)', transformOrigin:'center' }} />
+
+      <div style={{ width:42, height:42, borderRadius:'0.875rem', display:'flex', alignItems:'center', justifyContent:'center', background:hovered?`${dotColor}20`:'var(--surface)', border:`1.5px solid ${hovered?dotColor+'40':'var(--border)'}`, flexShrink:0, transition:'background 0.25s, border-color 0.25s, transform 0.3s var(--ease-spring)', transform:hovered?'scale(1.1) rotate(4deg)':'scale(1)' }}>
+        <Icon style={{ width:18, height:18, color:hovered?dotColor:'var(--ink-mid)', transition:'color 0.2s' }} strokeWidth={2.5} />
       </div>
 
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-extrabold uppercase tracking-widest mb-0.5"
-          style={{ color: value ? color + 'bb' : '#9ca3af' }}>{label}</p>
+      <div style={{ flex:1, minWidth:0 }}>
+        <p style={{ fontSize:'0.9375rem', fontWeight:600, color:hovered?(danger?dotColor:'#fff'):'var(--ink)', margin:0, transition:'color 0.2s' }}>{label}</p>
+        <p style={{ fontSize:'0.8125rem', color:hovered?`${dotColor}99`:'var(--ink-faint)', margin:'0.2rem 0 0', transition:'color 0.2s' }}>{desc}</p>
+      </div>
+
+      <div style={{ width:28, height:28, borderRadius:'0.5rem', display:'flex', alignItems:'center', justifyContent:'center', background:hovered?`${dotColor}20`:'var(--surface)', flexShrink:0, transition:'background 0.2s, transform 0.2s', transform:hovered?'translateX(3px)':'translateX(0)' }}>
+        <ChevronRight style={{ width:14, height:14, color:hovered?dotColor:'var(--border-strong)' }} />
+      </div>
+    </button>
+  );
+}
+
+/* ── Back to Info Button ── */
+function BackToInfoBtn({ onClick }) {
+  const ripple = useRipple();
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={(e) => { ripple(e); onClick(); }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="ac-ripple ac-shine"
+      style={{ display:'inline-flex', alignItems:'center', gap:'0.5rem', padding:'0.625rem 1.125rem', borderRadius:'0.875rem', border:`1.5px solid ${hovered?'var(--accent)':'var(--border)'}`, background:hovered?'var(--ink)':'var(--surface-raise)', color:hovered?'#fff':'var(--ink-mid)', fontSize:'0.875rem', fontWeight:600, cursor:'pointer', transition:'all 0.2s' }}
+    >
+      <ArrowLeft style={{ width:14, height:14, color:hovered?'var(--accent)':'var(--ink-faint)', transform:hovered?'translateX(-2px)':'translateX(0)', transition:'transform 0.2s, color 0.2s' }} />
+      Back to Info
+    </button>
+  );
+}
+
+/* ── Password Field ── */
+function PasswordField({ label, value, show, onToggle, onChange, dotColor }) {
+  const hasValue = !!value;
+  return (
+    <div style={{
+      position:'relative', display:'flex', alignItems:'center', gap:'0.875rem',
+      padding:'1rem', borderRadius:'1rem',
+      border:`1.5px solid ${hasValue ? dotColor+'45' : 'var(--border)'}`,
+      background: hasValue ? `${dotColor}07` : 'var(--surface)',
+      transition:'border-color 0.2s, background 0.2s',
+    }}>
+      {/* Left stripe */}
+      <div style={{ position:'absolute', left:0, top:0, bottom:0, width:3, borderRadius:'1rem 0 0 1rem', background:hasValue?dotColor:'var(--border)', transition:'background 0.2s' }} />
+
+      {/* Lock icon */}
+      <div style={{ width:38, height:38, borderRadius:'0.75rem', display:'flex', alignItems:'center', justifyContent:'center', background:hasValue?`${dotColor}15`:'var(--surface)', border:`1.5px solid ${hasValue?dotColor+'28':'var(--border)'}`, flexShrink:0, transition:'background 0.2s, border-color 0.2s' }}>
+        <Lock style={{ width:16, height:16, color:hasValue?dotColor:'var(--ink-faint)', transition:'color 0.2s' }} strokeWidth={2} />
+      </div>
+
+      <div style={{ flex:1, minWidth:0 }}>
+        <p style={{ fontSize:'0.625rem', fontWeight:700, letterSpacing:'0.14em', textTransform:'uppercase', color:hasValue?dotColor:'var(--ink-faint)', marginBottom:'0.3rem', transition:'color 0.2s' }}>{label}</p>
         <input
           type={show ? 'text' : 'password'}
           required
           value={value}
           onChange={e => onChange(e.target.value)}
-          className="w-full bg-transparent text-sm font-semibold text-gray-900 placeholder:text-gray-300 focus:outline-none"
+          className="ac-pwd-input"
           placeholder="••••••••"
         />
       </div>
 
-      <button type="button" onClick={onToggle}
-        className="shrink-0 flex h-8 w-8 items-center justify-center rounded-xl transition-colors"
-        style={{ backgroundColor: value ? color + '12' : '#f3f4f6' }}>
+      {/* Toggle visibility */}
+      <button
+        type="button"
+        onClick={onToggle}
+        style={{ width:32, height:32, borderRadius:'0.5rem', display:'flex', alignItems:'center', justifyContent:'center', background:hasValue?`${dotColor}12`:'var(--surface)', border:'none', cursor:'pointer', flexShrink:0, transition:'background 0.2s' }}
+      >
         {show
-          ? <EyeOff className="h-3.5 w-3.5" style={{ color: value ? color : '#9ca3af' }} />
-          : <Eye className="h-3.5 w-3.5" style={{ color: value ? color : '#9ca3af' }} />
+          ? <EyeOff style={{ width:14, height:14, color:hasValue?dotColor:'var(--ink-faint)' }} />
+          : <Eye    style={{ width:14, height:14, color:hasValue?dotColor:'var(--ink-faint)' }} />
         }
       </button>
     </div>
+  );
+}
+
+/* ── Update Password Button ── */
+function UpdatePasswordBtn({ loading }) {
+  const ripple = useRipple();
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      type="submit"
+      disabled={loading}
+      onClick={ripple}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="ac-ripple ac-shine"
+      style={{
+        width:'100%', padding:'1rem', borderRadius:'1.125rem', marginTop:'0.25rem',
+        fontSize:'0.9375rem', fontWeight:700, color:'#fff', cursor:loading?'not-allowed':'pointer',
+        background:'var(--ink)',
+        border:`1.5px solid ${hovered?'var(--accent)':'var(--ink)'}`,
+        boxShadow:hovered?'0 8px 28px rgba(0,0,0,0.25)':'0 4px 16px rgba(0,0,0,0.15)',
+        transition:'all 0.2s',
+        transform:hovered&&!loading?'translateY(-1px)':'translateY(0)',
+        opacity:loading?0.6:1,
+        display:'flex', alignItems:'center', justifyContent:'center', gap:'0.5rem',
+      }}
+    >
+      {loading ? (
+        <>
+          <div style={{ width:16, height:16, borderRadius:'50%', border:'2px solid rgba(255,255,255,0.3)', borderTopColor:'#fff', animation:'ac-spin-slow 0.7s linear infinite' }} />
+          Updating…
+        </>
+      ) : (
+        <>
+          <Zap style={{ width:16, height:16, color:'var(--accent)' }} strokeWidth={2.5} />
+          Update Password
+        </>
+      )}
+    </button>
+  );
+}
+
+/* ── Zap icon inline import fix ── */
+function Zap({ style, strokeWidth, ...rest }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth||2} strokeLinecap="round" strokeLinejoin="round" style={style} {...rest}>
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
   );
 }
