@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { reportService } from '@/services/reportService';
 import { useAuth } from '@/components/AuthProvider';
 import {
@@ -22,235 +22,311 @@ import {
   ArrowUpRight,
   ChevronRight,
   AlertCircle,
+  X,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { cn, formatCurrency, formatDate, formatNumber } from '@/lib/utils';
 import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
+  Dialog, DialogTrigger, DialogContent, DialogHeader,
+  DialogTitle, DialogDescription, DialogFooter, DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis,
+  Tooltip, CartesianGrid,
 } from 'recharts';
 import Link from 'next/link';
 import { MetricDetailsDialog } from '@/components/MetricDetailsDialog';
 
-/* ─── Styles (matching dashboard) ─── */
-const STYLES = `
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN SYSTEM — exact mirror of dashboard + services + sales + history
+   ─ Single accent: #f97316  |  Ink: #0d0d0d  |  Surface: #f9fafb
+   ─ Fonts: Instrument Serif (display) + Geist (body)
+   ─ Motion: tilt, count-up, stagger, morph, shine, ripple, orbit
+═══════════════════════════════════════════════════════════════ */
 
-@keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position:  200% center; }
-}
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-6px); }
-}
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes count-in {
-  from { opacity: 0; transform: scale(0.5); }
-  to   { opacity: 1; transform: scale(1); }
-}
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-@keyframes blink {
-  0%,100% { opacity: 1; }
-  50%      { opacity: 0.3; }
-}
-@keyframes gradient-shift {
-  0%,100% { background-position: 0% 50%; }
-  50%      { background-position: 100% 50%; }
-}
-@keyframes pulse-ring {
-  0%   { transform: scale(0.8); opacity: 0.8; }
-  70%  { transform: scale(1.6); opacity: 0; }
-  100% { transform: scale(1.6); opacity: 0; }
+const REPORT_STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --accent:        #f97316;
+  --accent-dim:    rgba(249,115,22,0.12);
+  --accent-mid:    rgba(249,115,22,0.22);
+  --ink:           #0d0d0d;
+  --ink-mid:       #4b5563;
+  --ink-faint:     #9ca3af;
+  --surface:       #f9fafb;
+  --surface-raise: #ffffff;
+  --border:        #e5e7eb;
+  --border-strong: #d1d5db;
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-expo:     cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.rp-animate-slide-up  { animation: slide-up 0.5s ease forwards; }
-.rp-animate-count-in  { animation: count-in 0.4s cubic-bezier(.34,1.56,.64,1) forwards; }
-.rp-animate-float     { animation: float 3s ease-in-out infinite; }
-.rp-animate-spin-slow { animation: spin-slow 8s linear infinite; }
-.rp-animate-blink     { animation: blink 2s ease-in-out infinite; }
+.rp-font-display { font-family: 'Instrument Serif', Georgia, serif; }
+.rp-font-body    { font-family: 'Geist', system-ui, sans-serif; }
 
-.rp-shimmer-text {
-  background: linear-gradient(90deg, #f97316, #a855f7, #3b82f6, #f97316);
-  background-size: 300% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: shimmer 4s linear infinite;
+/* ── Keyframes ── */
+@keyframes rp-fade-up {
+  from { opacity:0; transform:translateY(20px); filter:blur(4px); }
+  to   { opacity:1; transform:translateY(0);    filter:blur(0); }
+}
+@keyframes rp-card-in {
+  from { opacity:0; transform:translateY(16px) scale(0.97); filter:blur(3px); }
+  to   { opacity:1; transform:translateY(0)    scale(1);    filter:blur(0); }
+}
+@keyframes rp-num-rise {
+  from { opacity:0; transform:translateY(10px) scale(0.9); }
+  to   { opacity:1; transform:translateY(0)    scale(1); }
+}
+@keyframes rp-spin-slow  { from { transform:rotate(0deg); }  to { transform:rotate(360deg); } }
+@keyframes rp-spin-rev   { from { transform:rotate(0deg); }  to { transform:rotate(-360deg); } }
+@keyframes rp-blink      { 0%,100%{ opacity:1; } 50%{ opacity:0.2; } }
+@keyframes rp-live-ring  {
+  0%   { transform:scale(1);   opacity:0.5; }
+  70%  { transform:scale(2.4); opacity:0; }
+  100% { transform:scale(2.4); opacity:0; }
+}
+@keyframes rp-blob-morph {
+  0%,100% { border-radius:60% 40% 30% 70% / 60% 30% 70% 40%; }
+  33%      { border-radius:30% 70% 60% 40% / 50% 60% 30% 60%; }
+  66%      { border-radius:50% 30% 70% 40% / 40% 70% 30% 60%; }
+}
+@keyframes rp-shine      { from { left:-80%; } to { left:130%; } }
+@keyframes rp-ripple-out { from { transform:scale(0); opacity:0.35; } to { transform:scale(3.5); opacity:0; } }
+@keyframes rp-orbit {
+  from { transform:rotate(0deg) translateX(44px) rotate(0deg); }
+  to   { transform:rotate(360deg) translateX(44px) rotate(-360deg); }
+}
+@keyframes rp-underline {
+  from { transform:scaleX(0); transform-origin:left; }
+  to   { transform:scaleX(1); transform-origin:left; }
+}
+@keyframes rp-glow {
+  0%,100% { box-shadow:0 0 0 0 rgba(249,115,22,0); }
+  50%      { box-shadow:0 0 28px 8px rgba(249,115,22,0.2); }
 }
 
-.rp-glass {
-  background: rgba(255,255,255,0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.9);
+/* ── Stagger ── */
+.rp-stagger > *:nth-child(1)  { animation:rp-card-in 0.52s var(--ease-expo) 0.04s both; }
+.rp-stagger > *:nth-child(2)  { animation:rp-card-in 0.52s var(--ease-expo) 0.09s both; }
+.rp-stagger > *:nth-child(3)  { animation:rp-card-in 0.52s var(--ease-expo) 0.14s both; }
+.rp-stagger > *:nth-child(4)  { animation:rp-card-in 0.52s var(--ease-expo) 0.19s both; }
+
+.rp-section-enter { animation:rp-fade-up 0.65s var(--ease-expo) both; }
+
+/* ── Shine ── */
+.rp-shine { position:relative; overflow:hidden; }
+.rp-shine::before {
+  content:'';
+  position:absolute; top:-50%; left:-80%;
+  width:50%; height:200%;
+  background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,0.5) 50%,transparent 70%);
+  transform:skewX(-20deg);
+  pointer-events:none; z-index:2;
+}
+.rp-shine:hover::before { animation:rp-shine 0.5s ease forwards; }
+
+/* ── Ripple ── */
+.rp-ripple { position:relative; overflow:hidden; }
+.rp-ripple-circle {
+  position:absolute; border-radius:50%;
+  background:rgba(255,255,255,0.28);
+  transform:scale(0);
+  animation:rp-ripple-out 0.6s linear forwards;
+  pointer-events:none;
 }
 
-.rp-mesh-bg {
-  background-color: #fafafa;
-  background-image:
-    radial-gradient(at 20% 10%, rgba(249,115,22,0.08) 0px, transparent 50%),
-    radial-gradient(at 80% 0%,  rgba(168,85,247,0.07) 0px, transparent 50%),
-    radial-gradient(at 0%  60%, rgba(59,130,246,0.06) 0px, transparent 50%),
-    radial-gradient(at 90% 80%, rgba(34,197,94,0.05)  0px, transparent 50%);
+/* ── Blob ── */
+.rp-blob {
+  border-radius:60% 40% 30% 70% / 60% 30% 70% 40%;
+  animation:rp-blob-morph 10s ease-in-out infinite;
+  position:absolute; pointer-events:none;
 }
 
-.rp-card-hover {
-  transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s ease, border-color 0.2s;
+/* ── Accent glow ── */
+.rp-accent-glow { animation:rp-glow 3s ease-in-out infinite; }
+
+/* ── Input ── */
+.rp-input {
+  background:transparent;
+  border:none;
+  outline:none;
+  font-size:0.875rem;
+  font-weight:600;
+  color:var(--ink);
+  font-family:'Geist', system-ui, sans-serif;
+  width:100%;
 }
-.rp-card-hover:hover {
-  transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.12);
+
+/* ── Chart styles ── */
+.rp-chart-grid line { stroke:#f1f5f9; }
+
+/* ── AI content formatting ── */
+.rp-ai-content strong { font-weight:700; color:var(--ink); }
+.rp-ai-content em     { font-style:italic; color:#1f2937; }
+
+/* ── Dialog overrides ── */
+[role="dialog"] {
+  border-radius:1.5rem !important;
+  border:1px solid var(--border) !important;
+  box-shadow:0 25px 60px -12px rgba(0,0,0,0.18) !important;
+  font-family:'Geist', system-ui, sans-serif !important;
+  overflow:hidden !important;
 }
-
-.rp-orb {
-  border-radius: 50%;
-  filter: blur(40px);
-  position: absolute;
-  pointer-events: none;
-}
-
-.rp-dashboard-font { font-family: 'DM Sans', sans-serif; }
-.rp-display-font   { font-family: 'Syne', sans-serif; }
-
-.gradient-orange { background: linear-gradient(135deg, #fff7ed, #fff); }
-.gradient-purple { background: linear-gradient(135deg, #faf5ff, #fff); }
-.gradient-blue   { background: linear-gradient(135deg, #eff6ff, #fff); }
-.gradient-green  { background: linear-gradient(135deg, #f0fdf4, #fff); }
-.gradient-cyan   { background: linear-gradient(135deg, #ecfeff, #fff); }
-.gradient-amber  { background: linear-gradient(135deg, #fffbeb, #fff); }
-.gradient-red    { background: linear-gradient(135deg, #fef2f2, #fff); }
-.gradient-emerald{ background: linear-gradient(135deg, #ecfdf5, #fff); }
-
-.rp-chart-grid line { stroke: #f1f5f9; }
-
-/* AI result formatting */
-.ai-result-content strong { font-weight: 700; color: #111827; }
-.ai-result-content em     { font-style: italic; color: #1f2937; }
 `;
 
 function StyleInjector() {
   useEffect(() => {
-    if (document.getElementById('reports-styles')) return;
+    if (document.getElementById('rp-v2-styles')) return;
     const el = document.createElement('style');
-    el.id = 'reports-styles';
-    el.textContent = STYLES;
+    el.id = 'rp-v2-styles';
+    el.textContent = REPORT_STYLES;
     document.head.appendChild(el);
   }, []);
   return null;
 }
 
-/* ─── Section Label (matches dashboard) ─── */
-function SectionLabel({ icon: Icon, label }) {
+/* ── Ripple hook ── */
+function useRipple() {
+  return useCallback((e) => {
+    const btn = e.currentTarget;
+    const circle = document.createElement('span');
+    const d = Math.max(btn.clientWidth, btn.clientHeight);
+    const r = btn.getBoundingClientRect();
+    circle.className = 'rp-ripple-circle';
+    Object.assign(circle.style, {
+      width:`${d}px`, height:`${d}px`,
+      left:`${e.clientX - r.left - d/2}px`,
+      top:`${e.clientY - r.top  - d/2}px`,
+    });
+    btn.appendChild(circle);
+    setTimeout(() => circle.remove(), 700);
+  }, []);
+}
+
+/* ── 3D Tilt hook ── */
+function useTilt(strength = 5) {
+  const ref = useRef(null);
+  const onMove = useCallback((e) => {
+    const el = ref.current; if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const dx = (e.clientX - rect.left - rect.width/2)  / (rect.width/2);
+    const dy = (e.clientY - rect.top  - rect.height/2) / (rect.height/2);
+    el.style.transform = `perspective(700px) rotateY(${dx*strength}deg) rotateX(${-dy*strength}deg) translateY(-3px) scale(1.018)`;
+    el.style.boxShadow = `${-dx*6}px ${dy*6}px 28px rgba(0,0,0,0.09), 0 0 0 1.5px rgba(249,115,22,0.22)`;
+  }, [strength]);
+  const onLeave = useCallback(() => {
+    const el = ref.current; if (!el) return;
+    el.style.transform = ''; el.style.boxShadow = '';
+  }, []);
+  return { ref, onMouseMove: onMove, onMouseLeave: onLeave };
+}
+
+/* ── Count-up hook ── */
+function useCountUp(target, duration = 900, delay = 0) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (typeof target !== 'number') { setValue(target); return; }
+    let start = null;
+    const t = setTimeout(() => {
+      const step = (ts) => {
+        if (!start) start = ts;
+        const p = Math.min((ts - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - p, 4);
+        setValue(Math.floor(ease * target));
+        if (p < 1) requestAnimationFrame(step);
+        else setValue(target);
+      };
+      requestAnimationFrame(step);
+    }, delay);
+    return () => clearTimeout(t);
+  }, [target, duration, delay]);
+  return value;
+}
+
+/* ── Shared panel styles ── */
+const panelStyle = {
+  background:'var(--surface-raise)', border:'1px solid var(--border)',
+  borderRadius:'1.5rem', padding:'1.5rem',
+  position:'relative', overflow:'hidden',
+  boxShadow:'0 2px 16px rgba(0,0,0,0.04)',
+};
+const topAccentBar = {
+  position:'absolute', top:0, left:'1.5rem', right:'1.5rem', height:2,
+  background:'linear-gradient(90deg, var(--accent), transparent)',
+  borderRadius:'0 0 3px 3px', opacity:0.5,
+};
+
+/* ── Section Label — identical to dashboard ── */
+function RpSectionLabel({ icon: Icon, label }) {
   return (
-    <div className="mb-4 flex items-center gap-2.5">
-      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-orange-400 to-purple-500 shadow-sm">
-        <Icon className="h-3 w-3 text-white" strokeWidth={2.5} />
+    <div style={{ display:'flex', alignItems:'center', gap:'0.625rem', marginBottom:'0.875rem' }}>
+      <div style={{ width:24, height:24, borderRadius:'0.375rem', background:'var(--ink)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+        <Icon style={{ width:12, height:12, color:'var(--accent)' }} strokeWidth={2.5} />
       </div>
-      <h3 className="rp-dashboard-font text-sm font-semibold text-gray-700">{label}</h3>
-      <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent" />
+      <span style={{ fontSize:'0.8125rem', fontWeight:600, color:'var(--ink-mid)', letterSpacing:'0.01em' }}>{label}</span>
+      <div style={{ flex:1, height:1, background:'var(--border)', borderRadius:2 }} />
     </div>
   );
 }
 
-/* ─── Main Page ─── */
+/* ═══════════════════════════════════════════════════════════════
+   MAIN REPORTS PAGE
+═══════════════════════════════════════════════════════════════ */
 export default function ReportsPage() {
   const { profile } = useAuth();
   const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [aiMode, setAiMode] = useState('sales');
-  const [aiResult, setAiResult] = useState('');
+  const [endDate, setEndDate]     = useState('');
+  const [loading, setLoading]     = useState(true);
+  const [aiMode, setAiMode]       = useState('sales');
+  const [aiResult, setAiResult]   = useState('');
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState('');
+  const [aiError, setAiError]     = useState('');
+  const [mounted, setMounted]     = useState(false);
   const [data, setData] = useState({
     summary: {
-      totalServices: 0,
-      completedServices: 0,
-      returnedServices: 0,
-      notRepairableServices: 0,
-      estimatedAmount: 0,
-      finalAmount: 0,
-      totalSales: 0,
-      overallRevenue: 0,
-      gapInRevenue: 0,
+      totalServices:0, completedServices:0, returnedServices:0,
+      notRepairableServices:0, estimatedAmount:0, finalAmount:0,
+      totalSales:0, overallRevenue:0, gapInRevenue:0,
     },
-    services: [],
-    sales: [],
+    services: [], sales: [],
   });
 
-  /* ── column definitions (unchanged) ── */
+  /* ── Column definitions (unchanged logic) ── */
   const serviceExportColumns = [
-    { key: 'ticket_number', label: 'Ticket Number' },
-    { key: 'customer_name', label: 'Customer Name' },
-    { key: 'customer_mobile', label: 'Customer Mobile' },
-    { key: 'customer_address', label: 'Customer Address' },
-    { key: 'device_brand', label: 'Device Brand' },
-    { key: 'device_model', label: 'Device Model' },
-    { key: 'issue_type', label: 'Issue Type' },
-    { key: 'issue_description', label: 'Issue Description' },
-    { key: 'estimated_cost', label: 'Estimated Cost' },
-    { key: 'final_amount', label: 'Final Amount' },
-    { key: 'status', label: 'Status' },
-    { key: 'registered_by', label: 'Registered By' },
-    { key: 'returned_by', label: 'Returned By' },
-    { key: 'created_at', label: 'Created At' },
-    { key: 'returned_at', label: 'Returned At' },
+    { key:'ticket_number', label:'Ticket Number' },{ key:'customer_name', label:'Customer Name' },
+    { key:'customer_mobile', label:'Customer Mobile' },{ key:'customer_address', label:'Customer Address' },
+    { key:'device_brand', label:'Device Brand' },{ key:'device_model', label:'Device Model' },
+    { key:'issue_type', label:'Issue Type' },{ key:'issue_description', label:'Issue Description' },
+    { key:'estimated_cost', label:'Estimated Cost' },{ key:'final_amount', label:'Final Amount' },
+    { key:'status', label:'Status' },{ key:'registered_by', label:'Registered By' },
+    { key:'returned_by', label:'Returned By' },{ key:'created_at', label:'Created At' },
+    { key:'returned_at', label:'Returned At' },
   ];
   const salesExportColumns = [
-    { key: 'product_name', label: 'Product Name' },
-    { key: 'brand_type', label: 'Brand Type' },
-    { key: 'quantity', label: 'Quantity' },
-    { key: 'price', label: 'Price' },
-    { key: 'total', label: 'Total' },
-    { key: 'recorded_by', label: 'Recorded By' },
-    { key: 'created_at', label: 'Created At' },
+    { key:'product_name', label:'Product Name' },{ key:'brand_type', label:'Brand Type' },
+    { key:'quantity', label:'Quantity' },{ key:'price', label:'Price' },
+    { key:'total', label:'Total' },{ key:'recorded_by', label:'Recorded By' },
+    { key:'created_at', label:'Created At' },
   ];
   const servicePdfColumns = [
-    { key: 'ticket_number', label: 'Ticket' },
-    { key: 'customer_name', label: 'Customer' },
-    { key: 'customer_mobile', label: 'Mobile' },
-    { key: 'device_brand', label: 'Brand' },
-    { key: 'device_model', label: 'Model' },
-    { key: 'issue_type', label: 'Issue' },
-    { key: 'estimated_cost', label: 'Est Cost' },
-    { key: 'final_amount', label: 'Final' },
-    { key: 'status', label: 'Status' },
-    { key: 'created_at', label: 'Date' },
+    { key:'ticket_number', label:'Ticket' },{ key:'customer_name', label:'Customer' },
+    { key:'customer_mobile', label:'Mobile' },{ key:'device_brand', label:'Brand' },
+    { key:'device_model', label:'Model' },{ key:'issue_type', label:'Issue' },
+    { key:'estimated_cost', label:'Est Cost' },{ key:'final_amount', label:'Final' },
+    { key:'status', label:'Status' },{ key:'created_at', label:'Date' },
   ];
   const salesPdfColumns = [
-    { key: 'product_name', label: 'Product' },
-    { key: 'brand_type', label: 'Brand' },
-    { key: 'quantity', label: 'Qty' },
-    { key: 'price', label: 'Price' },
-    { key: 'total', label: 'Total' },
-    { key: 'created_at', label: 'Date' },
+    { key:'product_name', label:'Product' },{ key:'brand_type', label:'Brand' },
+    { key:'quantity', label:'Qty' },{ key:'price', label:'Price' },
+    { key:'total', label:'Total' },{ key:'created_at', label:'Date' },
   ];
 
   useEffect(() => {
     if (profile?.role === 'admin' || profile?.role === 'owner') fetchReportData();
+    setTimeout(() => setMounted(true), 50);
   }, [startDate, endDate, profile]);
 
   async function fetchReportData() {
@@ -258,121 +334,97 @@ export default function ReportsPage() {
       setLoading(true);
       const reportData = await reportService.getReportData(startDate, endDate);
       setData(reportData);
-    } catch (err) {
-      console.error('Error fetching reports:', err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   }
 
-  /* ── export helpers (unchanged logic) ── */
   function csvEscape(value) {
     if (value === null || value === undefined) return '';
-    return `"${String(value).replace(/"/g, '""')}"`;
+    return `"${String(value).replace(/"/g,'""')}"`;
   }
-
   function downloadCsv(records, columns, fileName, title, timeframe) {
     if (!records?.length) return;
     const headers = columns.map(c => csvEscape(c.label));
     const rows = records.map(r => columns.map(c => csvEscape(r[c.key])).join(','));
     const csv = [csvEscape(title), csvEscape(timeframe), '', headers.join(','), ...rows].join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = `${fileName}.csv`; a.click();
     URL.revokeObjectURL(url);
   }
-
   function downloadPdf(records, columns, fileName, title, timeframe) {
     if (!records?.length) return;
-    const doc = new jsPDF({ orientation: 'landscape' });
+    const doc = new jsPDF({ orientation:'landscape' });
     const pw = doc.internal.pageSize.getWidth();
     const ph = doc.internal.pageSize.getHeight();
     const m = 12;
     doc.setLineWidth(0.8); doc.setDrawColor(0);
-    doc.rect(m / 2, m / 2, pw - m, ph - m);
-    doc.setFontSize(18); doc.setFont('helvetica', 'bold');
-    doc.text('Orange Mobiles', pw / 2, 18, { align: 'center' });
-    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
-    doc.text(timeframe, pw / 2, 26, { align: 'center' });
+    doc.rect(m/2, m/2, pw-m, ph-m);
+    doc.setFontSize(18); doc.setFont('helvetica','bold');
+    doc.text('Orange Mobiles', pw/2, 18, { align:'center' });
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text(timeframe, pw/2, 26, { align:'center' });
     doc.setFontSize(12);
-    doc.text(title, pw / 2, 34, { align: 'center' });
+    doc.text(title, pw/2, 34, { align:'center' });
     autoTable(doc, {
-      startY: 40, margin: { left: m, right: m, top: m },
-      head: [columns.map(c => c.label)],
-      body: records.map(r => columns.map(c => r[c.key] == null ? '' : String(r[c.key]))),
-      styles: { fontSize: 7, overflow: 'linebreak', cellPadding: { top: 3, right: 2, bottom: 3, left: 2 } },
-      headStyles: { fillColor: [249, 115, 22], textColor: 255, halign: 'left' },
-      theme: 'grid',
+      startY:40, margin:{left:m, right:m, top:m},
+      head:[columns.map(c=>c.label)],
+      body:records.map(r=>columns.map(c=>r[c.key]==null?'':String(r[c.key]))),
+      styles:{fontSize:7, overflow:'linebreak', cellPadding:{top:3,right:2,bottom:3,left:2}},
+      headStyles:{fillColor:[249,115,22], textColor:255, halign:'left'},
+      theme:'grid',
     });
     doc.save(`${fileName}.pdf`);
   }
-
   function getServiceExportRows() {
     return data.services.map(s => ({
-      ticket_number: s.ticket_number || '',
-      customer_name: s.customer_name || '',
-      customer_mobile: s.customer_mobile || '',
-      customer_address: s.customer_address || '',
-      device_brand: s.device_brand || '',
-      device_model: s.device_model || '',
-      issue_type: s.issue_type || '',
-      issue_description: s.issue_description || '',
-      estimated_cost: s.estimated_cost ?? '',
-      final_amount: s.final_amount ?? '',
-      status: s.status || '',
-      registered_by: s.registered_by_name || s.profiles?.full_name || s.registered_by || '',
-      returned_by: s.returned_by_name || s.returned_by_profile?.full_name || s.returned_by || '',
-      created_at: s.created_at ? formatDate(s.created_at) : '',
-      returned_at: s.returned_at ? formatDate(s.returned_at) : '',
+      ticket_number:s.ticket_number||'', customer_name:s.customer_name||'',
+      customer_mobile:s.customer_mobile||'', customer_address:s.customer_address||'',
+      device_brand:s.device_brand||'', device_model:s.device_model||'',
+      issue_type:s.issue_type||'', issue_description:s.issue_description||'',
+      estimated_cost:s.estimated_cost??'', final_amount:s.final_amount??'',
+      status:s.status||'',
+      registered_by:s.registered_by_name||s.profiles?.full_name||s.registered_by||'',
+      returned_by:s.returned_by_name||s.returned_by_profile?.full_name||s.returned_by||'',
+      created_at:s.created_at?formatDate(s.created_at):'',
+      returned_at:s.returned_at?formatDate(s.returned_at):'',
     }));
   }
-
   function getSalesExportRows() {
     return data.sales.map(s => ({
-      product_name: s.product_name || '',
-      brand_type: s.brand_type || '',
-      quantity: s.quantity ?? '',
-      price: s.price ?? '',
-      total: s.price && s.quantity ? s.price * s.quantity : '',
-      recorded_by: s.recorded_by_name || s.profiles?.full_name || s.recorded_by || '',
-      created_at: s.created_at ? formatDate(s.created_at) : '',
+      product_name:s.product_name||'', brand_type:s.brand_type||'',
+      quantity:s.quantity??'', price:s.price??'',
+      total:s.price&&s.quantity?s.price*s.quantity:'',
+      recorded_by:s.recorded_by_name||s.profiles?.full_name||s.recorded_by||'',
+      created_at:s.created_at?formatDate(s.created_at):'',
     }));
   }
-
   function handleExport(type, format) {
-    const rows = type === 'sales' ? getSalesExportRows() : getServiceExportRows();
-    const columns = type === 'sales'
-      ? (format === 'pdf' ? salesPdfColumns : salesExportColumns)
-      : (format === 'pdf' ? servicePdfColumns : serviceExportColumns);
+    const rows = type==='sales'?getSalesExportRows():getServiceExportRows();
+    const columns = type==='sales'
+      ?(format==='pdf'?salesPdfColumns:salesExportColumns)
+      :(format==='pdf'?servicePdfColumns:serviceExportColumns);
     if (!rows?.length) return;
-    const range = startDate && endDate ? `${startDate}_to_${endDate}` : 'till_now';
-    const title = `${type === 'sales' ? 'Sales' : 'Service'} Report`;
-    const timeframe = startDate && endDate ? `Time Frame: ${startDate} to ${endDate}` : 'Time Frame: Till Now';
-    format === 'csv'
-      ? downloadCsv(rows, columns, `${type}_${range}`, title, timeframe)
-      : downloadPdf(rows, columns, `${type}_${range}`, title, timeframe);
+    const range = startDate&&endDate?`${startDate}_to_${endDate}`:'till_now';
+    const title = `${type==='sales'?'Sales':'Service'} Report`;
+    const timeframe = startDate&&endDate?`Time Frame: ${startDate} to ${endDate}`:'Time Frame: Till Now';
+    format==='csv'
+      ?downloadCsv(rows,columns,`${type}_${range}`,title,timeframe)
+      :downloadPdf(rows,columns,`${type}_${range}`,title,timeframe);
   }
-
   async function requestAiAnalysis(mode) {
-    setAiMode(mode);
-    setAiResult('');
-    setAiError('');
-    setAiLoading(true);
+    setAiMode(mode); setAiResult(''); setAiError(''); setAiLoading(true);
     try {
       const res = await fetch('/api/ai-analysis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode, startDate, endDate }),
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ mode, startDate, endDate }),
       });
       const result = await res.json();
-      if (!res.ok || result.error) throw new Error(result.error || 'AI analysis request failed.');
-      setAiResult(result.summary || 'No analysis was returned.');
-    } catch (err) {
-      setAiError(err.message || 'Failed to generate AI analysis.');
-    } finally {
-      setAiLoading(false);
-    }
+      if (!res.ok||result.error) throw new Error(result.error||'AI analysis request failed.');
+      setAiResult(result.summary||'No analysis was returned.');
+    } catch (err) { setAiError(err.message||'Failed to generate AI analysis.'); }
+    finally { setAiLoading(false); }
   }
 
   /* ── Access Denied ── */
@@ -380,13 +432,15 @@ export default function ReportsPage() {
     return (
       <>
         <StyleInjector />
-        <div className="rp-mesh-bg rp-dashboard-font flex min-h-[500px] flex-col items-center justify-center gap-5 rounded-3xl p-8 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-red-400 to-red-600 shadow-2xl shadow-red-200">
-            <Lock className="h-9 w-9 text-white" />
-          </div>
-          <div>
-            <h2 className="rp-display-font text-2xl font-bold text-gray-900">Access Denied</h2>
-            <p className="mt-1 text-sm text-gray-500">Only administrators can view analytics reports.</p>
+        <div className="rp-font-body" style={{ backgroundColor:'var(--surface)', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', padding:'2rem' }}>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'1.25rem', textAlign:'center', maxWidth:360 }}>
+            <div style={{ width:72, height:72, borderRadius:'1.25rem', background:'var(--ink)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 12px 32px rgba(0,0,0,0.2)' }}>
+              <Lock style={{ width:32, height:32, color:'var(--accent)' }} />
+            </div>
+            <div>
+              <p className="rp-font-display" style={{ fontSize:'1.5rem', fontWeight:400, color:'var(--ink)', fontStyle:'italic' }}>Access Denied</p>
+              <p style={{ fontSize:'0.875rem', color:'var(--ink-faint)', marginTop:'0.375rem' }}>Only administrators can view analytics reports.</p>
+            </div>
           </div>
         </div>
       </>
@@ -402,509 +456,545 @@ export default function ReportsPage() {
   return (
     <>
       <StyleInjector />
-      <div className="rp-mesh-bg rp-dashboard-font min-h-screen space-y-8 p-1">
+      <div className="rp-font-body" style={{ backgroundColor:'var(--surface)', minHeight:'100vh', padding:'0.25rem' }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:'1.5rem' }}>
 
-        {/* ── Hero Header ── */}
-        <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-7 shadow-2xl">
-          <div className="rp-orb w-64 h-64 bg-orange-500/20 -top-16 -left-16 rp-animate-float" style={{ animationDelay: '0s' }} />
-          <div className="rp-orb w-48 h-48 bg-purple-500/20 -bottom-12 left-1/3 rp-animate-float" style={{ animationDelay: '1s' }} />
-          <div className="rp-orb w-56 h-56 bg-blue-500/15 -top-8 right-10 rp-animate-float" style={{ animationDelay: '2s' }} />
-          <div className="absolute right-6 top-6 h-20 w-20 rounded-full border-2 border-dashed border-white/10 rp-animate-spin-slow" />
-          <div className="absolute right-10 top-10 h-12 w-12 rounded-full border border-orange-400/30 rp-animate-spin-slow" style={{ animationDirection: 'reverse', animationDuration: '5s' }} />
-
-          <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40 mb-1">Analytics & Reports</p>
-              <h1 className="rp-display-font text-2xl sm:text-3xl font-bold text-white mb-1">
-                <span className="rp-shimmer-text">Business Intelligence</span> 📊
-              </h1>
-              <p className="text-sm text-white/50">Deep-dive into your shop's performance data.</p>
+          {/* ═══ HERO HEADER ═══ */}
+          <header
+            className={cn(mounted && 'rp-section-enter')}
+            style={{ background:'linear-gradient(135deg,#0d0d0d 0%,#181818 60%,#0d0d0d 100%)', borderRadius:'1.75rem', padding:'1.75rem', position:'relative', overflow:'hidden', boxShadow:'0 24px 60px -16px rgba(0,0,0,0.45)', animationDelay:'0s' }}
+          >
+            <div className="rp-blob" style={{ width:260, height:260, background:'var(--accent)', opacity:0.06, top:-60, right:-40 }} />
+            <div className="rp-blob" style={{ width:160, height:160, background:'var(--accent)', opacity:0.04, bottom:-40, left:'22%', animationDelay:'4s' }} />
+            <div style={{ position:'absolute', right:28, top:28, width:88, height:88, animation:'rp-spin-slow 20s linear infinite', pointerEvents:'none' }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', border:'1px dashed rgba(249,115,22,0.18)' }} />
             </div>
-            {/* Live date badge */}
-            <div className="flex items-center gap-3">
-              <div className="rp-glass rounded-2xl px-5 py-3 text-right">
-                <p className="rp-display-font text-sm font-bold text-gray-900 truncate max-w-[180px]">{dateLabel}</p>
-                <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-orange-400 rp-animate-blink" />
-                  <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Range</p>
-                </div>
-              </div>
+            <div style={{ position:'absolute', right:36, top:36, width:54, height:54, animation:'rp-spin-rev 9s linear infinite', pointerEvents:'none' }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', border:'1px solid rgba(249,115,22,0.10)' }} />
             </div>
-          </div>
-        </header>
-
-        {/* ── Date Filter + Export ── */}
-        <section>
-          <SectionLabel icon={CalendarRange} label="Date Range & Export" />
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-
-            {/* From date */}
-            <div
-              className="relative flex items-center gap-4 rounded-2xl border-2 p-4 shadow-sm"
-              style={{ borderColor: '#bfdbfe', backgroundColor: '#eff6ff' }}
-            >
-              <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-blue-500" />
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: '#3b82f620', border: '1.5px solid #3b82f640' }}>
-                <CalendarRange className="h-5 w-5 text-blue-500" strokeWidth={2.5} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <label className="text-[10px] font-extrabold uppercase tracking-widest text-blue-500">From</label>
-                <input
-                  type="date"
-                  className="mt-0.5 w-full bg-transparent text-sm font-semibold text-gray-900 focus:outline-none"
-                  value={startDate}
-                  onChange={e => setStartDate(e.target.value)}
-                />
-              </div>
+            <div style={{ position:'absolute', right:49, top:49, pointerEvents:'none' }}>
+              <div style={{ width:6, height:6, borderRadius:'50%', background:'var(--accent)', opacity:0.65, animation:'rp-orbit 9s linear infinite' }} />
             </div>
+            <div style={{ position:'absolute', top:0, left:'8%', width:100, height:2, background:'linear-gradient(90deg,var(--accent),transparent)', opacity:0.55 }} />
 
-            {/* To date */}
-            <div
-              className="relative flex items-center gap-4 rounded-2xl border-2 p-4 shadow-sm"
-              style={{ borderColor: '#e9d5ff', backgroundColor: '#faf5ff' }}
-            >
-              <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-purple-500" />
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: '#a855f720', border: '1.5px solid #a855f740' }}>
-                <CalendarRange className="h-5 w-5 text-purple-500" strokeWidth={2.5} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <label className="text-[10px] font-extrabold uppercase tracking-widest text-purple-500">To</label>
-                <input
-                  type="date"
-                  className="mt-0.5 w-full bg-transparent text-sm font-semibold text-gray-900 focus:outline-none"
-                  value={endDate}
-                  onChange={e => setEndDate(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Export button */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <button
-                  className="rp-card-hover group relative flex items-center gap-4 rounded-2xl border-2 p-4 text-left shadow-sm transition-all"
-                  style={{ borderColor: '#fed7aa', backgroundColor: '#fff7ed' }}
-                >
-                  <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-orange-500" />
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-110 group-hover:rotate-3"
-                    style={{ backgroundColor: '#f9731620', border: '1.5px solid #f9731640' }}>
-                    <FileDown className="h-5 w-5 text-orange-500" strokeWidth={2.5} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900">Export Reports</p>
-                    <p className="text-xs mt-0.5 font-medium text-orange-500/80">Download CSV or PDF</p>
-                  </div>
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-sm"
-                    style={{ backgroundColor: '#f9731615', border: '1px solid #f9731630' }}>
-                    <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 text-orange-500" />
-                  </div>
-                </button>
-              </DialogTrigger>
-              <DialogContent className="rounded-3xl border-0 shadow-2xl overflow-hidden p-0 sm:max-w-md">
-                {/* modal header */}
-                <div className="relative overflow-hidden bg-gradient-to-br from-gray-900 to-gray-800 px-6 py-5">
-                  <div className="rp-orb w-32 h-32 bg-orange-500/20 -top-8 -right-8" />
-                  <div className="rp-orb w-24 h-24 bg-purple-500/20 -bottom-8 left-4" />
-                  <div className="relative">
-                    <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/40 mb-1">Download</p>
-                    <DialogTitle className="rp-display-font text-lg font-bold text-white">Export Reports</DialogTitle>
-                    <DialogDescription className="text-white/50 text-xs mt-0.5">Choose format for services or sales data.</DialogDescription>
-                  </div>
-                </div>
-                <div className="grid gap-3 p-5 bg-white">
-                  {[
-                    { label: 'Service Report — CSV', type: 'services', format: 'csv', color: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe' },
-                    { label: 'Service Report — PDF', type: 'services', format: 'pdf', color: '#f97316', bg: '#fff7ed', border: '#fed7aa' },
-                    { label: 'Sales Report — CSV', type: 'sales', format: 'csv', color: '#a855f7', bg: '#faf5ff', border: '#e9d5ff' },
-                    { label: 'Sales Report — PDF', type: 'sales', format: 'pdf', color: '#10b981', bg: '#f0fdf4', border: '#bbf7d0' },
-                  ].map(btn => (
-                    <DialogClose key={btn.label} asChild>
-                      <button
-                        onClick={() => handleExport(btn.type, btn.format)}
-                        className="rp-card-hover flex items-center justify-between rounded-2xl border-2 px-5 py-3.5 text-left text-sm font-semibold transition-all"
-                        style={{ borderColor: btn.border, backgroundColor: btn.bg, color: btn.color }}
-                      >
-                        <span>{btn.label}</span>
-                        <FileDown className="h-4 w-4 opacity-70" />
-                      </button>
-                    </DialogClose>
-                  ))}
-                </div>
-                <div className="px-5 pb-5 bg-white">
-                  <DialogClose asChild>
-                    <Button variant="ghost" className="w-full rounded-2xl border border-gray-100">Close</Button>
-                  </DialogClose>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </section>
-
-        {/* ── Revenue Overview ── */}
-        <section>
-          <SectionLabel icon={IndianRupee} label="Revenue Overview" />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Link href="/history?tab=sales" className="block">
-              <RevenueCard
-                title="Sales Revenue"
-                value={formatCurrency(data.summary.totalSales)}
-                icon={ShoppingBag}
-                color="#a855f7"
-                gradClass="gradient-purple"
-                shadowColor="rgba(168,85,247,0.2)"
-              />
-            </Link>
-            <Link href="/history?tab=services" className="block">
-              <RevenueCard
-                title="Services Revenue"
-                value={formatCurrency(data.summary.finalAmount)}
-                icon={Wrench}
-                color="#3b82f6"
-                gradClass="gradient-blue"
-                shadowColor="rgba(59,130,246,0.2)"
-              />
-            </Link>
-            <RevenueCard
-              title="Overall Revenue"
-              value={formatCurrency(data.summary.overallRevenue)}
-              icon={IndianRupee}
-              color="#f97316"
-              gradClass="gradient-orange"
-              shadowColor="rgba(249,115,22,0.2)"
-              highlight
-            />
-          </div>
-        </section>
-
-        {/* ── Service Metrics ── */}
-        <section>
-          <SectionLabel icon={Activity} label="Service Metrics" />
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <MetricDetailsDialog title="Total Services" dataList={data.services}>
-              <MetricCard
-                title="Total Services"
-                count={data.summary.totalServices}
-                icon={Wrench}
-                color="#3b82f6"
-                gradClass="gradient-blue"
-                shadowColor="rgba(59,130,246,0.2)"
-              />
-            </MetricDetailsDialog>
-            <MetricDetailsDialog title="Returned Services" dataList={data.services.filter(s => s.status === 'Returned')}>
-              <MetricCard
-                title="Returned"
-                count={data.summary.returnedServices}
-                icon={TrendingUp}
-                color="#10b981"
-                gradClass="gradient-emerald"
-                shadowColor="rgba(16,185,129,0.2)"
-              />
-            </MetricDetailsDialog>
-            <MetricDetailsDialog title="Not Repairable" dataList={data.services.filter(s => s.was_not_repairable)}>
-              <MetricCard
-                title="Not Repairable"
-                count={data.summary.notRepairableServices}
-                icon={XCircle}
-                color="#ef4444"
-                gradClass="gradient-red"
-                shadowColor="rgba(239,68,68,0.2)"
-              />
-            </MetricDetailsDialog>
-            <MetricDetailsDialog
-              title="Gap in Revenue"
-              dataList={data.services.filter(s => s.status === 'Returned' && (s.estimated_cost || 0) !== (s.final_amount || 0))}
-            >
-              <MetricCard
-                title="Revenue Gap"
-                count={formatCurrency(data.summary.gapInRevenue)}
-                icon={TrendingDown}
-                color="#f59e0b"
-                gradClass="gradient-amber"
-                shadowColor="rgba(245,158,11,0.2)"
-                isCurrency
-              />
-            </MetricDetailsDialog>
-          </div>
-        </section>
-
-        {/* ── Bottom Grid: Chart + AI ── */}
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-
-          {/* Revenue Trend Chart */}
-          <section className="rp-glass rounded-3xl p-6 shadow-xl overflow-hidden relative lg:col-span-3">
-            <div className="rp-orb w-40 h-40 bg-orange-400/10 -top-10 -right-10" />
-            <div className="rp-orb w-32 h-32 bg-blue-400/10 -bottom-8 -left-8" />
-
-            <div className="relative mb-5 flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-orange-400 to-purple-500 shadow-md">
-                <BarChart3 className="h-4 w-4 text-white" />
-              </div>
+            <div style={{ position:'relative', display:'flex', flexWrap:'wrap', alignItems:'flex-end', justifyContent:'space-between', gap:'1.25rem' }}>
               <div>
-                <h3 className="text-base font-semibold text-gray-900">Revenue Trend</h3>
-                <p className="text-[11px] text-gray-400">Daily revenue across sales & services</p>
-              </div>
-            </div>
-
-            <RevenueChart
-              sales={data.sales}
-              services={data.services}
-              startDate={startDate}
-              endDate={endDate}
-            />
-          </section>
-
-          {/* AI Analysis */}
-          <section className="rp-glass rounded-3xl p-6 shadow-xl overflow-hidden relative lg:col-span-2">
-            <div className="rp-orb w-40 h-40 bg-purple-400/10 -top-10 -right-10" />
-
-            <div className="relative mb-5 flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-purple-400 to-blue-500 shadow-md">
-                <Bot className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <h3 className="text-base font-semibold text-gray-900">AI Analysis</h3>
-                <p className="text-[11px] text-gray-400">Powered insights from your data</p>
-              </div>
-            </div>
-
-            {/* Mode buttons */}
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              {[
-                { key: 'sales', color: '#f97316', bg: '#fff7ed', border: '#fed7aa' },
-                { key: 'service', color: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe' },
-                { key: 'feedback', color: '#10b981', bg: '#f0fdf4', border: '#bbf7d0' },
-                { key: 'struggles', color: '#ef4444', bg: '#fef2f2', border: '#fecaca' },
-              ].map(m => (
-                <button
-                  key={m.key}
-                  onClick={() => requestAiAnalysis(m.key)}
-                  disabled={aiLoading}
-                  className="rp-card-hover rounded-2xl border-2 py-2.5 text-xs font-bold uppercase tracking-wide transition-all disabled:opacity-50"
-                  style={{
-                    borderColor: aiMode === m.key ? m.color : m.border,
-                    backgroundColor: aiMode === m.key ? m.bg : '#fff',
-                    color: aiMode === m.key ? m.color : '#6b7280',
-                  }}
-                >
-                  {m.key}
-                </button>
-              ))}
-            </div>
-
-            {/* Open full AI dialog */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <button className="rp-card-hover w-full flex items-center justify-between gap-2 rounded-2xl border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50 px-4 py-3 text-left mb-4 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-purple-500" />
-                    <span className="text-xs font-semibold text-purple-700">Open Full AI Analysis</span>
+                <div style={{ display:'flex', alignItems:'center', gap:'0.625rem', marginBottom:'0.5rem' }}>
+                  <div style={{ width:28, height:28, borderRadius:'0.625rem', background:'var(--accent)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <BarChart3 style={{ width:14, height:14, color:'#fff' }} strokeWidth={2.5} />
                   </div>
-                  <ChevronRight className="h-4 w-4 text-purple-400" />
-                </button>
-              </DialogTrigger>
-              <DialogContent className="rounded-3xl border-0 shadow-2xl overflow-hidden p-0 max-h-[90vh] sm:max-w-3xl">
-                <div className="relative overflow-hidden bg-gradient-to-br from-gray-900 to-gray-800 px-6 py-5">
-                  <div className="rp-orb w-32 h-32 bg-purple-500/20 -top-8 -right-8" />
-                  <div className="rp-orb w-24 h-24 bg-orange-500/20 -bottom-8 left-4" />
-                  <div className="relative">
-                    <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/40 mb-1">Powered by AI</p>
-                    <DialogTitle className="rp-display-font text-lg font-bold text-white">AI Analysis</DialogTitle>
-                    <DialogDescription className="text-white/50 text-xs mt-0.5">Select a mode to analyze your business data.</DialogDescription>
-                  </div>
+                  <p style={{ fontSize:'0.625rem', fontWeight:700, letterSpacing:'0.22em', textTransform:'uppercase', color:'rgba(255,255,255,0.28)' }}>Analytics</p>
                 </div>
-                <div className="overflow-y-auto bg-white p-5 space-y-4">
-                  <div className="grid gap-3 sm:grid-cols-2">
+                <h1 className="rp-font-display" style={{ fontSize:'clamp(1.75rem,4vw,2.5rem)', fontWeight:400, lineHeight:1.1, color:'rgba(255,255,255,0.94)', marginBottom:'0.5rem', fontStyle:'italic' }}>
+                  Business <span style={{ color:'var(--accent)' }}>Intelligence</span>
+                </h1>
+                <div style={{ height:2, width:56, background:'var(--accent)', animation:'rp-underline 0.8s var(--ease-expo) 0.3s both', borderRadius:2 }} />
+                <p style={{ marginTop:'0.7rem', fontSize:'0.8125rem', color:'rgba(255,255,255,0.3)', fontWeight:400 }}>
+                  Deep-dive into your shop's performance data.
+                </p>
+              </div>
+
+              {/* Date range widget */}
+              <div style={{ background:'rgba(255,255,255,0.06)', backdropFilter:'blur(16px)', border:'1px solid rgba(255,255,255,0.09)', borderRadius:'1.125rem', padding:'0.85rem 1.4rem', textAlign:'right', minWidth:148 }}>
+                <p style={{ fontSize:'0.6rem', fontWeight:700, letterSpacing:'0.2em', textTransform:'uppercase', color:'rgba(255,255,255,0.28)', marginBottom:'0.3rem' }}>Range</p>
+                <p style={{ fontSize:'0.9375rem', fontWeight:700, letterSpacing:'-0.01em', color:'var(--accent)', lineHeight:1.2, margin:0, maxWidth:160, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                  {dateLabel}
+                </p>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', gap:'0.4rem', marginTop:'0.4rem' }}>
+                  <span style={{ display:'inline-block', position:'relative', width:7, height:7, borderRadius:'50%', background:'#22c55e' }}>
+                    <span style={{ position:'absolute', inset:0, borderRadius:'50%', background:'#22c55e', animation:'rp-live-ring 2s ease-out infinite' }} />
+                  </span>
+                  <span style={{ fontSize:'0.6rem', fontWeight:700, letterSpacing:'0.14em', textTransform:'uppercase', color:'rgba(255,255,255,0.28)' }}>Live</span>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* ═══ DATE RANGE + EXPORT ═══ */}
+          <section className={cn(mounted && 'rp-section-enter')} style={{ animationDelay:'0.1s' }}>
+            <RpSectionLabel icon={CalendarRange} label="Date Range & Export" />
+            <div className="rp-stagger" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:'0.875rem' }}>
+
+              {/* From */}
+              <DateInputCard label="From" color="#3b82f6" value={startDate} onChange={e => setStartDate(e.target.value)} />
+              {/* To */}
+              <DateInputCard label="To" color="#10b981" value={endDate} onChange={e => setEndDate(e.target.value)} />
+
+              {/* Export button */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <ExportTriggerBtn />
+                </DialogTrigger>
+                <DialogContent className="rounded-3xl border-0 shadow-2xl overflow-hidden p-0 sm:max-w-md">
+                  <div style={{ background:'linear-gradient(135deg,#0d0d0d,#181818)', padding:'1.25rem 1.5rem', position:'relative', overflow:'hidden' }}>
+                    <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:'var(--accent)' }} />
+                    <div className="rp-blob" style={{ width:120, height:120, background:'var(--accent)', opacity:0.06, top:-30, right:-20 }} />
+                    <div style={{ position:'relative' }}>
+                      <p style={{ fontSize:'0.6rem', fontWeight:700, letterSpacing:'0.2em', textTransform:'uppercase', color:'rgba(255,255,255,0.28)', marginBottom:'0.25rem' }}>Download</p>
+                      <DialogTitle style={{ fontFamily:"'Geist', system-ui, sans-serif", fontSize:'1rem', fontWeight:600, color:'#fff', margin:0 }}>Export Reports</DialogTitle>
+                      <DialogDescription style={{ fontSize:'0.75rem', color:'rgba(255,255,255,0.35)', marginTop:'0.25rem' }}>Choose format for services or sales data.</DialogDescription>
+                    </div>
+                  </div>
+                  <div style={{ display:'grid', gap:'0.625rem', padding:'1.25rem', background:'var(--surface-raise)' }}>
                     {[
-                      { key: 'sales', color: '#f97316', bg: '#fff7ed', border: '#fed7aa' },
-                      { key: 'service', color: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe' },
-                      { key: 'feedback', color: '#10b981', bg: '#f0fdf4', border: '#bbf7d0' },
-                      { key: 'struggles', color: '#ef4444', bg: '#fef2f2', border: '#fecaca' },
-                    ].map(m => (
-                      <button
-                        key={m.key}
-                        onClick={() => requestAiAnalysis(m.key)}
-                        disabled={aiLoading}
-                        className="rp-card-hover rounded-2xl border-2 py-3 text-sm font-bold uppercase tracking-wide transition-all disabled:opacity-50"
-                        style={{
-                          borderColor: aiMode === m.key ? m.color : m.border,
-                          backgroundColor: aiMode === m.key ? m.bg : '#fafafa',
-                          color: aiMode === m.key ? m.color : '#6b7280',
-                        }}
-                      >
-                        {m.key.charAt(0).toUpperCase() + m.key.slice(1)}
-                      </button>
+                      { label:'Service Report — CSV', type:'services', format:'csv', dotColor:'#3b82f6' },
+                      { label:'Service Report — PDF', type:'services', format:'pdf', dotColor:'var(--accent)' },
+                      { label:'Sales Report — CSV',   type:'sales',    format:'csv', dotColor:'#8b5cf6' },
+                      { label:'Sales Report — PDF',   type:'sales',    format:'pdf', dotColor:'#10b981' },
+                    ].map(btn => (
+                      <DialogClose key={btn.label} asChild>
+                        <ExportOptionBtn
+                          label={btn.label}
+                          dotColor={btn.dotColor}
+                          onClick={() => handleExport(btn.type, btn.format)}
+                        />
+                      </DialogClose>
                     ))}
                   </div>
-
-                  {/* AI result area */}
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50/60 p-4 min-h-[200px]">
-                    {aiLoading && (
-                      <div className="flex flex-col items-center justify-center h-40 gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-400 to-blue-500 shadow-md rp-animate-spin-slow">
-                          <Bot className="h-6 w-6 text-white" />
-                        </div>
-                        <p className="text-sm font-semibold text-gray-500">Generating analysis…</p>
-                      </div>
-                    )}
-                    {aiError && (
-                      <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4">
-                        <AlertCircle className="h-5 w-5 shrink-0 text-red-500 mt-0.5" />
-                        <p className="text-sm text-red-700">{aiError}</p>
-                      </div>
-                    )}
-                    {!aiLoading && !aiError && !aiResult && (
-                      <div className="flex h-40 flex-col items-center justify-center gap-2 text-center">
-                        <Bot className="h-8 w-8 text-gray-300" />
-                        <p className="text-sm font-semibold text-gray-400">Select a mode above to load insights</p>
-                      </div>
-                    )}
-                    {!aiLoading && !aiError && aiResult && (
-                      <div className="space-y-4">
-                        <p className="rp-display-font text-base font-bold text-gray-900">
-                          {aiMode.charAt(0).toUpperCase() + aiMode.slice(1)} Analysis
-                        </p>
-                        {typeof aiResult === 'object' ? (
-                          <>
-                            {aiResult.overview && (
-                              <p className="text-sm text-gray-700 leading-relaxed ai-result-content">
-                                {formatHighlight(aiResult.overview)}
-                              </p>
-                            )}
-                            {aiResult.positives?.length > 0 && (
-                              <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
-                                <p className="text-xs font-bold uppercase tracking-widest text-green-600 mb-2">Highlights</p>
-                                <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
-                                  {aiResult.positives.map((t, i) => <li key={i} className="ai-result-content">{formatHighlight(t)}</li>)}
-                                </ul>
-                              </div>
-                            )}
-                            {aiResult.improvements?.length > 0 && (
-                              <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
-                                <p className="text-xs font-bold uppercase tracking-widest text-orange-600 mb-2">Improvements</p>
-                                <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
-                                  {aiResult.improvements.map((t, i) => <li key={i} className="ai-result-content">{formatHighlight(t)}</li>)}
-                                </ul>
-                              </div>
-                            )}
-                            {aiResult.recommendations?.length > 0 && (
-                              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
-                                <p className="text-xs font-bold uppercase tracking-widest text-blue-600 mb-2">Recommendations</p>
-                                <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
-                                  {aiResult.recommendations.map((t, i) => <li key={i} className="ai-result-content">{formatHighlight(t)}</li>)}
-                                </ul>
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line ai-result-content">
-                            {String(aiResult)}
-                          </p>
-                        )}
-                      </div>
-                    )}
+                  <div style={{ padding:'0 1.25rem 1.25rem', background:'var(--surface-raise)' }}>
+                    <DialogClose asChild>
+                      <button style={{ width:'100%', padding:'0.75rem', borderRadius:'0.875rem', border:'1.5px solid var(--border)', background:'var(--surface)', fontSize:'0.875rem', fontWeight:600, color:'var(--ink-mid)', cursor:'pointer' }}>
+                        Close
+                      </button>
+                    </DialogClose>
                   </div>
-                </div>
-                <div className="px-5 pb-5 bg-white border-t border-gray-100">
-                  <DialogClose asChild>
-                    <Button variant="ghost" className="w-full rounded-2xl border border-gray-100 mt-3">Close</Button>
-                  </DialogClose>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            {/* Inline AI preview result */}
-            <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-4 min-h-[100px]">
-              {aiLoading && (
-                <div className="flex items-center gap-2">
-                  <div className="h-5 w-5 rounded-full border-2 border-purple-400 border-t-transparent animate-spin" />
-                  <p className="text-xs font-semibold text-gray-400">Analyzing…</p>
-                </div>
-              )}
-              {aiError && <p className="text-xs text-red-500">{aiError}</p>}
-              {!aiLoading && !aiError && !aiResult && (
-                <p className="text-xs text-gray-400 text-center mt-4">Choose a mode above to see a quick preview here.</p>
-              )}
-              {!aiLoading && !aiError && aiResult && (
-                <p className="text-xs text-gray-700 leading-relaxed line-clamp-5 ai-result-content">
-                  {typeof aiResult === 'object' ? aiResult.overview || 'Analysis ready.' : String(aiResult)}
-                </p>
-              )}
+                </DialogContent>
+              </Dialog>
             </div>
           </section>
+
+          {/* ═══ REVENUE OVERVIEW ═══ */}
+          <section className={cn(mounted && 'rp-section-enter')} style={{ animationDelay:'0.18s' }}>
+            <RpSectionLabel icon={IndianRupee} label="Revenue Overview" />
+            <div className="rp-stagger" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:'1rem' }}>
+              <Link href="/history?tab=sales" style={{ textDecoration:'none' }}>
+                <RevenueCard title="Sales Revenue"    value={formatCurrency(data.summary.totalSales)}     icon={ShoppingBag} dotColor="#8b5cf6" />
+              </Link>
+              <Link href="/history?tab=services" style={{ textDecoration:'none' }}>
+                <RevenueCard title="Services Revenue" value={formatCurrency(data.summary.finalAmount)}    icon={Wrench}      dotColor="#3b82f6" />
+              </Link>
+              <RevenueCard title="Overall Revenue"    value={formatCurrency(data.summary.overallRevenue)} icon={IndianRupee} dotColor="var(--accent)" highlight />
+            </div>
+          </section>
+
+          {/* ═══ SERVICE METRICS ═══ */}
+          <section className={cn(mounted && 'rp-section-enter')} style={{ animationDelay:'0.26s' }}>
+            <RpSectionLabel icon={Activity} label="Service Metrics" />
+            <div className="rp-stagger" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:'1rem' }}>
+              <MetricDetailsDialog title="Total Services" dataList={data.services}>
+                <MetricCard title="Total Services" count={data.summary.totalServices}        icon={Wrench}       dotColor="#3b82f6" />
+              </MetricDetailsDialog>
+              <MetricDetailsDialog title="Returned Services" dataList={data.services.filter(s=>s.status==='Returned')}>
+                <MetricCard title="Returned"       count={data.summary.returnedServices}     icon={TrendingUp}   dotColor="#10b981" />
+              </MetricDetailsDialog>
+              <MetricDetailsDialog title="Not Repairable" dataList={data.services.filter(s=>s.was_not_repairable)}>
+                <MetricCard title="Not Repairable" count={data.summary.notRepairableServices} icon={XCircle}     dotColor="#ef4444" />
+              </MetricDetailsDialog>
+              <MetricDetailsDialog title="Gap in Revenue" dataList={data.services.filter(s=>s.status==='Returned'&&(s.estimated_cost||0)!==(s.final_amount||0))}>
+                <MetricCard title="Revenue Gap"    count={formatCurrency(data.summary.gapInRevenue)} icon={TrendingDown} dotColor="#f59e0b" isCurrency />
+              </MetricDetailsDialog>
+            </div>
+          </section>
+
+          {/* ═══ BOTTOM: CHART + AI ═══ */}
+          <div
+            className={cn(mounted && 'rp-section-enter')}
+            style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))', gap:'1.5rem', alignItems:'start', animationDelay:'0.34s' }}
+          >
+            {/* Revenue Chart */}
+            <div style={{ ...panelStyle, gridColumn:'span 2' }}>
+              <div style={topAccentBar} />
+              <div style={{ display:'flex', alignItems:'center', gap:'0.625rem', marginBottom:'1.25rem' }}>
+                <div style={{ width:32, height:32, borderRadius:'0.625rem', background:'var(--ink)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <BarChart3 style={{ width:15, height:15, color:'var(--accent)' }} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <p style={{ fontSize:'0.9375rem', fontWeight:600, color:'var(--ink)', margin:0 }}>Revenue Trend</p>
+                  <p style={{ fontSize:'0.75rem', color:'var(--ink-faint)', margin:0 }}>Daily revenue across sales &amp; services</p>
+                </div>
+              </div>
+              <RevenueChart sales={data.sales} services={data.services} startDate={startDate} endDate={endDate} />
+            </div>
+
+            {/* AI Analysis */}
+            <div style={panelStyle}>
+              <div style={topAccentBar} />
+              <div style={{ display:'flex', alignItems:'center', gap:'0.625rem', marginBottom:'1.25rem' }}>
+                <div style={{ width:32, height:32, borderRadius:'0.625rem', background:'var(--ink)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <Bot style={{ width:15, height:15, color:'var(--accent)' }} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <p style={{ fontSize:'0.9375rem', fontWeight:600, color:'var(--ink)', margin:0 }}>AI Analysis</p>
+                  <p style={{ fontSize:'0.75rem', color:'var(--ink-faint)', margin:0 }}>Powered insights from your data</p>
+                </div>
+              </div>
+
+              {/* Mode buttons */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.5rem', marginBottom:'1rem' }}>
+                {[
+                  { key:'sales',    dotColor:'var(--accent)' },
+                  { key:'service',  dotColor:'#3b82f6' },
+                  { key:'feedback', dotColor:'#10b981' },
+                  { key:'struggles',dotColor:'#ef4444' },
+                ].map(m => (
+                  <AiModeBtn
+                    key={m.key} label={m.key} dotColor={m.dotColor}
+                    active={aiMode === m.key} disabled={aiLoading}
+                    onClick={() => requestAiAnalysis(m.key)}
+                  />
+                ))}
+              </div>
+
+              {/* Full AI Dialog trigger */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <FullAiBtn />
+                </DialogTrigger>
+                <DialogContent className="rounded-3xl border-0 shadow-2xl overflow-hidden p-0 max-h-[90vh] sm:max-w-3xl">
+                  <div style={{ background:'linear-gradient(135deg,#0d0d0d,#181818)', padding:'1.25rem 1.5rem', position:'relative', overflow:'hidden' }}>
+                    <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:'var(--accent)' }} />
+                    <div className="rp-blob" style={{ width:120, height:120, background:'var(--accent)', opacity:0.06, top:-30, right:-20 }} />
+                    <div style={{ position:'relative' }}>
+                      <p style={{ fontSize:'0.6rem', fontWeight:700, letterSpacing:'0.2em', textTransform:'uppercase', color:'rgba(255,255,255,0.28)', marginBottom:'0.25rem' }}>Powered by AI</p>
+                      <DialogTitle style={{ fontFamily:"'Geist', system-ui, sans-serif", fontSize:'1rem', fontWeight:600, color:'#fff', margin:0 }}>AI Analysis</DialogTitle>
+                      <DialogDescription style={{ fontSize:'0.75rem', color:'rgba(255,255,255,0.35)', marginTop:'0.25rem' }}>Select a mode to analyze your business data.</DialogDescription>
+                    </div>
+                  </div>
+                  <div style={{ overflowY:'auto', background:'var(--surface-raise)', padding:'1.25rem', display:'flex', flexDirection:'column', gap:'1rem' }}>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.625rem' }}>
+                      {[
+                        { key:'sales', dotColor:'var(--accent)' },{ key:'service', dotColor:'#3b82f6' },
+                        { key:'feedback', dotColor:'#10b981' },{ key:'struggles', dotColor:'#ef4444' },
+                      ].map(m => (
+                        <AiModeBtn key={m.key} label={m.key} dotColor={m.dotColor}
+                          active={aiMode===m.key} disabled={aiLoading}
+                          onClick={() => requestAiAnalysis(m.key)} large />
+                      ))}
+                    </div>
+                    <AiResultArea aiLoading={aiLoading} aiError={aiError} aiResult={aiResult} aiMode={aiMode} large />
+                  </div>
+                  <div style={{ padding:'0 1.25rem 1.25rem', background:'var(--surface-raise)', borderTop:'1px solid var(--border)' }}>
+                    <DialogClose asChild>
+                      <button style={{ width:'100%', padding:'0.75rem', borderRadius:'0.875rem', border:'1.5px solid var(--border)', background:'var(--surface)', fontSize:'0.875rem', fontWeight:600, color:'var(--ink-mid)', cursor:'pointer', marginTop:'0.75rem' }}>
+                        Close
+                      </button>
+                    </DialogClose>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Inline preview */}
+              <AiResultArea aiLoading={aiLoading} aiError={aiError} aiResult={aiResult} aiMode={aiMode} preview />
+            </div>
+          </div>
+
         </div>
       </div>
     </>
   );
 }
 
-/* ─── Revenue Card (matches PriorityCard style) ─── */
-function RevenueCard({ title, value, icon: Icon, color, gradClass, shadowColor, highlight }) {
+/* ═══════════════════════════════════════════════════════════════
+   SUB-COMPONENTS
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Date Input Card ── */
+function DateInputCard({ label, color, value, onChange }) {
+  const { ref, onMouseMove, onMouseLeave } = useTilt(4);
   return (
-    <div
-      className={cn('rp-card-hover group relative overflow-hidden rounded-2xl border border-white/80 p-5 text-left shadow-md cursor-pointer', gradClass)}
-      style={{ boxShadow: `0 4px 20px ${shadowColor}` }}
+    <div ref={ref} onMouseMove={onMouseMove} onMouseLeave={onMouseLeave}
+      style={{ position:'relative', display:'flex', alignItems:'center', gap:'0.875rem', borderRadius:'1.125rem', border:`1.5px solid ${color}40`, background:`${color}08`, padding:'1rem', willChange:'transform' }}
     >
-      <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full blur-2xl opacity-20" style={{ backgroundColor: color }} />
-      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${color}80, ${color}20)` }} />
-
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3"
-          style={{ background: `${color}15` }}>
-          <Icon className="h-5 w-5" style={{ color }} strokeWidth={2} />
-        </div>
-        {highlight && <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-orange-600">Total</span>}
+      <div style={{ position:'absolute', left:0, top:'20%', bottom:'20%', width:3, borderRadius:'0 3px 3px 0', background:color }} />
+      <div style={{ width:40, height:40, borderRadius:'0.75rem', display:'flex', alignItems:'center', justifyContent:'center', background:`${color}15`, border:`1.5px solid ${color}30`, flexShrink:0 }}>
+        <CalendarRange style={{ width:18, height:18, color }} strokeWidth={2.5} />
       </div>
-
-      <p className="rp-display-font text-2xl sm:text-3xl font-bold tabular-nums leading-none text-gray-900 rp-animate-count-in truncate">{value}</p>
-      <p className="mt-2 text-[13px] font-medium text-gray-500">{title}</p>
+      <div style={{ flex:1, minWidth:0 }}>
+        <label style={{ display:'block', fontSize:'0.625rem', fontWeight:700, letterSpacing:'0.14em', textTransform:'uppercase', color, marginBottom:'0.25rem' }}>{label}</label>
+        <input type="date" value={value} onChange={onChange} className="rp-input" style={{ color:'var(--ink)' }} />
+      </div>
     </div>
   );
 }
 
-/* ─── Metric Card (matches SummaryCard) ─── */
-function MetricCard({ title, count, icon: Icon, color, gradClass, shadowColor, isCurrency }) {
+/* ── Export Trigger Button ── */
+function ExportTriggerBtn() {
+  const ripple = useRipple();
+  const { ref, onMouseMove, onMouseLeave } = useTilt(4);
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button ref={ref} onClick={ripple} onMouseMove={onMouseMove}
+      onMouseLeave={() => { onMouseLeave(); setHovered(false); }}
+      onMouseEnter={() => setHovered(true)}
+      className="rp-ripple rp-shine"
+      style={{ width:'100%', display:'flex', alignItems:'center', gap:'0.875rem', borderRadius:'1.125rem', border:`1.5px solid ${hovered?'var(--accent)':'var(--border)'}`, background:hovered?'var(--ink)':'var(--surface-raise)', padding:'1rem', cursor:'pointer', textAlign:'left', transition:'background 0.25s, border-color 0.25s', willChange:'transform', position:'relative' }}
+    >
+      <div style={{ position:'absolute', left:0, top:'20%', bottom:'20%', width:3, borderRadius:'0 3px 3px 0', background:'var(--accent)', transform:hovered?'scaleY(1)':'scaleY(0.35)', transition:'transform 0.3s var(--ease-spring)', transformOrigin:'center' }} />
+      <div style={{ width:40, height:40, borderRadius:'0.75rem', display:'flex', alignItems:'center', justifyContent:'center', background:hovered?'rgba(249,115,22,0.15)':'var(--surface)', border:`1.5px solid ${hovered?'rgba(249,115,22,0.35)':'var(--border)'}`, flexShrink:0, transition:'background 0.25s, border-color 0.25s, transform 0.3s var(--ease-spring)', transform:hovered?'scale(1.1) rotate(4deg)':'scale(1)' }}>
+        <FileDown style={{ width:18, height:18, color:hovered?'var(--accent)':'var(--ink-mid)' }} strokeWidth={2.5} />
+      </div>
+      <div style={{ flex:1 }}>
+        <p style={{ fontSize:'0.875rem', fontWeight:600, color:hovered?'#fff':'var(--ink)', margin:0, transition:'color 0.2s' }}>Export Reports</p>
+        <p style={{ fontSize:'0.75rem', color:hovered?'rgba(255,255,255,0.45)':'var(--ink-faint)', margin:'2px 0 0', transition:'color 0.2s' }}>Download CSV or PDF</p>
+      </div>
+      <ArrowUpRight style={{ width:15, height:15, color:hovered?'var(--accent)':'var(--border-strong)', transform:hovered?'translate(2px,-2px)':'translate(0,0)', transition:'transform 0.2s, color 0.2s', flexShrink:0 }} />
+    </button>
+  );
+}
+
+/* ── Export Option Button ── */
+function ExportOptionBtn({ label, dotColor, onClick }) {
+  const ripple = useRipple();
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={(e) => { ripple(e); onClick(); }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="rp-ripple rp-shine"
+      style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0.875rem 1rem', borderRadius:'0.875rem', border:`1.5px solid ${hovered?dotColor+'55':'var(--border)'}`, background:hovered?`${dotColor}08`:'var(--surface)', cursor:'pointer', fontSize:'0.875rem', fontWeight:600, color:hovered?dotColor:'var(--ink-mid)', transition:'all 0.2s' }}
+    >
+      <div style={{ display:'flex', alignItems:'center', gap:'0.625rem' }}>
+        <span style={{ width:8, height:8, borderRadius:'50%', background:dotColor, display:'inline-block' }} />
+        {label}
+      </div>
+      <FileDown style={{ width:15, height:15, opacity:0.7 }} />
+    </button>
+  );
+}
+
+/* ── Revenue Card ── */
+function RevenueCard({ title, value, icon: Icon, dotColor, highlight }) {
+  const { ref, onMouseMove, onMouseLeave } = useTilt(5);
+  const [hovered, setHovered] = useState(false);
   return (
     <div
-      className={cn('rp-card-hover group relative w-full overflow-hidden rounded-2xl border border-white/80 p-5 text-left shadow-md cursor-pointer', gradClass)}
-      style={{ boxShadow: `0 4px 20px ${shadowColor}` }}
+      ref={ref}
+      onMouseMove={onMouseMove}
+      onMouseLeave={() => { onMouseLeave(); setHovered(false); }}
+      onMouseEnter={() => setHovered(true)}
+      className="rp-shine"
+      style={{
+        borderRadius:'1.25rem', padding:'1.25rem', background:'var(--surface-raise)',
+        border:`1.5px solid ${hovered?dotColor+'55':'var(--border)'}`,
+        position:'relative', overflow:'hidden', cursor:'pointer',
+        transition:'border-color 0.25s, box-shadow 0.25s',
+        boxShadow: hovered ? `0 8px 32px ${dotColor === 'var(--accent)' ? 'rgba(249,115,22,0.2)' : dotColor+'22'}` : '0 2px 8px rgba(0,0,0,0.04)',
+        willChange:'transform',
+      }}
     >
-      <div className="absolute -bottom-8 -right-8 h-20 w-20 rounded-full blur-2xl opacity-20" style={{ backgroundColor: color }} />
-      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl" style={{ background: `linear-gradient(90deg, ${color}70, ${color}10)` }} />
+      <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:dotColor, transform:hovered?'scaleX(1)':'scaleX(0)', transformOrigin:'left', transition:'transform 0.35s var(--ease-expo)' }} />
+      <div style={{ position:'absolute', right:-20, bottom:-20, width:80, height:80, borderRadius:'50%', background:dotColor, opacity:hovered?0.09:0.04, transition:'opacity 0.3s', filter:'blur(20px)' }} />
 
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white shadow-sm transition-transform group-hover:scale-110"
-          style={{ background: `${color}15` }}>
-          <Icon className="h-4 w-4" style={{ color }} strokeWidth={2} />
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'1rem' }}>
+        <div style={{ width:40, height:40, borderRadius:'0.875rem', display:'flex', alignItems:'center', justifyContent:'center', background:`${dotColor}15`, border:`1.5px solid ${dotColor}28`, transform:hovered?'scale(1.1) rotate(3deg)':'scale(1)', transition:'transform 0.3s var(--ease-spring)' }}>
+          <Icon style={{ width:18, height:18, color:dotColor === 'var(--accent)' ? 'var(--accent)' : dotColor }} strokeWidth={2} />
         </div>
-        <Activity className="h-3.5 w-3.5 text-gray-300 group-hover:text-gray-500 transition-colors" />
+        {highlight && (
+          <span style={{ borderRadius:100, padding:'0.2rem 0.625rem', background:'var(--accent-dim)', border:'1px solid var(--accent-mid)', fontSize:'0.6rem', fontWeight:800, letterSpacing:'0.1em', textTransform:'uppercase', color:'var(--accent)' }}>Total</span>
+        )}
       </div>
 
-      <p className="rp-display-font text-3xl font-bold tabular-nums leading-none text-gray-900 rp-animate-count-in truncate">
-        {count}
+      <p style={{ fontSize:'1.75rem', fontWeight:800, letterSpacing:'-0.03em', lineHeight:1, color:'var(--ink)', margin:0, animation:'rp-num-rise 0.5s var(--ease-spring) both', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+        {value}
       </p>
-      <p className="mt-2 text-[12px] font-semibold text-gray-500">{title}</p>
+      <p style={{ marginTop:'0.5rem', fontSize:'0.8125rem', fontWeight:500, color:'var(--ink-faint)' }}>{title}</p>
     </div>
   );
 }
 
-/* ─── Revenue Chart ─── */
+/* ── Metric Card ── */
+function MetricCard({ title, count, icon: Icon, dotColor, isCurrency }) {
+  const animated = typeof count === 'number' ? useCountUp(count, 800, 200) : count;
+  const { ref, onMouseMove, onMouseLeave } = useTilt(5);
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      ref={ref}
+      onMouseMove={onMouseMove}
+      onMouseLeave={() => { onMouseLeave(); setHovered(false); }}
+      onMouseEnter={() => setHovered(true)}
+      className="rp-shine"
+      style={{
+        borderRadius:'1.25rem', padding:'1.25rem', background:'var(--surface-raise)',
+        border:`1.5px solid ${hovered?dotColor+'55':'var(--border)'}`,
+        position:'relative', overflow:'hidden', cursor:'pointer',
+        transition:'border-color 0.25s, box-shadow 0.25s',
+        boxShadow: hovered ? `0 8px 32px ${dotColor}22` : '0 2px 8px rgba(0,0,0,0.04)',
+        willChange:'transform',
+      }}
+    >
+      <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:dotColor, transform:hovered?'scaleX(1)':'scaleX(0)', transformOrigin:'left', transition:'transform 0.35s var(--ease-expo)' }} />
+      <div style={{ position:'absolute', right:-16, bottom:-16, width:64, height:64, borderRadius:'50%', background:dotColor, opacity:hovered?0.09:0.04, transition:'opacity 0.3s', filter:'blur(16px)' }} />
+
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'0.875rem' }}>
+        <div style={{ width:36, height:36, borderRadius:'0.75rem', display:'flex', alignItems:'center', justifyContent:'center', background:`${dotColor}15`, border:`1px solid ${dotColor}28`, transform:hovered?'scale(1.1) rotate(-4deg)':'scale(1)', transition:'transform 0.3s var(--ease-spring)' }}>
+          <Icon style={{ width:15, height:15, color:dotColor }} strokeWidth={2} />
+        </div>
+        <Activity style={{ width:13, height:13, color:hovered?'var(--ink-mid)':'var(--border-strong)', transition:'color 0.2s' }} />
+      </div>
+
+      <p style={{ fontSize: isCurrency?'1.125rem':'2.25rem', fontWeight:800, letterSpacing:'-0.03em', lineHeight:1, color:'var(--ink)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', animation:'rp-num-rise 0.5s var(--ease-spring) both' }}>
+        {isCurrency ? count : animated}
+      </p>
+      <p style={{ marginTop:'0.5rem', fontSize:'0.75rem', fontWeight:600, color:'var(--ink-faint)', textTransform:'uppercase', letterSpacing:'0.08em' }}>{title}</p>
+    </div>
+  );
+}
+
+/* ── AI Mode Button ── */
+function AiModeBtn({ label, dotColor, active, disabled, onClick, large }) {
+  const ripple = useRipple();
+  return (
+    <button
+      onClick={(e) => { ripple(e); onClick(); }}
+      disabled={disabled}
+      className="rp-ripple"
+      style={{
+        padding: large ? '0.75rem' : '0.5rem 0.75rem',
+        borderRadius:'0.75rem', border:`1.5px solid ${active?dotColor+'55':'var(--border)'}`,
+        background: active ? `${dotColor}10` : 'var(--surface)',
+        color: active ? (dotColor === 'var(--accent)' ? 'var(--accent)' : dotColor) : 'var(--ink-faint)',
+        fontSize: large ? '0.875rem' : '0.75rem',
+        fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em',
+        cursor:disabled?'not-allowed':'pointer', opacity:disabled?0.5:1, transition:'all 0.2s',
+        display:'flex', alignItems:'center', justifyContent:'center', gap:'0.4rem',
+      }}
+    >
+      {active && <span style={{ width:5, height:5, borderRadius:'50%', background:dotColor === 'var(--accent)' ? 'var(--accent)' : dotColor, display:'inline-block', animation:'rp-blink 2s ease-in-out infinite' }} />}
+      {label.charAt(0).toUpperCase() + label.slice(1)}
+    </button>
+  );
+}
+
+/* ── Full AI Dialog Trigger ── */
+function FullAiBtn() {
+  const ripple = useRipple();
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={ripple}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="rp-ripple rp-shine"
+      style={{
+        width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'0.5rem',
+        padding:'0.75rem 1rem', borderRadius:'0.875rem',
+        border:`1.5px solid ${hovered?'var(--accent)':'var(--border)'}`,
+        background:hovered?'var(--ink)':'var(--surface)',
+        cursor:'pointer', marginBottom:'1rem', transition:'all 0.2s',
+      }}
+    >
+      <div style={{ display:'flex', alignItems:'center', gap:'0.5rem' }}>
+        <Sparkles style={{ width:14, height:14, color:hovered?'var(--accent)':'var(--ink-mid)' }} />
+        <span style={{ fontSize:'0.8125rem', fontWeight:600, color:hovered?'#fff':'var(--ink-mid)' }}>Open Full AI Analysis</span>
+      </div>
+      <ChevronRight style={{ width:14, height:14, color:hovered?'var(--accent)':'var(--border-strong)', transition:'transform 0.2s, color 0.2s', transform:hovered?'translateX(2px)':'translateX(0)' }} />
+    </button>
+  );
+}
+
+/* ── AI Result Area ── */
+function AiResultArea({ aiLoading, aiError, aiResult, aiMode, preview, large }) {
+  const minH = preview ? 100 : 200;
+  return (
+    <div style={{ borderRadius:'0.875rem', border:'1px solid var(--border)', background:'var(--surface)', padding:'1rem', minHeight:minH }}>
+      {aiLoading && (
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:'0.75rem', padding:'1rem 0' }}>
+          <div style={{ width:36, height:36, borderRadius:'0.75rem', background:'var(--ink)', display:'flex', alignItems:'center', justifyContent:'center', animation:'rp-spin-slow 1s linear infinite' }}>
+            <Bot style={{ width:18, height:18, color:'var(--accent)' }} />
+          </div>
+          <p style={{ fontSize:'0.8125rem', fontWeight:600, color:'var(--ink-faint)' }}>Analyzing…</p>
+        </div>
+      )}
+      {aiError && (
+        <div style={{ display:'flex', alignItems:'flex-start', gap:'0.625rem', padding:'0.75rem', borderRadius:'0.75rem', background:'#fef2f2', border:'1px solid #fecaca' }}>
+          <AlertCircle style={{ width:15, height:15, color:'#ef4444', flexShrink:0, marginTop:2 }} />
+          <p style={{ fontSize:'0.8125rem', color:'#dc2626', margin:0 }}>{aiError}</p>
+        </div>
+      )}
+      {!aiLoading && !aiError && !aiResult && (
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'1.5rem 0', gap:'0.5rem', textAlign:'center' }}>
+          <Bot style={{ width:24, height:24, color:'var(--border-strong)' }} />
+          <p style={{ fontSize:'0.8125rem', color:'var(--ink-faint)', fontWeight:500 }}>
+            {preview ? 'Choose a mode above to see a quick preview here.' : 'Select a mode above to load insights'}
+          </p>
+        </div>
+      )}
+      {!aiLoading && !aiError && aiResult && (
+        <div style={{ display:'flex', flexDirection:'column', gap:'0.875rem' }}>
+          <p className="rp-font-display" style={{ fontSize:'0.9375rem', fontWeight:400, color:'var(--ink)', fontStyle:'italic', margin:0 }}>
+            {aiMode.charAt(0).toUpperCase() + aiMode.slice(1)} Analysis
+          </p>
+          {preview ? (
+            <p style={{ fontSize:'0.75rem', color:'var(--ink-mid)', lineHeight:1.6, margin:0, display:'-webkit-box', WebkitLineClamp:5, WebkitBoxOrient:'vertical', overflow:'hidden' }} className="rp-ai-content">
+              {typeof aiResult === 'object' ? aiResult.overview || 'Analysis ready.' : String(aiResult)}
+            </p>
+          ) : (
+            typeof aiResult === 'object' ? (
+              <>
+                {aiResult.overview && (
+                  <p style={{ fontSize:'0.875rem', color:'var(--ink-mid)', lineHeight:1.6, margin:0 }} className="rp-ai-content">
+                    {formatHighlight(aiResult.overview)}
+                  </p>
+                )}
+                {aiResult.positives?.length > 0 && (
+                  <AiSection color="#10b981" label="Highlights" items={aiResult.positives} />
+                )}
+                {aiResult.improvements?.length > 0 && (
+                  <AiSection color="var(--accent)" label="Improvements" items={aiResult.improvements} />
+                )}
+                {aiResult.recommendations?.length > 0 && (
+                  <AiSection color="#3b82f6" label="Recommendations" items={aiResult.recommendations} />
+                )}
+              </>
+            ) : (
+              <p style={{ fontSize:'0.875rem', color:'var(--ink-mid)', lineHeight:1.6, margin:0, whiteSpace:'pre-line' }} className="rp-ai-content">
+                {String(aiResult)}
+              </p>
+            )
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AiSection({ color, label, items }) {
+  return (
+    <div style={{ borderRadius:'0.875rem', border:`1px solid ${color}25`, background:`${color}08`, padding:'0.875rem' }}>
+      <p style={{ fontSize:'0.625rem', fontWeight:800, letterSpacing:'0.14em', textTransform:'uppercase', color, marginBottom:'0.5rem' }}>{label}</p>
+      <ul style={{ margin:0, paddingLeft:'1.25rem', display:'flex', flexDirection:'column', gap:'0.25rem' }}>
+        {items.map((t, i) => (
+          <li key={i} style={{ fontSize:'0.8125rem', color:'var(--ink-mid)', lineHeight:1.5 }} className="rp-ai-content">
+            {formatHighlight(t)}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   REVENUE CHART
+═══════════════════════════════════════════════════════════════ */
 function RevenueChart({ sales, services, startDate, endDate }) {
-  const [activeRange, setActiveRange] = useState('All');
+  const [activeRange, setActiveRange]   = useState('All');
   const [activeMetric, setActiveMetric] = useState('Sales');
 
   const dailyData = {};
   sales.forEach(sale => {
     if (!sale.created_at) return;
     const date = new Date(sale.created_at).toISOString().split('T')[0];
-    const amount = (sale.price || 0) * (sale.quantity || 0);
-    if (!dailyData[date]) dailyData[date] = { Sales: 0, Services: 0 };
+    const amount = (sale.price||0)*(sale.quantity||0);
+    if (!dailyData[date]) dailyData[date] = { Sales:0, Services:0 };
     dailyData[date].Sales += amount;
   });
   services.forEach(service => {
     if (service.status !== 'Returned' || !service.returned_at) return;
     const date = new Date(service.returned_at).toISOString().split('T')[0];
     const amount = service.final_amount || 0;
-    if (!dailyData[date]) dailyData[date] = { Sales: 0, Services: 0 };
+    if (!dailyData[date]) dailyData[date] = { Sales:0, Services:0 };
     dailyData[date].Services += amount;
   });
 
@@ -918,106 +1008,85 @@ function RevenueChart({ sales, services, startDate, endDate }) {
     let cb = 0;
     while (curr <= endObj && cb < 5000) {
       const d = curr.toISOString().split('T')[0];
-      if (!dailyData[d]) dailyData[d] = { Sales: 0, Services: 0 };
-      curr.setDate(curr.getDate() + 1);
-      cb++;
+      if (!dailyData[d]) dailyData[d] = { Sales:0, Services:0 };
+      curr.setDate(curr.getDate()+1); cb++;
     }
   }
 
   let chartData = Object.keys(dailyData).sort().map(date => ({
-    date, Sales: dailyData[date].Sales, Services: dailyData[date].Services,
+    date, Sales:dailyData[date].Sales, Services:dailyData[date].Services,
   }));
 
   if (activeRange !== 'All' && chartData.length > 0) {
     const cutoff = new Date(maxDateStr);
-    if (activeRange === '1D') cutoff.setDate(cutoff.getDate() - 1);
-    else if (activeRange === '1W') cutoff.setDate(cutoff.getDate() - 7);
-    else if (activeRange === '1M') cutoff.setMonth(cutoff.getMonth() - 1);
-    else if (activeRange === '3M') cutoff.setMonth(cutoff.getMonth() - 3);
-    else if (activeRange === '6M') cutoff.setMonth(cutoff.getMonth() - 6);
-    else if (activeRange === '1Y') cutoff.setFullYear(cutoff.getFullYear() - 1);
+    if (activeRange==='1D') cutoff.setDate(cutoff.getDate()-1);
+    else if (activeRange==='1W') cutoff.setDate(cutoff.getDate()-7);
+    else if (activeRange==='1M') cutoff.setMonth(cutoff.getMonth()-1);
+    else if (activeRange==='3M') cutoff.setMonth(cutoff.getMonth()-3);
+    else if (activeRange==='6M') cutoff.setMonth(cutoff.getMonth()-6);
+    else if (activeRange==='1Y') cutoff.setFullYear(cutoff.getFullYear()-1);
     chartData = chartData.filter(d => new Date(d.date) >= cutoff);
   }
 
-  const metricColor = activeMetric === 'Sales' ? '#f97316' : '#10b981';
+  const metricColor = activeMetric === 'Sales' ? 'var(--accent)' : '#10b981';
+  const metricColorHex = activeMetric === 'Sales' ? '#f97316' : '#10b981';
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
-    const dateStr = formatDate(label);
     const p = payload.find(x => x.dataKey === activeMetric);
     if (!p) return null;
     return (
-      <div className="rp-glass rounded-2xl px-4 py-3 shadow-xl text-sm">
-        <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400 mb-1">{dateStr}</p>
-        <p className="font-bold text-gray-900">₹{formatNumber(p.value)}</p>
+      <div style={{ background:'var(--surface-raise)', backdropFilter:'blur(12px)', border:'1px solid var(--border)', borderRadius:'0.875rem', padding:'0.75rem 1rem', boxShadow:'0 8px 24px rgba(0,0,0,0.1)' }}>
+        <p style={{ fontSize:'0.625rem', fontWeight:700, letterSpacing:'0.14em', textTransform:'uppercase', color:'var(--ink-faint)', marginBottom:'0.25rem' }}>{formatDate(label)}</p>
+        <p style={{ fontSize:'1rem', fontWeight:800, color:metricColorHex, margin:0 }}>₹{formatNumber(p.value)}</p>
       </div>
     );
   };
 
-  const ranges = ['1W', '1M', '3M', '6M', '1Y', 'All'];
-
   return (
-    <div className="w-full">
+    <div style={{ width:'100%' }}>
       {/* Metric toggle */}
-      <div className="mb-4 flex gap-2">
+      <div style={{ display:'flex', gap:'0.5rem', marginBottom:'1rem' }}>
         {[
-          { key: 'Sales', color: '#f97316', bg: '#fff7ed', border: '#fed7aa', label: 'Sales' },
-          { key: 'Services', color: '#10b981', bg: '#f0fdf4', border: '#bbf7d0', label: 'Services' },
-        ].map(m => (
-          <button
-            key={m.key}
-            onClick={() => setActiveMetric(m.key)}
-            className="flex items-center gap-1.5 rounded-xl border-2 px-4 py-1.5 text-xs font-bold transition-all"
-            style={{
-              borderColor: activeMetric === m.key ? m.color : m.border,
-              backgroundColor: activeMetric === m.key ? m.bg : '#fff',
-              color: activeMetric === m.key ? m.color : '#9ca3af',
-            }}
-          >
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: m.color }} />
-            {m.label}
-          </button>
-        ))}
+          { key:'Sales',    color:'#f97316' },
+          { key:'Services', color:'#10b981' },
+        ].map(m => {
+          const active = activeMetric === m.key;
+          return (
+            <button key={m.key} onClick={() => setActiveMetric(m.key)}
+              style={{ display:'flex', alignItems:'center', gap:'0.4rem', padding:'0.375rem 0.875rem', borderRadius:'9999px', fontSize:'0.75rem', fontWeight:700, cursor:'pointer', border:`1.5px solid ${active?m.color+'55':'var(--border)'}`, background:active?`${m.color}12`:'var(--surface-raise)', color:active?m.color:'var(--ink-faint)', transition:'all 0.2s' }}>
+              <span style={{ width:7, height:7, borderRadius:'50%', background:m.color, display:'inline-block' }} />
+              {m.key}
+            </button>
+          );
+        })}
       </div>
 
       {chartData.length === 0 ? (
-        <div className="flex h-56 items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 gap-2 flex-col">
-          <BarChart3 className="h-7 w-7 text-gray-300" />
-          <p className="text-sm font-semibold text-gray-400">No data for selected period</p>
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', height:220, borderRadius:'0.875rem', border:'2px dashed var(--border)', background:'var(--surface)', gap:'0.5rem' }}>
+          <BarChart3 style={{ width:28, height:28, color:'var(--border-strong)' }} />
+          <p style={{ fontSize:'0.8125rem', fontWeight:600, color:'var(--ink-faint)' }}>No data for selected period</p>
         </div>
       ) : (
-        <div className="h-[240px] w-full">
+        <div style={{ height:240, width:'100%' }}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 10, right: 4, left: 4, bottom: 0 }}>
+            <LineChart data={chartData} margin={{ top:10, right:4, left:4, bottom:0 }}>
               <CartesianGrid vertical={false} stroke="#f1f5f9" strokeDasharray="0" />
               <XAxis dataKey="date" hide />
-              <YAxis hide domain={['dataMin - 200', 'dataMax + 500']} />
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#e2e8f0', strokeWidth: 1, strokeDasharray: '4 4' }} isAnimationActive={false} />
-              <Line
-                type="monotone"
-                dataKey={activeMetric}
-                stroke={metricColor}
-                strokeWidth={2.5}
-                dot={false}
-                activeDot={{ r: 5, fill: metricColor, stroke: '#fff', strokeWidth: 2 }}
-              />
+              <YAxis hide domain={['dataMin - 200','dataMax + 500']} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke:'var(--border)', strokeWidth:1, strokeDasharray:'4 4' }} isAnimationActive={false} />
+              <Line type="monotone" dataKey={activeMetric} stroke={metricColorHex} strokeWidth={2.5} dot={false}
+                activeDot={{ r:5, fill:metricColorHex, stroke:'#fff', strokeWidth:2 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       )}
 
       {/* Range selector */}
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-        {ranges.map(r => (
-          <button
-            key={r}
-            onClick={() => setActiveRange(r)}
-            className="px-4 py-1.5 text-[12px] font-semibold rounded-full transition-all"
-            style={activeRange === r
-              ? { backgroundColor: '#f97316', color: '#fff', boxShadow: '0 2px 8px rgba(249,115,22,0.3)' }
-              : { backgroundColor: 'transparent', color: '#9ca3af' }
-            }
-          >
+      <div style={{ marginTop:'1rem', display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'center', gap:'0.375rem' }}>
+        {['1W','1M','3M','6M','1Y','All'].map(r => (
+          <button key={r} onClick={() => setActiveRange(r)}
+            style={{ padding:'0.3rem 0.875rem', fontSize:'0.75rem', fontWeight:700, borderRadius:'9999px', cursor:'pointer', border:'none', transition:'all 0.2s', background:activeRange===r?'var(--ink)':'transparent', color:activeRange===r?'var(--accent)':'var(--ink-faint)' }}>
             {r}
           </button>
         ))}
@@ -1029,20 +1098,23 @@ function RevenueChart({ sales, services, startDate, endDate }) {
 /* ─── Skeleton ─── */
 function ReportsSkeleton() {
   return (
-    <div className="rp-mesh-bg rp-dashboard-font min-h-screen space-y-8 p-1 animate-pulse">
-      <div className="h-28 rounded-3xl bg-gray-200" />
-      <div className="grid grid-cols-3 gap-4">
-        {[...Array(3)].map((_, i) => <div key={i} className="h-20 rounded-2xl bg-gray-200" />)}
-      </div>
-      <div className="grid grid-cols-3 gap-4">
-        {[...Array(3)].map((_, i) => <div key={i} className="h-28 rounded-2xl bg-gray-200" />)}
-      </div>
-      <div className="grid grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-2xl bg-gray-200" />)}
-      </div>
-      <div className="grid grid-cols-5 gap-4">
-        <div className="col-span-3 h-64 rounded-3xl bg-gray-200" />
-        <div className="col-span-2 h-64 rounded-3xl bg-gray-200" />
+    <div className="rp-font-body" style={{ backgroundColor:'var(--surface)', minHeight:'100vh', padding:'0.25rem' }}>
+      <style>{REPORT_STYLES}</style>
+      <div style={{ display:'flex', flexDirection:'column', gap:'1.5rem' }}>
+        <div style={{ height:132, borderRadius:'1.75rem', background:'#e5e7eb', animation:'rp-fade-up 0.3s ease both' }} />
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'0.875rem' }}>
+          {[...Array(3)].map((_,i) => <div key={i} style={{ height:80, borderRadius:'1.125rem', background:'#f3f4f6' }} />)}
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1rem' }}>
+          {[...Array(3)].map((_,i) => <div key={i} style={{ height:108, borderRadius:'1.25rem', background:'#f3f4f6' }} />)}
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'1rem' }}>
+          {[...Array(4)].map((_,i) => <div key={i} style={{ height:104, borderRadius:'1.25rem', background:'#f3f4f6' }} />)}
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:'1.5rem' }}>
+          <div style={{ height:320, borderRadius:'1.5rem', background:'#f3f4f6' }} />
+          <div style={{ height:320, borderRadius:'1.5rem', background:'#f3f4f6' }} />
+        </div>
       </div>
     </div>
   );
@@ -1052,10 +1124,8 @@ function ReportsSkeleton() {
 function formatHighlight(text) {
   if (typeof text !== 'string') return text;
   const html = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>');
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>');
   return <span dangerouslySetInnerHTML={{ __html: html }} />;
 }
