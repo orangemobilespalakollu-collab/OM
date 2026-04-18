@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { authService } from '@/services/authService';
@@ -8,135 +8,199 @@ import { getCookie, setCookie, deleteCookie } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Smartphone, Lock, UserCircle, Users, Eye, EyeOff, Zap, ArrowRight } from 'lucide-react';
 
-/* ─── Styles — same token system as dashboard ─── */
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN SYSTEM — exact mirror of all app pages
+   ─ Single accent: #f97316  |  Ink: #0d0d0d  |  Surface: #f9fafb
+   ─ Fonts: Instrument Serif (display) + Geist (body)
+   ─ Motion: tilt, morph, shine, ripple, orbit
+═══════════════════════════════════════════════════════════════ */
+
 const LOGIN_STYLES = `
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700;800&display=swap');
 
-@keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position:  200% center; }
-}
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-7px); }
-}
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(22px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes scale-in {
-  from { opacity: 0; transform: scale(0.93); }
-  to   { opacity: 1; transform: scale(1); }
-}
-@keyframes blink {
-  0%,100% { opacity: 1; }
-  50%      { opacity: 0.25; }
-}
-@keyframes pulse-ring {
-  0%   { transform: scale(0.85); opacity: 0.6; }
-  70%  { transform: scale(1.6);  opacity: 0; }
-  100% { transform: scale(1.6);  opacity: 0; }
+:root {
+  --accent:        #f97316;
+  --accent-dim:    rgba(249,115,22,0.12);
+  --accent-mid:    rgba(249,115,22,0.22);
+  --ink:           #0d0d0d;
+  --ink-mid:       #4b5563;
+  --ink-faint:     #9ca3af;
+  --surface:       #f9fafb;
+  --surface-raise: #ffffff;
+  --border:        #e5e7eb;
+  --border-strong: #d1d5db;
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-expo:     cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.lg-slide-up  { animation: slide-up 0.5s ease forwards; }
-.lg-scale-in  { animation: scale-in 0.4s cubic-bezier(.34,1.56,.64,1) forwards; }
-.lg-float     { animation: float 3.5s ease-in-out infinite; }
-.lg-spin      { animation: spin-slow 10s linear infinite; }
-.lg-spin-rev  { animation: spin-slow 7s linear infinite reverse; }
-.lg-blink     { animation: blink 2s ease-in-out infinite; }
+.lg-font-display { font-family: 'Instrument Serif', Georgia, serif; }
+.lg-font-body    { font-family: 'Geist', system-ui, sans-serif; }
 
-.lg-shimmer-text {
-  background: linear-gradient(90deg, #f97316, #a855f7, #3b82f6, #f97316);
-  background-size: 300% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: shimmer 4s linear infinite;
+@keyframes lg-fade-up {
+  from { opacity:0; transform:translateY(24px); filter:blur(4px); }
+  to   { opacity:1; transform:translateY(0);    filter:blur(0); }
+}
+@keyframes lg-card-in {
+  from { opacity:0; transform:translateY(18px) scale(0.96); filter:blur(4px); }
+  to   { opacity:1; transform:translateY(0)    scale(1);    filter:blur(0); }
+}
+@keyframes lg-spin-slow  { from { transform:rotate(0deg); }  to { transform:rotate(360deg); } }
+@keyframes lg-spin-rev   { from { transform:rotate(0deg); }  to { transform:rotate(-360deg); } }
+@keyframes lg-blink      { 0%,100%{ opacity:1; } 50%{ opacity:0.2; } }
+@keyframes lg-live-ring  {
+  0%   { transform:scale(1);   opacity:0.5; }
+  70%  { transform:scale(2.2); opacity:0; }
+  100% { transform:scale(2.2); opacity:0; }
+}
+@keyframes lg-blob-morph {
+  0%,100% { border-radius:60% 40% 30% 70% / 60% 30% 70% 40%; }
+  33%      { border-radius:30% 70% 60% 40% / 50% 60% 30% 60%; }
+  66%      { border-radius:50% 30% 70% 40% / 40% 70% 30% 60%; }
+}
+@keyframes lg-shine      { from { left:-80%; } to { left:130%; } }
+@keyframes lg-ripple-out { from { transform:scale(0); opacity:0.35; } to { transform:scale(3.5); opacity:0; } }
+@keyframes lg-orbit {
+  from { transform:rotate(0deg) translateX(44px) rotate(0deg); }
+  to   { transform:rotate(360deg) translateX(44px) rotate(-360deg); }
+}
+@keyframes lg-underline {
+  from { transform:scaleX(0); transform-origin:left; }
+  to   { transform:scaleX(1); transform-origin:left; }
+}
+@keyframes lg-float {
+  0%,100% { transform:translateY(0); }
+  50%      { transform:translateY(-8px); }
+}
+@keyframes lg-pulse-ring {
+  0%   { transform:scale(0.85); opacity:0.6; }
+  70%  { transform:scale(1.7);  opacity:0; }
+  100% { transform:scale(1.7);  opacity:0; }
 }
 
-.lg-mesh-bg {
-  background-color: #fafafa;
-  background-image:
-    radial-gradient(at 15% 15%, rgba(249,115,22,0.10) 0px, transparent 50%),
-    radial-gradient(at 85% 5%,  rgba(168,85,247,0.08) 0px, transparent 50%),
-    radial-gradient(at 5%  80%, rgba(59,130,246,0.07) 0px, transparent 50%),
-    radial-gradient(at 90% 85%, rgba(34,197,94,0.05)  0px, transparent 50%);
+.lg-section-enter { animation:lg-card-in 0.65s var(--ease-expo) both; }
+
+/* Shine */
+.lg-shine { position:relative; overflow:hidden; }
+.lg-shine::before {
+  content:''; position:absolute; top:-50%; left:-80%;
+  width:50%; height:200%;
+  background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,0.5) 50%,transparent 70%);
+  transform:skewX(-20deg); pointer-events:none; z-index:2;
+}
+.lg-shine:hover::before { animation:lg-shine 0.5s ease forwards; }
+
+/* Ripple */
+.lg-ripple { position:relative; overflow:hidden; }
+.lg-ripple-circle {
+  position:absolute; border-radius:50%;
+  background:rgba(255,255,255,0.28);
+  transform:scale(0);
+  animation:lg-ripple-out 0.6s linear forwards;
+  pointer-events:none;
 }
 
-.lg-glass {
-  background: rgba(255,255,255,0.75);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255,255,255,0.95);
+/* Blob */
+.lg-blob {
+  border-radius:60% 40% 30% 70% / 60% 30% 70% 40%;
+  animation:lg-blob-morph 10s ease-in-out infinite;
+  position:absolute; pointer-events:none;
 }
 
-.lg-orb {
-  border-radius: 50%;
-  filter: blur(50px);
-  position: absolute;
-  pointer-events: none;
-}
-
-.lg-card-hover {
-  transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s ease;
-}
-.lg-card-hover:hover:not(:disabled) {
-  transform: translateY(-3px) scale(1.01);
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.11);
-}
-
+/* Input */
 .lg-input {
-  width: 100%;
-  background: #fff;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 12px 14px 12px 44px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  color: #111827;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  width:100%;
+  background:var(--surface-raise);
+  border:1.5px solid var(--border);
+  border-radius:0.875rem;
+  padding:0.75rem 0.875rem 0.75rem 2.75rem;
+  font-family:'Geist', system-ui, sans-serif;
+  font-size:0.9375rem;
+  font-weight:500;
+  color:var(--ink);
+  outline:none;
+  transition:border-color 0.2s, box-shadow 0.2s;
 }
-.lg-input::placeholder { color: #9ca3af; }
+.lg-input::placeholder { color:var(--ink-faint); }
 .lg-input:focus {
-  border-color: #f97316;
-  box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-dim);
 }
 
-.lg-font      { font-family: 'DM Sans', sans-serif; }
-.display-font { font-family: 'Syne', sans-serif; }
+/* Stagger for form elements */
+.lg-stagger > *:nth-child(1) { animation:lg-fade-up 0.5s var(--ease-expo) 0.08s both; }
+.lg-stagger > *:nth-child(2) { animation:lg-fade-up 0.5s var(--ease-expo) 0.15s both; }
+.lg-stagger > *:nth-child(3) { animation:lg-fade-up 0.5s var(--ease-expo) 0.22s both; }
+.lg-stagger > *:nth-child(4) { animation:lg-fade-up 0.5s var(--ease-expo) 0.29s both; }
+.lg-stagger > *:nth-child(5) { animation:lg-fade-up 0.5s var(--ease-expo) 0.36s both; }
 `;
 
 function LoginStyleInjector() {
   useEffect(() => {
-    if (document.getElementById('login-styles')) return;
+    if (document.getElementById('lg-v2-styles')) return;
     const el = document.createElement('style');
-    el.id = 'login-styles';
+    el.id = 'lg-v2-styles';
     el.textContent = LOGIN_STYLES;
     document.head.appendChild(el);
   }, []);
   return null;
 }
 
+/* ── Ripple hook ── */
+function useRipple() {
+  return useCallback((e) => {
+    const btn = e.currentTarget;
+    const circle = document.createElement('span');
+    const d = Math.max(btn.clientWidth, btn.clientHeight);
+    const r = btn.getBoundingClientRect();
+    circle.className = 'lg-ripple-circle';
+    Object.assign(circle.style, {
+      width:`${d}px`, height:`${d}px`,
+      left:`${e.clientX - r.left - d/2}px`,
+      top:`${e.clientY - r.top  - d/2}px`,
+    });
+    btn.appendChild(circle);
+    setTimeout(() => circle.remove(), 700);
+  }, []);
+}
+
+/* ── 3D Tilt hook ── */
+function useTilt(strength = 5) {
+  const ref = useRef(null);
+  const onMove = useCallback((e) => {
+    const el = ref.current; if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const dx = (e.clientX - rect.left - rect.width/2)  / (rect.width/2);
+    const dy = (e.clientY - rect.top  - rect.height/2) / (rect.height/2);
+    el.style.transform = `perspective(800px) rotateY(${dx*strength}deg) rotateX(${-dy*strength}deg)`;
+    el.style.boxShadow = `${-dx*8}px ${dy*8}px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.9)`;
+  }, [strength]);
+  const onLeave = useCallback(() => {
+    const el = ref.current; if (!el) return;
+    el.style.transform = ''; el.style.boxShadow = '';
+  }, []);
+  return { ref, onMouseMove: onMove, onMouseLeave: onLeave };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MAIN LOGIN PAGE
+═══════════════════════════════════════════════════════════════ */
 export default function LoginPage() {
   const { login, user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [loginType, setLoginType] = useState('admin');
+  const [loading, setLoading]         = useState(false);
+  const [loginType, setLoginType]     = useState('admin');
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ mobile: '', password: '' });
-  const [focused, setFocused] = useState(null);
+  const [formData, setFormData]       = useState({ mobile:'', password:'' });
+  const [focused, setFocused]         = useState(null);
+  const [mounted, setMounted]         = useState(false);
   const isReloadRef = useRef(false);
   const DRAFT_COOKIE_KEY = 'loginDraft';
 
+  const ripple = useRipple();
+  const { ref: cardRef, onMouseMove: cardMove, onMouseLeave: cardLeave } = useTilt(3);
+
   useEffect(() => {
-    if (!authLoading && user) {
-      router.replace('/dashboard');
-    }
+    if (!authLoading && user) router.replace('/dashboard');
   }, [user, authLoading, router]);
 
   useEffect(() => {
@@ -148,8 +212,9 @@ export default function LoginPage() {
         if (parsed?.formData) setFormData(prev => ({ ...prev, ...parsed.formData }));
       } catch {}
     }
-    const handleBeforeUnload = () => sessionStorage.setItem('loginIsReload', '1');
+    const handleBeforeUnload = () => sessionStorage.setItem('loginIsReload','1');
     window.addEventListener('beforeunload', handleBeforeUnload);
+    setTimeout(() => setMounted(true), 50);
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       const isReload = sessionStorage.getItem('loginIsReload') === '1';
@@ -182,105 +247,165 @@ export default function LoginPage() {
   return (
     <>
       <LoginStyleInjector />
-      <div className="lg-font lg-mesh-bg relative min-h-screen flex items-center justify-center overflow-hidden p-4">
+      <div
+        className="lg-font-body"
+        style={{
+          minHeight:'100vh', position:'relative', overflow:'hidden',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          padding:'1rem',
+          /* Same surface bg as all pages */
+          backgroundColor:'var(--surface)',
+        }}
+      >
+        {/* ── Background ambient blobs — matching dashboard ── */}
+        <div className="lg-blob" style={{ width:320, height:320, background:'var(--accent)', opacity:0.06, top:-80, left:-80, animation:'lg-blob-morph 12s ease-in-out infinite, lg-float 6s ease-in-out infinite' }} />
+        <div className="lg-blob" style={{ width:240, height:240, background:'var(--accent)', opacity:0.04, top:'5%', right:-60, animationDelay:'3s', animation:'lg-blob-morph 14s ease-in-out 3s infinite, lg-float 7s ease-in-out 1s infinite' }} />
+        <div className="lg-blob" style={{ width:200, height:200, background:'var(--accent)', opacity:0.03, bottom:-40, left:'25%', animationDelay:'6s', animation:'lg-blob-morph 11s ease-in-out 6s infinite, lg-float 8s ease-in-out 2s infinite' }} />
 
-        {/* ── ambient orbs — identical to dashboard ── */}
-        <div className="lg-orb w-80 h-80 bg-orange-400/15 lg-float" style={{ top: '-60px', left: '-60px' }} />
-        <div className="lg-orb w-64 h-64 bg-purple-500/12 lg-float" style={{ top: '5%', right: '-40px', animationDelay: '1s' }} />
-        <div className="lg-orb w-56 h-56 bg-blue-400/10 lg-float" style={{ bottom: '-40px', left: '20%', animationDelay: '2s' }} />
-        <div className="lg-orb w-40 h-40 bg-green-400/08 lg-float" style={{ bottom: '10%', right: '5%', animationDelay: '0.5s' }} />
+        {/* ── Decorative spinning rings (page-level, same as dashboard) ── */}
+        <div style={{ position:'absolute', top:32, right:32, width:80, height:80, animation:'lg-spin-slow 22s linear infinite', pointerEvents:'none' }}>
+          <div style={{ width:'100%', height:'100%', borderRadius:'50%', border:'1px dashed rgba(249,115,22,0.15)' }} />
+        </div>
+        <div style={{ position:'absolute', top:42, right:42, width:48, height:48, animation:'lg-spin-rev 11s linear infinite', pointerEvents:'none' }}>
+          <div style={{ width:'100%', height:'100%', borderRadius:'50%', border:'1px solid rgba(249,115,22,0.08)' }} />
+        </div>
+        <div style={{ position:'absolute', bottom:32, left:32, width:64, height:64, animation:'lg-spin-slow 16s linear infinite', pointerEvents:'none' }}>
+          <div style={{ width:'100%', height:'100%', borderRadius:'50%', border:'1px dashed rgba(249,115,22,0.12)' }} />
+        </div>
+        {/* Orbiting dot */}
+        <div style={{ position:'absolute', top:50, right:50, pointerEvents:'none' }}>
+          <div style={{ width:5, height:5, borderRadius:'50%', background:'var(--accent)', opacity:0.5, animation:'lg-orbit 10s linear infinite' }} />
+        </div>
 
-        {/* ── decorative spinning rings ── */}
-        <div className="absolute top-8 right-8 h-24 w-24 rounded-full border-2 border-dashed border-orange-200/60 lg-spin hidden sm:block" />
-        <div className="absolute top-14 right-14 h-10 w-10 rounded-full border border-purple-300/40 lg-spin-rev hidden sm:block" />
-        <div className="absolute bottom-10 left-10 h-16 w-16 rounded-full border border-dashed border-blue-200/50 lg-spin hidden sm:block" style={{ animationDuration: '14s' }} />
+        {/* ══════════════════ CARD ══════════════════ */}
+        <div
+          ref={cardRef}
+          onMouseMove={cardMove}
+          onMouseLeave={cardLeave}
+          className={mounted ? 'lg-section-enter' : ''}
+          style={{
+            width:'100%', maxWidth:420, position:'relative',
+            borderRadius:'1.75rem',
+            background:'var(--surface-raise)',
+            border:'1px solid var(--border)',
+            boxShadow:'0 24px 64px -16px rgba(0,0,0,0.14), 0 0 0 1px rgba(255,255,255,0.9)',
+            overflow:'hidden',
+            willChange:'transform',
+            transition:'box-shadow 0.3s ease',
+          }}
+        >
+          {/* ── Dark hero banner — identical to all page headers ── */}
+          <div style={{ background:'linear-gradient(135deg,#0d0d0d 0%,#181818 60%,#0d0d0d 100%)', padding:'1.75rem', position:'relative', overflow:'hidden' }}>
+            {/* Morphing blobs inside banner */}
+            <div className="lg-blob" style={{ width:200, height:200, background:'var(--accent)', opacity:0.07, top:-50, right:-30 }} />
+            <div className="lg-blob" style={{ width:130, height:130, background:'var(--accent)', opacity:0.04, bottom:-35, left:'15%', animationDelay:'4s' }} />
 
-        {/* ── Card ── */}
-        <div className="lg-glass lg-scale-in relative w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
-          style={{ boxShadow: '0 32px 80px -12px rgba(0,0,0,0.13), 0 0 0 1px rgba(255,255,255,0.9)' }}>
+            {/* Spinning rings inside banner */}
+            <div style={{ position:'absolute', right:24, top:24, width:72, height:72, animation:'lg-spin-slow 18s linear infinite', pointerEvents:'none' }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', border:'1px dashed rgba(249,115,22,0.2)' }} />
+            </div>
+            <div style={{ position:'absolute', right:31, top:31, width:44, height:44, animation:'lg-spin-rev 8s linear infinite', pointerEvents:'none' }}>
+              <div style={{ width:'100%', height:'100%', borderRadius:'50%', border:'1px solid rgba(249,115,22,0.12)' }} />
+            </div>
+            {/* Orbiting dot */}
+            <div style={{ position:'absolute', right:40, top:40, pointerEvents:'none' }}>
+              <div style={{ width:5, height:5, borderRadius:'50%', background:'var(--accent)', opacity:0.7, animation:'lg-orbit 8s linear infinite' }} />
+            </div>
 
-          {/* top gradient accent line */}
-          <div className="absolute top-0 left-0 right-0 h-0.5 z-10"
-            style={{ background: 'linear-gradient(90deg, #f97316, #a855f7, #3b82f6, transparent)' }} />
+            {/* Corner accent line — same as all page headers */}
+            <div style={{ position:'absolute', top:0, left:'8%', width:90, height:2, background:'linear-gradient(90deg,var(--accent),transparent)', opacity:0.6 }} />
 
-          {/* ── Dark hero banner — same as dashboard header ── */}
-          <div className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 px-8 pt-8 pb-10">
-            {/* inner orbs */}
-            <div className="lg-orb w-48 h-48 bg-orange-500/20" style={{ top: '-40px', left: '-30px', filter: 'blur(35px)' }} />
-            <div className="lg-orb w-36 h-36 bg-purple-500/18" style={{ bottom: '-20px', right: '10px', filter: 'blur(30px)' }} />
-            {/* grid texture */}
-            <div className="absolute inset-0 opacity-[0.04]"
-              style={{ backgroundImage: 'linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)', backgroundSize: '28px 28px' }} />
-            {/* spinning rings inside banner */}
-            <div className="absolute right-5 top-5 h-16 w-16 rounded-full border-2 border-dashed border-white/10 lg-spin" />
-            <div className="absolute right-9 top-9 h-8 w-8 rounded-full border border-orange-400/30 lg-spin-rev" />
-
-            <div className="relative flex items-center gap-5">
-              {/* logo icon */}
-              <div className="relative shrink-0">
-                <div className="h-14 w-14 rounded-2xl flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg,#f97316,#ea580c)', boxShadow: '0 8px 28px rgba(249,115,22,0.45)' }}>
-                  <Smartphone className="h-7 w-7 text-white" strokeWidth={2} />
+            <div style={{ position:'relative', display:'flex', alignItems:'center', gap:'1.125rem' }}>
+              {/* Logo icon with pulse ring */}
+              <div style={{ position:'relative', flexShrink:0 }}>
+                <div style={{
+                  width:56, height:56, borderRadius:'1rem',
+                  background:'linear-gradient(135deg,var(--accent),#c2410c)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  boxShadow:'0 8px 28px rgba(249,115,22,0.4)',
+                }}>
+                  <Smartphone style={{ width:26, height:26, color:'#fff' }} strokeWidth={2} />
                 </div>
-                {/* pulse ring */}
-                <div className="absolute inset-0 rounded-2xl"
-                  style={{ backgroundColor: 'rgba(249,115,22,0.35)', animation: 'pulse-ring 2.5s cubic-bezier(0.215,0.61,0.355,1) infinite' }} />
-                {/* live dot */}
-                <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-green-400 border-2 border-gray-900 flex items-center justify-center">
-                  <span className="h-1.5 w-1.5 rounded-full bg-white lg-blink" />
-                </div>
+                {/* Pulse ring */}
+                <div style={{ position:'absolute', inset:0, borderRadius:'1rem', background:'rgba(249,115,22,0.35)', animation:'lg-pulse-ring 2.5s cubic-bezier(0.215,0.61,0.355,1) infinite' }} />
+                {/* Live dot */}
+                <span style={{ position:'absolute', top:-3, right:-3, width:14, height:14, borderRadius:'50%', background:'#22c55e', border:'2.5px solid #0d0d0d', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <span style={{ width:5, height:5, borderRadius:'50%', background:'#fff', animation:'lg-blink 2s ease-in-out infinite', display:'inline-block' }} />
+                </span>
               </div>
 
               <div>
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-white/35 mb-0.5">Welcome back</p>
-                <h1 className="display-font text-2xl font-bold text-white">
-                  Orange <span className="lg-shimmer-text">Mobile</span>
+                <p style={{ fontSize:'0.625rem', fontWeight:700, letterSpacing:'0.22em', textTransform:'uppercase', color:'rgba(255,255,255,0.28)', marginBottom:'0.35rem' }}>
+                  Welcome back
+                </p>
+                <h1 className="lg-font-display" style={{ fontSize:'clamp(1.5rem,3.5vw,2rem)', fontWeight:400, lineHeight:1.1, color:'rgba(255,255,255,0.94)', fontStyle:'italic', marginBottom:'0.4rem' }}>
+                  Orange <span style={{ color:'var(--accent)' }}>Mobile</span>
                 </h1>
-                <p className="text-xs text-white/40 mt-0.5 font-medium">Sign in to your workspace</p>
+                {/* Animated underline */}
+                <div style={{ height:2, width:48, background:'var(--accent)', animation:'lg-underline 0.8s var(--ease-expo) 0.4s both', borderRadius:2 }} />
+                <p style={{ fontSize:'0.75rem', color:'rgba(255,255,255,0.3)', marginTop:'0.5rem', fontWeight:400 }}>
+                  Sign in to your workspace
+                </p>
               </div>
             </div>
           </div>
 
           {/* ── Form body ── */}
-          <div className="px-8 pb-8 pt-7 space-y-6">
+          <div style={{ padding:'1.75rem', display:'flex', flexDirection:'column', gap:'1.25rem' }} className="lg-stagger">
 
-            {/* Role tabs — same style as dashboard quick actions */}
-            <div className="lg-slide-up" style={{ animationDelay: '0.07s' }}>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400 mb-2.5">Login as</p>
-              <div className="flex gap-2.5">
+            {/* Role tabs */}
+            <div>
+              <p style={{ fontSize:'0.625rem', fontWeight:700, letterSpacing:'0.14em', textTransform:'uppercase', color:'var(--ink-faint)', marginBottom:'0.625rem' }}>
+                Login as
+              </p>
+              <div style={{ display:'flex', gap:'0.625rem' }}>
                 {[
-                  { key: 'admin',    label: 'Admin',    Icon: UserCircle, color: '#f97316', lightBg: '#fff7ed', border: '#fed7aa' },
-                  { key: 'employee', label: 'Employee', Icon: Users,      color: '#a855f7', lightBg: '#faf5ff', border: '#e9d5ff' },
-                ].map(tab => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setLoginType(tab.key)}
-                    className="lg-card-hover flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 py-3 text-sm font-bold transition-all"
-                    style={
-                      loginType === tab.key
-                        ? { borderColor: tab.border, backgroundColor: tab.lightBg, color: tab.color, boxShadow: `0 4px 16px ${tab.color}25` }
-                        : { borderColor: '#e5e7eb', backgroundColor: '#f9fafb', color: '#9ca3af' }
-                    }
-                  >
-                    <tab.Icon className="h-4 w-4" strokeWidth={2} />
-                    {tab.label}
-                    {loginType === tab.key && (
-                      <span className="h-1.5 w-1.5 rounded-full lg-blink" style={{ backgroundColor: tab.color }} />
-                    )}
-                  </button>
-                ))}
+                  { key:'admin',    label:'Admin',    Icon:UserCircle, dotColor:'var(--accent)' },
+                  { key:'employee', label:'Employee', Icon:Users,      dotColor:'#8b5cf6' },
+                ].map(tab => {
+                  const active = loginType === tab.key;
+                  const rippleFn = useRipple();
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={(e) => { rippleFn(e); setLoginType(tab.key); }}
+                      className="lg-ripple lg-shine"
+                      style={{
+                        flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:'0.5rem',
+                        padding:'0.75rem', borderRadius:'0.875rem', cursor:'pointer',
+                        fontSize:'0.875rem', fontWeight:700,
+                        border:`1.5px solid ${active ? (tab.dotColor === 'var(--accent)' ? 'rgba(249,115,22,0.4)' : '#8b5cf640') : 'var(--border)'}`,
+                        background: active ? (tab.dotColor === 'var(--accent)' ? 'var(--accent-dim)' : 'rgba(139,92,246,0.1)') : 'var(--surface)',
+                        color: active ? (tab.dotColor === 'var(--accent)' ? 'var(--accent)' : '#8b5cf6') : 'var(--ink-faint)',
+                        transition:'all 0.2s',
+                        boxShadow: active ? `0 4px 16px ${tab.dotColor === 'var(--accent)' ? 'rgba(249,115,22,0.18)' : 'rgba(139,92,246,0.15)'}` : 'none',
+                      }}
+                    >
+                      <tab.Icon style={{ width:15, height:15 }} strokeWidth={2} />
+                      {tab.label}
+                      {active && (
+                        <span style={{ width:5, height:5, borderRadius:'50%', background: tab.dotColor === 'var(--accent)' ? 'var(--accent)' : '#8b5cf6', display:'inline-block', animation:'lg-blink 2s ease-in-out infinite' }} />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Mobile input */}
-            <div className="lg-slide-up space-y-1.5" style={{ animationDelay: '0.12s' }}>
-              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400">Mobile Number</label>
-              <div className="relative">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-md transition-all"
-                  style={{ background: focused === 'mobile' ? 'rgba(249,115,22,0.15)' : '#f3f4f6' }}>
-                  <Smartphone className="h-3 w-3 transition-colors"
-                    style={{ color: focused === 'mobile' ? '#f97316' : '#9ca3af' }} strokeWidth={2.5} />
+            <div style={{ display:'flex', flexDirection:'column', gap:'0.375rem' }}>
+              <label style={{ fontSize:'0.625rem', fontWeight:700, letterSpacing:'0.14em', textTransform:'uppercase', color:'var(--ink-faint)' }}>
+                Mobile Number
+              </label>
+              <div style={{ position:'relative' }}>
+                <div style={{
+                  position:'absolute', left:'0.875rem', top:'50%', transform:'translateY(-50%)',
+                  width:20, height:20, borderRadius:'0.375rem', display:'flex', alignItems:'center', justifyContent:'center',
+                  background: focused === 'mobile' ? 'var(--accent-dim)' : 'var(--surface)',
+                  transition:'background 0.2s',
+                }}>
+                  <Smartphone style={{ width:11, height:11, color: focused === 'mobile' ? 'var(--accent)' : 'var(--ink-faint)', transition:'color 0.2s' }} strokeWidth={2.5} />
                 </div>
                 <input
                   type="tel"
@@ -291,11 +416,16 @@ export default function LoginPage() {
                   value={formData.mobile}
                   onFocus={() => setFocused('mobile')}
                   onBlur={() => setFocused(null)}
-                  onChange={e => setFormData({ ...formData, mobile: e.target.value.replace(/\D/g, '') })}
+                  onChange={e => setFormData({ ...formData, mobile: e.target.value.replace(/\D/g,'') })}
+                  style={{ paddingRight: formData.mobile.length > 0 ? '3.5rem' : '0.875rem' }}
                 />
                 {formData.mobile.length > 0 && (
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold tabular-nums transition-colors"
-                    style={{ color: formData.mobile.length === 10 ? '#22c55e' : '#d1d5db' }}>
+                  <span style={{
+                    position:'absolute', right:'0.875rem', top:'50%', transform:'translateY(-50%)',
+                    fontSize:'0.6875rem', fontWeight:700,
+                    color: formData.mobile.length === 10 ? '#22c55e' : 'var(--border-strong)',
+                    transition:'color 0.2s',
+                  }}>
                     {formData.mobile.length}/10
                   </span>
                 )}
@@ -303,84 +433,102 @@ export default function LoginPage() {
             </div>
 
             {/* Password input */}
-            <div className="lg-slide-up space-y-1.5" style={{ animationDelay: '0.17s' }}>
-              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400">Password</label>
-              <div className="relative">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-md transition-all"
-                  style={{ background: focused === 'password' ? 'rgba(249,115,22,0.15)' : '#f3f4f6' }}>
-                  <Lock className="h-3 w-3 transition-colors"
-                    style={{ color: focused === 'password' ? '#f97316' : '#9ca3af' }} strokeWidth={2.5} />
+            <div style={{ display:'flex', flexDirection:'column', gap:'0.375rem' }}>
+              <label style={{ fontSize:'0.625rem', fontWeight:700, letterSpacing:'0.14em', textTransform:'uppercase', color:'var(--ink-faint)' }}>
+                Password
+              </label>
+              <div style={{ position:'relative' }}>
+                <div style={{
+                  position:'absolute', left:'0.875rem', top:'50%', transform:'translateY(-50%)',
+                  width:20, height:20, borderRadius:'0.375rem', display:'flex', alignItems:'center', justifyContent:'center',
+                  background: focused === 'password' ? 'var(--accent-dim)' : 'var(--surface)',
+                  transition:'background 0.2s',
+                }}>
+                  <Lock style={{ width:11, height:11, color: focused === 'password' ? 'var(--accent)' : 'var(--ink-faint)', transition:'color 0.2s' }} strokeWidth={2.5} />
                 </div>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
-                  className="lg-input pr-12"
+                  className="lg-input"
                   placeholder="Enter your password"
                   value={formData.password}
                   onFocus={() => setFocused('password')}
                   onBlur={() => setFocused(null)}
                   onChange={e => setFormData({ ...formData, password: e.target.value })}
+                  style={{ paddingRight:'3rem' }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(v => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-xl transition-all hover:scale-110"
-                  style={{ background: '#f3f4f6' }}
+                  style={{
+                    position:'absolute', right:'0.75rem', top:'50%', transform:'translateY(-50%)',
+                    width:28, height:28, borderRadius:'0.5rem', border:'none', cursor:'pointer',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    background:'var(--surface)', transition:'background 0.2s',
+                  }}
                 >
                   {showPassword
-                    ? <EyeOff className="h-3.5 w-3.5 text-gray-400" />
-                    : <Eye className="h-3.5 w-3.5 text-gray-400" />}
+                    ? <EyeOff style={{ width:14, height:14, color:'var(--ink-faint)' }} />
+                    : <Eye    style={{ width:14, height:14, color:'var(--ink-faint)' }} />}
                 </button>
               </div>
             </div>
 
-            {/* Submit button */}
-            <div className="lg-slide-up pt-1" style={{ animationDelay: '0.22s' }}>
-              <button
-                type="button"
-                disabled={loading || !isReady}
-                onClick={handleLogin}
-                className="lg-card-hover w-full relative overflow-hidden rounded-2xl py-4 text-sm font-bold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                style={{
-                  background: isReady
-                    ? 'linear-gradient(135deg,#f97316 0%,#ea580c 60%,#c2410c 100%)'
-                    : '#e5e7eb',
-                  color: isReady ? '#fff' : '#9ca3af',
-                  boxShadow: isReady ? '0 8px 28px rgba(249,115,22,0.30)' : 'none',
-                }}
-              >
-                {isReady && !loading && (
-                  <div className="absolute inset-0 -skew-x-12 pointer-events-none"
-                    style={{ background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.12),transparent)', animation: 'shimmer 2.5s linear infinite', backgroundSize: '200% auto' }} />
-                )}
-                <span className="relative flex items-center justify-center gap-2">
-                  {loading ? (
-                    <>
-                      <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white" style={{ animation: 'spin-slow 0.7s linear infinite' }} />
-                      Signing in…
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="h-4 w-4" strokeWidth={2.5} />
-                      Sign In
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
-                </span>
-              </button>
-            </div>
+            {/* Submit */}
+            <SignInBtn isReady={isReady} loading={loading} onSubmit={handleLogin} />
 
             {/* Footer */}
-            <p className="lg-slide-up text-center text-[11px] font-semibold text-gray-300" style={{ animationDelay: '0.27s' }}>
+            <p style={{ textAlign:'center', fontSize:'0.6875rem', fontWeight:500, color:'var(--ink-faint)' }}>
               Orange Mobile · Point of Sale System
             </p>
           </div>
 
-          {/* bottom accent line */}
-          <div className="absolute bottom-0 left-0 right-0 h-0.5"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(249,115,22,0.25), rgba(168,85,247,0.18), transparent)' }} />
+          {/* Bottom accent line */}
+          <div style={{ position:'absolute', bottom:0, left:0, right:0, height:2, background:'linear-gradient(90deg, transparent, rgba(249,115,22,0.3), transparent)' }} />
         </div>
       </div>
     </>
+  );
+}
+
+/* ── Sign In Button ── */
+function SignInBtn({ isReady, loading, onSubmit }) {
+  const ripple = useRipple();
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={loading || !isReady}
+      onClick={(e) => { ripple(e); onSubmit(e); }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="lg-ripple lg-shine"
+      style={{
+        width:'100%', padding:'1rem', borderRadius:'1.125rem',
+        fontSize:'0.9375rem', fontWeight:700,
+        cursor:(loading||!isReady)?'not-allowed':'pointer',
+        background: isReady ? 'var(--ink)' : 'var(--surface)',
+        color: isReady ? '#fff' : 'var(--ink-faint)',
+        border:`1.5px solid ${isReady ? (hovered?'var(--accent)':'var(--ink)') : 'var(--border)'}`,
+        boxShadow: isReady ? (hovered?'0 10px 32px rgba(0,0,0,0.25)':'0 4px 16px rgba(0,0,0,0.15)') : 'none',
+        transition:'all 0.2s',
+        transform: hovered&&isReady&&!loading ? 'translateY(-1px)' : 'translateY(0)',
+        opacity: loading ? 0.7 : 1,
+        display:'flex', alignItems:'center', justifyContent:'center', gap:'0.5rem',
+      }}
+    >
+      {loading ? (
+        <>
+          <div style={{ width:16, height:16, borderRadius:'50%', border:'2px solid rgba(255,255,255,0.3)', borderTopColor:'#fff', animation:'lg-spin-slow 0.7s linear infinite' }} />
+          Signing in…
+        </>
+      ) : (
+        <>
+          <Zap style={{ width:16, height:16, color: isReady ? 'var(--accent)' : 'var(--ink-faint)' }} strokeWidth={2.5} />
+          Sign In
+          <ArrowRight style={{ width:15, height:15, color: isReady ? (hovered?'var(--accent)':'rgba(255,255,255,0.6)') : 'var(--ink-faint)', transform:hovered&&isReady?'translateX(2px)':'translateX(0)', transition:'transform 0.2s, color 0.2s' }} />
+        </>
+      )}
+    </button>
   );
 }
