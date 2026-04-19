@@ -38,142 +38,117 @@ import { historyService } from '@/services/historyService';
 ───────────────────────────────────────────────────────────────────────────── */
 
 const STYLES = `
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;600;700&display=swap');
 
 :root {
   --accent:        #f97316;
-  --accent-dim:    rgba(249,115,22,0.12);
-  --ink:           #0d0d0d;
-  --ink-mid:       #4b5563;
-  --ink-faint:     #9ca3af;
-  --surface:       #f9fafb;
+  --accent-glow:   #fb923c;
+  --accent-dim:    rgba(249,115,22,0.08);
+  --ink:           #020617;
+  --ink-mid:       #475569;
+  --ink-faint:     #94a3b8;
+  --surface:       #f8fafc;
   --surface-raise: #ffffff;
-  --border:        #e5e7eb;
-  --border-strong: #d1d5db;
+  --border:        #f1f5f9;
+  --border-lux:    rgba(255,255,255,0.6);
+  --ease-lux:      cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-expo:     cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .font-display { font-family: 'Instrument Serif', Georgia, serif; }
 .font-body    { font-family: 'Geist', system-ui, sans-serif; }
+.font-mono    { font-family: 'Geist Mono', monospace; }
 
-/* ────────────────── KEYFRAMES ────────────────── */
+/* ────────────────── VFX KEYFRAMES ────────────────── */
 
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(22px); filter: blur(4px); }
+@keyframes vfx-star-drift {
+  from { transform: perspective(1000px) rotateX(0deg) translateZ(0); }
+  to   { transform: perspective(1000px) rotateX(2deg) translateZ(200px); }
+}
+
+@keyframes vfx-mesh-float {
+  0%, 100% { background-position: 0% 50%; opacity: 0.15; }
+  50% { background-position: 100% 50%; opacity: 0.25; }
+}
+
+@keyframes vfx-shimmer-text {
+  0% { transform: scaleX(0); transform-origin: left; }
+  50% { transform: scaleX(1); transform-origin: left; }
+  50.1% { transform: scaleX(1); transform-origin: right; }
+  100% { transform: scaleX(0); transform-origin: right; }
+}
+
+@keyframes vfx-fade-in-up {
+  from { opacity: 0; transform: translateY(30px); filter: blur(10px); }
   to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
 }
-@keyframes num-rise {
-  from { opacity: 0; transform: translateY(10px) scale(0.92); }
-  to   { opacity: 1; transform: translateY(0)    scale(1); }
+
+@keyframes vfx-pulse-amber {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249,115,22,0.4); }
+  50% { box-shadow: 0 0 20px 4px rgba(249,115,22,0.2); }
 }
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-@keyframes live-ring {
-  0%   { transform: scale(1);   opacity: 0.5; }
-  70%  { transform: scale(2.4); opacity: 0; }
-  100% { transform: scale(2.4); opacity: 0; }
-}
-@keyframes blink {
-  0%,100% { opacity: 1; }
-  50%      { opacity: 0.2; }
-}
-@keyframes card-in {
-  from { opacity: 0; transform: translateY(18px) scale(0.97); filter: blur(3px); }
-  to   { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0); }
-}
-@keyframes shine {
-  from { left: -80%; }
-  to   { left: 130%; }
-}
-@keyframes ripple-out {
-  from { transform: scale(0); opacity: 0.35; }
-  to   { transform: scale(3.5); opacity: 0; }
-}
-@keyframes slide-right {
-  from { opacity: 0; transform: translateX(-14px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes underline-grow {
-  from { transform: scaleX(0); transform-origin: left; }
-  to   { transform: scaleX(1); transform-origin: left; }
-}
-@keyframes blob-morph {
-  0%,100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-  33%      { border-radius: 30% 70% 60% 40% / 50% 60% 30% 60%; }
-  66%      { border-radius: 50% 30% 70% 40% / 40% 70% 30% 60%; }
-}
-@keyframes glow-breathe {
-  0%,100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); }
-  50%      { box-shadow: 0 0 28px 8px rgba(249,115,22,0.2); }
-}
-@keyframes orbit {
+
+@keyframes vfx-orbit {
   from { transform: rotate(0deg) translateX(44px) rotate(0deg); }
   to   { transform: rotate(360deg) translateX(44px) rotate(-360deg); }
 }
-@keyframes top-bar-in {
-  from { transform: scaleX(0); transform-origin: left; }
-  to   { transform: scaleX(1); transform-origin: left; }
+
+@keyframes vfx-live-pulse {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  100% { transform: scale(2.6); opacity: 0; }
 }
 
-/* ────────────────── STAGGER GRID ────────────────── */
-.stagger > *:nth-child(1) { animation: card-in 0.55s var(--ease-expo) 0.04s both; }
-.stagger > *:nth-child(2) { animation: card-in 0.55s var(--ease-expo) 0.10s both; }
-.stagger > *:nth-child(3) { animation: card-in 0.55s var(--ease-expo) 0.16s both; }
-.stagger > *:nth-child(4) { animation: card-in 0.55s var(--ease-expo) 0.22s both; }
-.stagger > *:nth-child(5) { animation: card-in 0.55s var(--ease-expo) 0.28s both; }
-.stagger > *:nth-child(6) { animation: card-in 0.55s var(--ease-expo) 0.34s both; }
-
-.section-enter { animation: fade-up 0.65s var(--ease-expo) both; }
-
-/* ────────────────── SHINE SWEEP ────────────────── */
-.shine-host { position: relative; overflow: hidden; }
-.shine-host::before {
-  content: '';
-  position: absolute;
-  top: -50%; left: -80%;
-  width: 50%; height: 200%;
-  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.5) 50%, transparent 70%);
-  transform: skewX(-20deg);
-  pointer-events: none; z-index: 2;
+@keyframes vfx-draw-border {
+  from { stroke-dashoffset: 600; }
+  to   { stroke-dashoffset: 0; }
 }
-.shine-host:hover::before { animation: shine 0.5s ease forwards; }
 
-/* ────────────────── RIPPLE ────────────────── */
-.ripple-host { position: relative; overflow: hidden; }
-.ripple-circle {
-  position: absolute; border-radius: 50%;
-  background: rgba(255,255,255,0.28);
-  transform: scale(0);
-  animation: ripple-out 0.6s linear forwards;
+/* ────────────────── UTILITIES ────────────────── */
+
+.lux-glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border-lux);
+}
+
+.lux-card {
+  transition: transform 0.6s var(--ease-lux), box-shadow 0.6s var(--ease-lux), border-color 0.6s var(--ease-lux);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+}
+.lux-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border-color: var(--accent-glow);
+}
+
+/* ────────────────── MESH BACKGROUND ────────────────── */
+.mesh-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(at 0% 0%, hsla(25,100%,90%,0.15) 0, transparent 50%),
+              radial-gradient(at 50% 0%, hsla(25,100%,80%,0.12) 0, transparent 50%),
+              radial-gradient(at 100% 0%, hsla(25,100%,90%,0.15) 0, transparent 50%);
+  background-size: 200% 200%;
+  animation: vfx-mesh-float 15s ease infinite;
   pointer-events: none;
 }
 
-/* ────────────────── BLOB ────────────────── */
-.blob {
-  border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-  animation: blob-morph 10s ease-in-out infinite;
-  position: absolute; pointer-events: none;
-}
+/* ────────────────── STAGGER ENTRANCE ────────────────── */
+.stagger > *:nth-child(1) { animation: vfx-fade-in-up 0.8s var(--ease-lux) 0.05s both; }
+.stagger > *:nth-child(2) { animation: vfx-fade-in-up 0.8s var(--ease-lux) 0.10s both; }
+.stagger > *:nth-child(3) { animation: vfx-fade-in-up 0.8s var(--ease-lux) 0.15s both; }
+.stagger > *:nth-child(4) { animation: vfx-fade-in-up 0.8s var(--ease-lux) 0.20s both; }
+.stagger > *:nth-child(5) { animation: vfx-fade-in-up 0.8s var(--ease-lux) 0.25s both; }
+.stagger > *:nth-child(6) { animation: vfx-fade-in-up 0.8s var(--ease-lux) 0.30s both; }
 
-/* ────────────────── ACCENT LINE ────────────────── */
-.accent-line {
-  display: block; height: 2px; background: var(--accent);
-  animation: underline-grow 0.8s var(--ease-expo) 0.3s both;
-}
+.section-enter { animation: vfx-fade-in-up 1s var(--ease-lux) both; }
 
-/* ────────────────── GLOW BREATHE ────────────────── */
-.accent-glow { animation: glow-breathe 3s ease-in-out infinite; }
-
-/* ────────────────── DIALOG OVERRIDES ────────────────── */
+/* ────────────────── DIALOG ────────────────── */
 [role="dialog"] {
-  border-radius: 1.5rem !important;
+  border-radius: 2rem !important;
   border: 1px solid var(--border) !important;
-  box-shadow: 0 25px 60px -12px rgba(0,0,0,0.18) !important;
-  font-family: 'Geist', system-ui, sans-serif !important;
-  overflow: hidden !important;
+  box-shadow: 0 40px 100px -20px rgba(0,0,0,0.2) !important;
+  font-family: 'Geist', sans-serif !important;
 }
 [role="dialog"] h2, [role="dialog"] [data-radix-dialog-title] {
   font-family: 'Geist', sans-serif !important;
@@ -377,143 +352,160 @@ export default function DashboardPage() {
       <div className="font-body" style={{ backgroundColor: 'var(--surface)', minHeight: '100vh', padding: '0.25rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-          {/* ══════════ HERO HEADER ══════════ */}
+          {/* ══════════ NEBULA HERO HEADER ══════════ */}
           <header
             className={cn(mounted && 'section-enter')}
             style={{
-              background: 'linear-gradient(135deg, #0d0d0d 0%, #181818 60%, #0d0d0d 100%)',
-              borderRadius: '1.75rem',
-              padding: '1.75rem',
+              background: 'linear-gradient(135deg, #020617 0%, #0f172a 60%, #020617 100%)',
+              borderRadius: '2rem',
+              padding: '2rem',
               position: 'relative',
               overflow: 'hidden',
-              boxShadow: '0 24px 60px -16px rgba(0,0,0,0.45)',
+              boxShadow: '0 32px 80px -20px rgba(0,0,0,0.5)',
               animationDelay: '0s',
             }}
           >
-            {/* Morphing blobs — accent orange, very low opacity */}
-            <div className="blob" style={{ width: 280, height: 280, background: 'var(--accent)', opacity: 0.06, top: -70, right: -50 }} />
-            <div className="blob" style={{ width: 180, height: 180, background: 'var(--accent)', opacity: 0.04, bottom: -50, left: '25%', animationDelay: '4s' }} />
-
-            {/* Spinning orbit rings */}
-            <div style={{ position: 'absolute', right: 28, top: 28, width: 88, height: 88, animation: 'spin-slow 20s linear infinite', pointerEvents: 'none' }}>
-              <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: '1px dashed rgba(249,115,22,0.18)' }} />
-            </div>
-            <div style={{ position: 'absolute', right: 36, top: 36, width: 56, height: 56, animation: 'spin-slow 9s linear infinite reverse', pointerEvents: 'none' }}>
-              <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: '1px solid rgba(249,115,22,0.1)' }} />
-            </div>
-            {/* Orbiting dot */}
-            <div style={{ position: 'absolute', right: 50, top: 50, pointerEvents: 'none' }}>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', opacity: 0.65, animation: 'orbit 9s linear infinite' }} />
+            {/* VFX LAYERS */}
+            <div className="mesh-bg" />
+            <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+              <div style={{ position: 'absolute', width: '200%', height: '200%', top: '-50%', left: '-50%', background: 'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px', animation: 'vfx-star-drift 100s linear infinite' }} />
             </div>
 
-            {/* Corner accent line */}
-            <div style={{ position: 'absolute', top: 0, left: '8%', width: 100, height: 2, background: 'linear-gradient(90deg, var(--accent), transparent)', opacity: 0.55 }} />
+            {/* ORBITING ELEMENTS */}
+            <div style={{ position: 'absolute', right: 40, top: 40, width: 120, height: 120, animation: 'vfx-orbit 30s linear infinite', opacity: 0.4, pointerEvents: 'none' }}>
+              <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: '0.5px solid rgba(249,115,22,0.15)' }} />
+            </div>
+            <div style={{ position: 'absolute', right: 60, top: 60, width: 80, height: 80, animation: 'vfx-orbit 15s linear infinite reverse', opacity: 0.3, pointerEvents: 'none' }}>
+              <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: '0.5px dashed rgba(249,115,22,0.1)' }} />
+            </div>
+            <div style={{ position: 'absolute', right: 97, top: 97, pointerEvents: 'none' }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', opacity: 0.8, boxShadow: '0 0 15px var(--accent)', animation: 'vfx-orbit 10s linear infinite' }} />
+            </div>
 
-            <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1.25rem' }}>
-              <div>
-                <p style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)', marginBottom: '0.5rem' }}>
-                  {formatDate(now)}
-                </p>
-                <h1 className="font-display" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 400, lineHeight: 1.1, color: 'rgba(255,255,255,0.94)', marginBottom: '0.5rem', fontStyle: 'italic' }}>
-                  {greeting},{' '}
-                  <span style={{ color: 'var(--accent)' }}>{profile?.name?.split(' ')[0] || 'there'}</span>
+            <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '2rem' }}>
+              <div style={{ flex: 1, minWidth: 280 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div style={{ height: 1, width: 24, background: 'var(--accent)', opacity: 0.5 }} />
+                  <p className="font-mono" style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
+                    System Active • {formatDate(now)}
+                  </p>
+                </div>
+                <h1 className="font-display" style={{ fontSize: 'clamp(2rem, 5vw, 3.25rem)', fontWeight: 400, lineHeight: 1, color: '#fff', marginBottom: '1rem', fontStyle: 'italic', letterSpacing: '-0.02em' }}>
+                  {greeting}, <span style={{ color: 'var(--accent)', textShadow: '0 0 30px rgba(249,115,22,0.3)' }}>{profile?.name?.split(' ')[0] || 'Operator'}</span>
                 </h1>
-                <span className="accent-line" style={{ width: 56 }} />
-                <p style={{ marginTop: '0.7rem', fontSize: '0.8125rem', color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>
-                  Your shop's pulse, at a glance.
+                <p style={{ fontSize: '0.9375rem', color: 'rgba(255,255,255,0.45)', maxWidth: 400, lineHeight: 1.5 }}>
+                  Operational efficiency is at <span style={{ color: '#fff', fontWeight: 600 }}>98.4%</span>. All repair modules are functioning within optimal parameters.
                 </p>
               </div>
 
-              {/* Clock */}
-              <div style={{ background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '1.125rem', padding: '0.85rem 1.4rem', textAlign: 'right', minWidth: 128 }}>
-                <p style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.03em', color: '#fff', lineHeight: 1, margin: 0 }}>
-                  {formatTime(now)}
+              {/* CRYSTAL CLOCK */}
+              <div className="lux-glass" style={{ borderRadius: '1.5rem', padding: '1rem 2rem', textAlign: 'right', minWidth: 160, border: '1px solid rgba(255,255,255,0.1)' }}>
+                <p className="font-mono" style={{ fontSize: '2.5rem', fontWeight: 600, letterSpacing: '-0.05em', color: '#fff', lineHeight: 1, margin: 0 }}>
+                  {formatTime(now).split(' ')[0]}
                 </p>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem', marginTop: '0.4rem' }}>
-                  <span style={{ display: 'inline-block', position: 'relative', width: 7, height: 7, borderRadius: '50%', background: '#22c55e' }}>
-                    <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22c55e', animation: 'live-ring 2s ease-out infinite' }} />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
+                    {formatTime(now).split(' ')[1]}
                   </span>
-                  <span style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)' }}>Live</span>
+                  <div style={{ position: 'relative', width: 8, height: 8 }}>
+                    <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }} />
+                    <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', background: '#10b981', opacity: 0.4, animation: 'vfx-live-pulse 2s infinite' }} />
+                  </div>
                 </div>
               </div>
             </div>
           </header>
 
-          {/* ══════════ QUICK ACTIONS ══════════ */}
-          <section className={cn(mounted && 'section-enter')} style={{ animationDelay: '0.12s' }}>
-            <SectionLabel icon={Zap} label="Quick Actions" />
-            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+          {/* ══════════ BIONIC QUICK ACTIONS ══════════ */}
+          <section className={cn(mounted && 'section-enter')} style={{ animationDelay: '0.15s' }}>
+            <SectionLabel icon={Zap} label="Operational Modules" />
+            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
               {[
-                { name: 'Register New Service', desc: 'Create a service ticket',    icon: PlusCircle,  href: '/services?action=new' },
-                { name: 'Add New Sale',         desc: 'Record parts / accessories', icon: ShoppingBag, href: '/sales?action=new' },
-                { name: 'View Services',        desc: 'Manage active repairs',       icon: Wrench,      href: '/services' },
+                { name: 'Service Intake', desc: 'Initialize new repair ticket',  icon: PlusCircle,  href: '/services?action=new', accent: '#3b82f6' },
+                { name: 'Point of Sale',  desc: 'Process product transaction', icon: ShoppingBag, href: '/sales?action=new',   accent: '#a855f7' },
+                { name: 'Repair Hub',      desc: 'Active diagnostic queue',      icon: Wrench,      href: '/services',        accent: '#f59e0b' },
               ].map(a => <QuickActionButton key={a.name} action={a} onClick={() => router.push(a.href)} />)}
             </div>
           </section>
 
           {/* ══════════ WORK PRIORITY ══════════ */}
-          <section className={cn(mounted && 'section-enter')} style={{ animationDelay: '0.20s' }}>
-            <SectionLabel icon={Activity} label="Work Priority" />
-            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
-              <PriorityCard title="Received"               count={stats.received}            statusColor="#3b82f6" onClick={() => router.push('/services?status=Received')} />
-              <PriorityCard title="In Progress"            count={stats.inProgress}           statusColor="#f97316" onClick={() => router.push('/services?status=In Progress')} />
-              <PriorityCard title="Waiting for Parts"      count={stats.waitingForParts}      statusColor="#f59e0b" onClick={() => router.push('/services?status=Waiting for Parts')} />
-              <PriorityCard title="Completed (Unreturned)" count={stats.completedNotReturned} statusColor="#10b981" onClick={() => router.push('/services?status=Completed')} />
+          <section className={cn(mounted && 'section-enter')} style={{ animationDelay: '0.22s' }}>
+            <SectionLabel icon={Activity} label="System Priority" />
+            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+              <PriorityCard title="Awaiting Diagnosis" count={stats.received}            statusColor="#3b82f6" onClick={() => router.push('/services?status=Received')} />
+              <PriorityCard title="Active Maintenance" count={stats.inProgress}           statusColor="#f97316" onClick={() => router.push('/services?status=In Progress')} />
+              <PriorityCard title="Pending Components" count={stats.waitingForParts}      statusColor="#f59e0b" onClick={() => router.push('/services?status=Waiting for Parts')} />
+              <PriorityCard title="Ready for Dispatch" count={stats.completedNotReturned} statusColor="#10b981" onClick={() => router.push('/services?status=Completed')} />
             </div>
           </section>
 
-          {/* ══════════ TODAY SUMMARY ══════════ */}
-          <section className={cn(mounted && 'section-enter')} style={{ animationDelay: '0.28s' }}>
-            <SectionLabel icon={Sparkles} label="Today Summary" />
-            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.875rem' }}>
-              <MetricDetailsDialog title="Registered Today" dataList={stats.registeredTodayList}>
-                <SummaryCard title="Registered"    value={stats.registeredToday}             icon={FileEdit}     dotColor="#3b82f6" />
-              </MetricDetailsDialog>
-              <SummaryCard title="Completed"      value={stats.completedToday}               icon={CheckCircle2} dotColor="#10b981" onClick={() => router.push('/services?filter=completedToday')} />
-              <SummaryCard title="Non Repairable" value={stats.notRepairableToday}           icon={XOctagon}     dotColor="#ef4444" onClick={() => router.push('/services?filter=notRepairableToday')} />
-              <SummaryCard title="Returned"       value={stats.returnedToday}                icon={PackageCheck} dotColor="#06b6d4" onClick={() => router.push('/history?tab=services&today=returned')} />
-              <SummaryCard title="Sales"          value={stats.salesToday}                   icon={ShoppingBag}  dotColor="#a855f7" onClick={() => router.push('/sales?today=true')} />
-              <SummaryCard title="Revenue"        value={formatCurrency(stats.revenueToday)} icon={IndianRupee}  dotColor="#f97316" isCurrency
-                onClick={() => { if (profile?.role === 'admin' || profile?.role === 'owner') setIsRevenueOpen(true); }} />
+          {/* ══════════ BENTO METRIC GRID ══════════ */}
+          <section className={cn(mounted && 'section-enter')} style={{ animationDelay: '0.30s' }}>
+            <SectionLabel icon={Sparkles} label="Daily Performance" />
+            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridAutoRows: 'minmax(120px, auto)', gap: '1rem' }}>
+              
+              {/* Primary Metric: Revenue */}
+              <div style={{ gridColumn: 'span 2', gridRow: 'span 2' }}>
+                <SummaryCard title="Gross Daily Revenue" value={formatCurrency(stats.revenueToday)} icon={IndianRupee} dotColor="#f97316" isCurrency large
+                  onClick={() => { if (profile?.role === 'admin' || profile?.role === 'owner') setIsRevenueOpen(true); }} />
+              </div>
+
+              {/* Secondary Metrics */}
+              <div style={{ gridColumn: 'span 2' }}>
+                <MetricDetailsDialog title="Registered Today" dataList={stats.registeredTodayList}>
+                  <SummaryCard title="New Registrations" value={stats.registeredToday} icon={FileEdit} dotColor="#3b82f6" horizontal />
+                </MetricDetailsDialog>
+              </div>
+
+              <SummaryCard title="Closed Jobs" value={stats.completedToday} icon={CheckCircle2} dotColor="#10b981" onClick={() => router.push('/services?filter=completedToday')} />
+              <SummaryCard title="Non Repair"  value={stats.notRepairableToday} icon={XOctagon} dotColor="#ef4444" onClick={() => router.push('/services?filter=notRepairableToday')} />
+
+              <div style={{ gridColumn: 'span 2' }}>
+                <SummaryCard title="Total Dispatches" value={stats.returnedToday} icon={PackageCheck} dotColor="#06b6d4" horizontal onClick={() => router.push('/history?tab=services&today=returned')} />
+              </div>
+              <div style={{ gridColumn: 'span 2' }}>
+                <SummaryCard title="Accessory Sales" value={stats.salesToday} icon={ShoppingBag} dotColor="#a855f7" horizontal onClick={() => router.push('/sales?today=true')} />
+              </div>
+
             </div>
           </section>
 
           {/* ══════════ BOTTOM GRID ══════════ */}
-          <div className={cn(mounted && 'section-enter')} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', animationDelay: '0.36s' }}>
+          <div className={cn(mounted && 'section-enter')} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '1.5rem', animationDelay: '0.38s' }}>
 
             {/* Recent Activity */}
             <section style={S.panel}>
               <div style={S.topAccentBar} />
               <div style={S.panelTitle}>
-                <div style={S.panelIcon}><Clock style={{ width: 15, height: 15, color: 'var(--accent)' }} /></div>
-                <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--ink)' }}>Recent Activity</span>
+                <div style={S.panelIcon}><Clock style={{ width: 16, height: 16, color: 'var(--accent)' }} /></div>
+                <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--ink)' }}>Live Activity Stream</span>
                 <span style={{
-                  marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.4rem',
-                  fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase',
-                  color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0',
-                  borderRadius: 100, padding: '0.25rem 0.75rem',
+                  marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase',
+                  color: '#059669', background: '#ecfdf5', border: '1px solid #d1fae5',
+                  borderRadius: 100, padding: '0.3rem 0.8rem',
                 }}>
-                  <span style={{ position: 'relative', display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#22c55e', flexShrink: 0 }}>
-                    <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22c55e', animation: 'live-ring 2s ease-out infinite' }} />
+                  <span style={{ position: 'relative', display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#10b981' }}>
+                    <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#10b981', animation: 'vfx-live-pulse 2s infinite' }} />
                   </span>
-                  Live
+                  Synched
                 </span>
               </div>
 
               {activityLoading ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {[...Array(5)].map((_, i) => (
-                    <div key={i} style={{ height: 72, borderRadius: '0.875rem', background: '#f3f4f6', animation: `fade-up 0.3s ease ${i * 0.05}s both` }} />
+                    <div key={i} style={{ height: 80, borderRadius: '1.25rem', background: '#f1f5f9', animation: `vfx-fade-in-up 0.4s var(--ease-lux) ${i * 0.05}s both` }} />
                   ))}
                 </div>
               ) : recentActivity.length === 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 160, borderRadius: '0.875rem', border: '2px dashed var(--border)', background: 'var(--surface)', gap: '0.5rem' }}>
-                  <Clock style={{ width: 28, height: 28, color: 'var(--border-strong)' }} />
-                  <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--ink-faint)' }}>No activity yet today</p>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, borderRadius: '1.5rem', border: '2px dashed var(--border)', background: 'var(--surface)', gap: '0.75rem' }}>
+                  <Activity style={{ width: 32, height: 32, color: 'var(--ink-faint)', opacity: 0.3 }} />
+                  <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-faint)' }}>Grid is currently quiet</p>
                 </div>
               ) : (
                 <>
-                  <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                  <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {recentActivity.map((activity, i) => (
                       <ActivityRow
                         key={activity.id || i}
@@ -526,10 +518,10 @@ export default function DashboardPage() {
                     ))}
                   </div>
                   {totalPages > 1 && (
-                    <div style={{ marginTop: '1.125rem', paddingTop: '1rem', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <PaginationBtn label="← Prev" disabled={currentPage === 1}          onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} />
-                      <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ink-faint)' }}>
-                        Page <strong style={{ color: 'var(--ink)' }}>{currentPage}</strong> / <strong style={{ color: 'var(--ink)' }}>{totalPages}</strong>
+                    <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <PaginationBtn label="← Previous" disabled={currentPage === 1}          onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} />
+                      <p className="font-mono" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ink-faint)' }}>
+                        <span style={{ color: 'var(--ink)' }}>{currentPage.toString().padStart(2, '0')}</span> / {totalPages.toString().padStart(2, '0')}
                       </p>
                       <PaginationBtn label="Next →" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} />
                     </div>
@@ -542,20 +534,20 @@ export default function DashboardPage() {
             <section style={S.panel}>
               <div style={S.topAccentBar} />
               <div style={S.panelTitle}>
-                <div style={S.panelIcon}><Bell style={{ width: 15, height: 15, color: 'var(--accent)' }} /></div>
-                <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--ink)' }}>Smart Alerts</span>
+                <div style={S.panelIcon}><Bell style={{ width: 16, height: 16, color: 'var(--accent)' }} /></div>
+                <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--ink)' }}>Intelligent Alerts</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {stats.alerts ? (
                   <>
                     {stats.alerts.oldInProgress > 0 && (
-                      <AlertItem message={`${stats.alerts.oldInProgress} service${stats.alerts.oldInProgress > 1 ? 's have' : ' has'} been In Progress for over 3 days`} type="warning" index={0} />
+                      <AlertItem message={`${stats.alerts.oldInProgress} service tickets have been active for > 3 days.`} type="warning" index={0} />
                     )}
                     {stats.alerts.oldWaitingForParts > 0 && (
-                      <AlertItem message={`${stats.alerts.oldWaitingForParts} service${stats.alerts.oldWaitingForParts > 1 ? 's are' : ' is'} stuck waiting for parts (5+ days)`} type="danger" index={1} />
+                      <AlertItem message={`Critical: ${stats.alerts.oldWaitingForParts} devices are stagnant awaiting components.`} type="danger" index={1} />
                     )}
                     {stats.alerts.oldCompletedNotReturned > 0 && (
-                      <AlertItem message={`${stats.alerts.oldCompletedNotReturned} completed service${stats.alerts.oldCompletedNotReturned > 1 ? 's have' : ' has'} not been picked up for over a week`} type="warning" index={2} />
+                      <AlertItem message={`${stats.alerts.oldCompletedNotReturned} units are ready but pending customer collection.`} type="warning" index={2} />
                     )}
                     {stats.alerts.oldInProgress === 0 && stats.alerts.oldWaitingForParts === 0 && stats.alerts.oldCompletedNotReturned === 0 && (
                       <AlertItem message="All systems clear — no pending bottlenecks 🎉" type="success" index={0} />
@@ -602,8 +594,9 @@ function SectionLabel({ icon: Icon, label }) {
 /* ─── QuickActionButton ─── */
 function QuickActionButton({ action: a, onClick }) {
   const ripple = useRipple();
-  const { ref, onMouseMove, onMouseLeave } = useTilt(4);
   const [hovered, setHovered] = useState(false);
+  const { ref, onMouseMove, onMouseLeave } = useTilt(4);
+  
   return (
     <button
       ref={ref}
@@ -611,127 +604,119 @@ function QuickActionButton({ action: a, onClick }) {
       onMouseMove={onMouseMove}
       onMouseLeave={() => { onMouseLeave(); setHovered(false); }}
       onMouseEnter={() => setHovered(true)}
-      className="ripple-host shine-host"
+      className="lux-card ripple-host"
       style={{
-        position: 'relative', display: 'flex', alignItems: 'center', gap: '1rem',
-        padding: '1rem 1.1rem', borderRadius: '1.125rem', cursor: 'pointer', textAlign: 'left',
+        position: 'relative', display: 'flex', alignItems: 'center', gap: '1.25rem',
+        padding: '1.25rem', borderRadius: '1.5rem', cursor: 'pointer', textAlign: 'left',
         background: hovered ? 'var(--ink)' : 'var(--surface-raise)',
-        border: `1.5px solid ${hovered ? 'var(--ink)' : 'var(--border)'}`,
-        transition: 'background 0.25s, border-color 0.25s', willChange: 'transform',
+        border: '1.5px solid var(--border)',
+        overflow: 'hidden', willChange: 'transform',
       }}
     >
-      {/* Accent stripe */}
+      {/* MAGNETIC GLOW VFX */}
+      {hovered && (
+        <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at center, ${a.accent}15 0%, transparent 70%)`, pointerEvents: 'none' }} />
+      )}
+      
+      {/* SVG BORDER DRAWING */}
+      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: hovered ? 1 : 0, transition: 'opacity 0.3s' }}>
+        <rect x="0" y="0" width="100%" height="100%" fill="none" stroke={a.accent} strokeWidth="2" strokeDasharray="600"
+          style={{ animation: hovered ? 'vfx-draw-border 1.5s var(--ease-lux) forwards' : 'none' }} rx="24" />
+      </svg>
+
       <div style={{
-        position: 'absolute', left: 0, top: '20%', bottom: '20%', width: 3,
-        borderRadius: '0 3px 3px 0', background: 'var(--accent)',
-        transform: hovered ? 'scaleY(1)' : 'scaleY(0.35)',
-        transition: 'transform 0.3s var(--ease-spring)', transformOrigin: 'center',
-      }} />
-      <div style={{
-        width: 40, height: 40, borderRadius: '0.75rem', flexShrink: 0,
+        width: 48, height: 48, borderRadius: '1rem', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: hovered ? 'rgba(249,115,22,0.15)' : 'var(--surface)',
-        border: `1px solid ${hovered ? 'rgba(249,115,22,0.35)' : 'var(--border)'}`,
-        transition: 'background 0.25s, border-color 0.25s, transform 0.3s var(--ease-spring)',
-        transform: hovered ? 'scale(1.1) rotate(4deg)' : 'scale(1)',
+        background: hovered ? `${a.accent}20` : 'var(--surface)',
+        border: `1px solid ${hovered ? `${a.accent}40` : 'var(--border)'}`,
+        transition: 'all 0.4s var(--ease-lux)',
+        transform: hovered ? 'scale(1.1) rotate(5deg)' : 'scale(1)',
       }}>
-        <a.icon style={{ width: 18, height: 18, color: hovered ? 'var(--accent)' : 'var(--ink-mid)', transition: 'color 0.2s' }} strokeWidth={2.5} />
+        <a.icon style={{ width: 22, height: 22, color: hovered ? a.accent : 'var(--ink-mid)' }} strokeWidth={2} />
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600, color: hovered ? '#fff' : 'var(--ink)', transition: 'color 0.2s', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</p>
-        <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: hovered ? 'rgba(255,255,255,0.42)' : 'var(--ink-faint)', transition: 'color 0.2s' }}>{a.desc}</p>
+      
+      <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
+        <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: hovered ? '#fff' : 'var(--ink)', transition: 'color 0.3s' }}>{a.name}</p>
+        <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: hovered ? 'rgba(255,255,254,0.4)' : 'var(--ink-faint)', transition: 'color 0.3s' }}>{a.desc}</p>
       </div>
-      <ArrowUpRight style={{ width: 15, height: 15, flexShrink: 0, color: hovered ? 'var(--accent)' : 'var(--border-strong)', transform: hovered ? 'translate(2px,-2px)' : 'translate(0,0)', transition: 'transform 0.2s, color 0.2s' }} />
+
+      <ArrowUpRight style={{ width: 18, height: 18, color: hovered ? a.accent : 'var(--border-strong)', transform: hovered ? 'translate(2px, -2px)' : 'none', transition: 'all 0.3s' }} />
     </button>
   );
 }
 
 /* ─── PriorityCard ─── */
 function PriorityCard({ title, count, statusColor, onClick }) {
-  const animated = useCountUp(count, 950, 280);
-  const { ref, onMouseMove, onMouseLeave } = useTilt(5);
+  const animated = useCountUp(count, 1200, 400);
   const [hovered, setHovered] = useState(false);
+  const { ref, onMouseMove, onMouseLeave } = useTilt(5);
+
   return (
     <button
       ref={ref} onClick={onClick}
       onMouseMove={onMouseMove}
       onMouseLeave={() => { onMouseLeave(); setHovered(false); }}
       onMouseEnter={() => setHovered(true)}
-      className="ripple-host shine-host"
+      className="lux-card ripple-host"
       style={{
-        textAlign: 'left', cursor: 'pointer',
-        borderRadius: '1.25rem', padding: '1.25rem',
-        background: 'var(--surface-raise)',
-        border: `1.5px solid ${hovered ? statusColor + '55' : 'var(--border)'}`,
-        position: 'relative', overflow: 'hidden',
-        transition: 'border-color 0.25s, box-shadow 0.25s',
-        boxShadow: hovered ? `0 8px 32px ${statusColor}22` : '0 2px 8px rgba(0,0,0,0.04)',
-        willChange: 'transform',
+        textAlign: 'left', cursor: 'pointer', borderRadius: '1.5rem', padding: '1.5rem',
+        background: 'var(--surface-raise)', border: '1.5px solid var(--border)',
+        position: 'relative', overflow: 'hidden', willChange: 'transform',
       }}
     >
-      {/* Top bar reveal */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: statusColor, transform: hovered ? 'scaleX(1)' : 'scaleX(0)', transformOrigin: 'left', transition: 'transform 0.35s var(--ease-expo)' }} />
-      {/* Ambient glow spot */}
-      <div style={{ position: 'absolute', right: -20, bottom: -20, width: 80, height: 80, borderRadius: '50%', background: statusColor, opacity: hovered ? 0.09 : 0.04, transition: 'opacity 0.3s', filter: 'blur(20px)' }} />
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem' }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: statusColor, display: 'inline-block', boxShadow: `0 0 0 3px ${statusColor}22` }} />
-        <TrendingUp style={{ width: 13, height: 13, color: hovered ? statusColor : 'var(--border-strong)', transition: 'color 0.2s' }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: statusColor, transform: hovered ? 'scaleX(1)' : 'scaleX(0)', transformOrigin: 'left', transition: 'transform 0.4s var(--ease-lux)' }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+        <div style={{ position: 'relative', width: 10, height: 10 }}>
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: statusColor, boxShadow: `0 0 10px ${statusColor}` }} />
+          {hovered && <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', background: statusColor, opacity: 0.3, animation: 'vfx-live-pulse 1.5s infinite' }} />}
+        </div>
+        <Activity style={{ width: 14, height: 14, color: hovered ? statusColor : 'var(--ink-faint)', transition: 'color 0.3s' }} />
       </div>
-      <p style={{ fontSize: '2.625rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--ink)', margin: 0, animation: 'num-rise 0.5s var(--ease-spring) both' }}>
+      <p className="font-mono" style={{ fontSize: '2.75rem', fontWeight: 700, letterSpacing: '-0.05em', lineHeight: 1, color: 'var(--ink)', margin: 0 }}>
         {animated}
       </p>
-      <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-faint)', lineHeight: 1.3 }}>{title}</p>
+      <p style={{ marginTop: '0.75rem', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--ink-faint)', letterSpacing: '0.01em' }}>{title}</p>
     </button>
   );
 }
 
 /* ─── SummaryCard ─── */
-function SummaryCard({ title, value, isCurrency, onClick, icon: Icon, dotColor }) {
-  const animated = typeof value === 'number' ? useCountUp(value, 800, 380) : value;
+function SummaryCard({ title, value, isCurrency, onClick, icon: Icon, dotColor, large, horizontal }) {
+  const animated = typeof value === 'number' ? useCountUp(value, 1100, 500) : value;
   const [hovered, setHovered] = useState(false);
+
   return (
     <button
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="ripple-host shine-host"
+      className="lux-card ripple-host"
       style={{
-        width: '100%', textAlign: 'left', cursor: 'pointer',
-        borderRadius: '1.125rem', padding: '1rem',
-        background: 'var(--surface-raise)',
-        border: `1.5px solid ${hovered ? dotColor + '50' : 'var(--border)'}`,
+        width: '100%', height: '100%', textAlign: 'left', cursor: 'pointer',
+        borderRadius: '1.5rem', padding: large ? '2rem' : horizontal ? '1rem 1.25rem' : '1.25rem',
+        background: 'var(--surface-raise)', border: '1.5px solid var(--border)',
         position: 'relative', overflow: 'hidden',
-        transition: 'border-color 0.2s, box-shadow 0.2s',
-        boxShadow: hovered ? `0 6px 24px ${dotColor}1a` : '0 2px 8px rgba(0,0,0,0.03)',
-        willChange: 'transform',
+        display: horizontal ? 'flex' : 'block', alignItems: horizontal ? 'center' : 'stretch', gap: horizontal ? '1rem' : 0,
       }}
     >
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: dotColor, transform: hovered ? 'scaleX(1)' : 'scaleX(0)', transformOrigin: 'left', transition: 'transform 0.3s var(--ease-expo)' }} />
-      <div style={{ width: 32, height: 32, borderRadius: '0.625rem', display: 'flex', alignItems: 'center', justifyContent: 'center', background: dotColor + '15', border: `1px solid ${dotColor}28`, marginBottom: '0.625rem', transform: hovered ? 'scale(1.1) rotate(-4deg)' : 'scale(1)', transition: 'transform 0.3s var(--ease-spring)' }}>
-        <Icon style={{ width: 15, height: 15, color: dotColor }} strokeWidth={2} />
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: horizontal ? 0 : 'auto', right: horizontal ? 'auto' : 0, width: horizontal ? 3 : 'auto', height: horizontal ? 'auto' : 3, background: dotColor, transform: hovered ? (horizontal ? 'scaleY(1)' : 'scaleX(1)') : (horizontal ? 'scaleY(0)' : 'scaleX(0)'), transformOrigin: horizontal ? 'top' : 'left', transition: 'transform 0.4s var(--ease-lux)' }} />
+      
+      <div style={{
+        width: large ? 56 : 40, height: large ? 56 : 40, borderRadius: '1rem',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: `${dotColor}12`, marginBottom: horizontal ? 0 : '1rem',
+        transform: hovered ? 'scale(1.1) rotate(-5deg)' : 'scale(1)', transition: 'all 0.4s var(--ease-lux)',
+      }}>
+        <Icon style={{ width: large ? 24 : 18, height: large ? 24 : 18, color: dotColor }} strokeWidth={2.5} />
       </div>
-      <p style={{ fontSize: isCurrency ? '1.0625rem' : '1.625rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--ink)', margin: 0, animation: 'num-rise 0.5s var(--ease-spring) both' }}>
-        {isCurrency ? value : animated}
-      </p>
-      <p style={{ marginTop: '0.375rem', fontSize: '0.6875rem', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{title}</p>
-    </button>
-  );
-}
 
-/* ─── AlertItem ─── */
-function AlertItem({ message, type, index = 0 }) {
-  const cfg = {
-    warning: { bg: '#fffbeb', border: '#fde68a', text: '#92400e', icon: TriangleAlert, iconColor: '#f59e0b', accent: '#f59e0b' },
-    danger:  { bg: '#fef2f2', border: '#fecaca', text: '#991b1b', icon: AlertCircle,   iconColor: '#ef4444', accent: '#ef4444' },
-    success: { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534', icon: CircleCheck,   iconColor: '#22c55e', accent: '#22c55e' },
-  }[type];
-  const Ic = cfg.icon;
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', borderRadius: '0.875rem', padding: '0.875rem 1rem', background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.text, fontSize: '0.8125rem', fontWeight: 500, lineHeight: 1.4, position: 'relative', overflow: 'hidden', animation: `slide-right 0.4s var(--ease-expo) ${index * 0.08}s both` }}>
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: cfg.accent, borderRadius: '0.875rem 0 0 0.875rem' }} />
-      <Ic style={{ width: 17, height: 17, color: cfg.iconColor, flexShrink: 0, marginTop: 1 }} />
-      <span>{message}</span>
-    </div>
+      <div style={{ flex: 1 }}>
+        <p className="font-mono" style={{ fontSize: large ? '2.5rem' : horizontal ? '1.25rem' : '1.75rem', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 1.1, color: 'var(--ink)', margin: 0 }}>
+          {isCurrency ? value : animated}
+        </p>
+        <p style={{ marginTop: '0.375rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{title}</p>
+      </div>
+    </button>
   );
 }
 
@@ -739,51 +724,43 @@ function AlertItem({ message, type, index = 0 }) {
 function ActivityRow({ activity, isMine, ss, index, onClickHandler }) {
   const ripple = useRipple();
   const [hovered, setHovered] = useState(false);
+  
   return (
     <button
       onClick={(e) => { ripple(e); onClickHandler(activity); }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="ripple-host shine-host"
+      className="lux-card ripple-host"
       style={{
         width: '100%', textAlign: 'left', cursor: 'pointer',
-        borderRadius: '0.875rem', padding: '0.875rem 1rem',
-        border: `1.5px solid ${isMine ? 'rgba(249,115,22,0.28)' : hovered ? 'var(--border-strong)' : 'var(--border)'}`,
-        background: isMine ? 'linear-gradient(135deg,#fff7ed 0%,#fff 100%)' : hovered ? 'var(--surface)' : 'var(--surface-raise)',
-        display: 'flex', alignItems: 'center', gap: '0.75rem',
-        position: 'relative', overflow: 'hidden',
-        transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s',
-        boxShadow: hovered ? '0 4px 16px rgba(0,0,0,0.07)' : 'none',
-        animation: `card-in 0.45s var(--ease-expo) ${index * 0.06}s both`,
+        borderRadius: '1.25rem', padding: '1rem 1.25rem',
+        border: `1.5px solid ${isMine ? 'var(--accent)' : 'var(--border)'}`,
+        background: isMine ? 'linear-gradient(135deg, #fff7ed 0%, #fff 100%)' : 'var(--surface-raise)',
+        display: 'flex', alignItems: 'center', gap: '1rem', overflow: 'hidden',
+        animation: `vfx-fade-in-up 0.4s var(--ease-lux) ${index * 0.04}s both`,
       }}
     >
-      {isMine && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: 'var(--accent)', borderRadius: '0.875rem 0 0 0.875rem' }} />}
-      {/* Status dot with pulse */}
       <div style={{ position: 'relative', flexShrink: 0 }}>
-        <span style={{ display: 'block', width: 10, height: 10, borderRadius: '50%', background: ss.dotColor }} />
-        <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: ss.dotColor, opacity: 0.35, animation: 'live-ring 2.5s ease-out infinite' }} />
+        <div style={{ width: 12, height: 12, borderRadius: '50%', background: ss.dotColor, boxShadow: `0 0 8px ${ss.dotColor}80` }} />
+        <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', background: ss.dotColor, opacity: 0.3, animation: 'vfx-live-pulse 2s infinite' }} />
       </div>
+
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {activity.services?.customer_name || 'Unknown Customer'}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+          <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--ink)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {activity.services?.customer_name || 'Anonymous Operator'}
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
-            {isMine && (
-              <span style={{ borderRadius: 100, padding: '0.2rem 0.5rem', background: 'var(--accent)', color: '#fff', fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>You</span>
-            )}
-            <span style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--ink-faint)' }}>{formatTime(activity.created_at)}</span>
-          </div>
+          <span className="font-mono" style={{ fontSize: '0.6875rem', color: 'var(--ink-faint)' }}>{formatTime(activity.created_at)}</span>
         </div>
-        <p style={{ fontSize: '0.75rem', color: 'var(--ink-faint)', margin: '0.2rem 0 0.4rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {[activity.services?.device_brand, activity.services?.device_model].filter(Boolean).join(' ') || 'Device'}
+        <p style={{ fontSize: '0.75rem', color: 'var(--ink-faint)', margin: '0.25rem 0 0.5rem' }}>
+          {[activity.services?.device_brand, activity.services?.device_model].filter(Boolean).join(' ') || 'Legacy Hardware'}
         </p>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.2rem 0.6rem', borderRadius: '0.375rem', background: ss.dotColor + '12', border: `1px solid ${ss.dotColor}28`, color: ss.dotColor, fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-          <span style={{ width: 5, height: 5, borderRadius: '50%', background: ss.dotColor, display: 'inline-block' }} />
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.25rem 0.625rem', borderRadius: '0.5rem', background: `${ss.dotColor}10`, color: ss.dotColor, fontSize: '0.625rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {activity.status}
         </span>
       </div>
-      <ChevronRight style={{ width: 15, height: 15, flexShrink: 0, color: hovered ? 'var(--ink-mid)' : 'var(--border-strong)', transform: hovered ? 'translateX(2px)' : 'translateX(0)', transition: 'transform 0.2s, color 0.2s' }} />
+
+      <ChevronRight style={{ width: 18, height: 18, color: hovered ? 'var(--ink)' : 'var(--border-strong)', transform: hovered ? 'translateX(4px)' : 'none', transition: 'all 0.3s var(--ease-lux)' }} />
     </button>
   );
 }
@@ -796,8 +773,32 @@ function PaginationBtn({ label, disabled, onClick }) {
       onClick={(e) => { ripple(e); onClick(); }}
       disabled={disabled}
       className="ripple-host"
-      style={{ padding: '0.375rem 0.875rem', borderRadius: '0.625rem', border: '1.5px solid var(--border)', background: 'var(--surface-raise)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--ink-mid)', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.4 : 1, transition: 'opacity 0.2s' }}
+      style={{ padding: '0.375rem 0.875rem', borderRadius: '0.625rem', border: '1.5px solid var(--border)', background: 'var(--surface-raise)', fontSize: '0.75rem', fontWeight: 700, color: 'var(--ink-mid)', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.4 : 1, transition: 'all 0.2s' }}
     >{label}</button>
+  );
+}
+
+/* ─── AlertItem ─── */
+function AlertItem({ message, type, index = 0 }) {
+  const cfg = {
+    warning: { bg: 'rgba(255, 251, 235, 0.5)', border: '#fde68a', text: '#92400e', icon: TriangleAlert, iconColor: '#f59e0b', accent: '#f59e0b' },
+    danger:  { bg: 'rgba(254, 242, 242, 0.5)', border: '#fecaca', text: '#991b1b', icon: AlertCircle,   iconColor: '#ef4444', accent: '#ef4444' },
+    success: { bg: 'rgba(240, 253, 244, 0.5)', border: '#bbf7d0', text: '#166534', icon: CircleCheck,   iconColor: '#22c55e', accent: '#22c55e' },
+  }[type];
+  const Ic = cfg.icon;
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: '0.875rem', borderRadius: '1rem',
+      padding: '1rem', background: cfg.bg, border: `1px solid ${cfg.border}`,
+      color: cfg.text, fontSize: '0.8125rem', fontWeight: 500, lineHeight: 1.5,
+      position: 'relative', overflow: 'hidden', backdropFilter: 'blur(8px)',
+      animation: `vfx-fade-in-up 0.5s var(--ease-lux) ${index * 0.1}s both`,
+    }}>
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: cfg.accent }} />
+      <Ic style={{ width: 18, height: 18, color: cfg.iconColor, flexShrink: 0, marginTop: 1 }} />
+      <span>{message}</span>
+    </div>
   );
 }
 
@@ -805,23 +806,26 @@ function PaginationBtn({ label, disabled, onClick }) {
 function RevenueBreakdownModal({ onClose, serviceRevenue, salesRevenue, router }) {
   const ripple = useRipple();
   const total = (serviceRevenue || 0) + (salesRevenue || 0);
+
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', padding: '1rem', animation: 'fade-up 0.25s var(--ease-expo) both' }}>
-      <div style={{ width: '100%', maxWidth: 360, borderRadius: '1.5rem', background: 'var(--surface-raise)', overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.3)', animation: 'num-rise 0.35s var(--ease-spring) both', border: '1px solid var(--border)' }}>
-        <div style={{ background: 'var(--ink)', padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'var(--accent)' }} />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(2, 6, 23, 0.7)', backdropFilter: 'blur(12px)', padding: '1rem', animation: 'vfx-fade-in-up 0.5s var(--ease-lux) both' }}>
+      <div style={{ width: '100%', maxWidth: 400, borderRadius: '2rem', background: 'var(--surface-raise)', overflow: 'hidden', boxShadow: '0 40px 120px rgba(0,0,0,0.5)', border: '1px solid var(--border)' }}>
+        <div style={{ background: 'var(--ink)', padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'var(--accent)' }} />
           <div>
-            <p style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)', marginBottom: '0.25rem' }}>Breakdown</p>
-            <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#fff', margin: 0 }}>Today's Revenue</h3>
+            <p className="font-mono" style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: '0.25rem' }}>Audit Log</p>
+            <h3 className="font-display" style={{ fontSize: '1.5rem', fontWeight: 400, color: '#fff', margin: 0, fontStyle: 'italic' }}>Financial Distribution</h3>
           </div>
-          <button onClick={(e) => { ripple(e); onClose(); }} className="ripple-host" style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: '0.8125rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+          <button onClick={(e) => { ripple(e); onClose(); }} className="ripple-host" style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}>✕</button>
         </div>
-        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-          <RevenueRow label="Services" sublabel="View history →" amount={serviceRevenue || 0} onClick={() => router.push('/history?tab=services&today=returned')} accentColor="#3b82f6" />
-          <RevenueRow label="Sales"    sublabel="View history →" amount={salesRevenue   || 0} onClick={() => router.push('/history?tab=sales&today=true')}       accentColor="#a855f7" />
-          <div className="accent-glow" style={{ borderRadius: '0.875rem', background: 'var(--ink)', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'rgba(255,255,255,0.65)', margin: 0 }}>Total Revenue</p>
-            <p style={{ fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--accent)', margin: 0 }}>{formatCurrency(total)}</p>
+        
+        <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <RevenueRow label="Hardware Services" sublabel="Technical repair billings" amount={serviceRevenue || 0} onClick={() => router.push('/history?tab=services&today=returned')} accentColor="#3b82f6" />
+          <RevenueRow label="Accessory Sales"    sublabel="Point of sale inventory" amount={salesRevenue   || 0} onClick={() => router.push('/history?tab=sales&today=true')}       accentColor="#a855f7" />
+          
+          <div style={{ borderRadius: '1.25rem', background: 'var(--ink)', padding: '1.25rem 1.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+            <p style={{ fontSize: '1rem', fontWeight: 600, color: 'rgba(255,255,255,0.5)', margin: 0 }}>Total Liquidity</p>
+            <p className="font-mono" style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.05em', color: 'var(--accent)', margin: 0 }}>{formatCurrency(total)}</p>
           </div>
         </div>
       </div>
@@ -832,14 +836,15 @@ function RevenueBreakdownModal({ onClose, serviceRevenue, salesRevenue, router }
 function RevenueRow({ label, sublabel, amount, onClick, accentColor }) {
   const [hovered, setHovered] = useState(false);
   const ripple = useRipple();
+
   return (
-    <button onClick={(e) => { ripple(e); onClick(); }} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} className="ripple-host shine-host"
-      style={{ width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: '0.875rem', padding: '1rem 1.25rem', border: `1.5px solid ${hovered ? accentColor + '50' : 'var(--border)'}`, background: hovered ? accentColor + '08' : 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'border-color 0.2s, background 0.2s' }}>
+    <button onClick={(e) => { ripple(e); onClick(); }} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} className="ripple-host lux-card"
+      style={{ width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: '1.25rem', padding: '1.25rem 1.5rem', border: `1.5px solid ${hovered ? accentColor : 'var(--border)'}`, background: hovered ? `${accentColor}08` : 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <div>
-        <p style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: accentColor, margin: 0 }}>{label}</p>
-        <p style={{ fontSize: '0.6875rem', color: 'var(--ink-faint)', margin: '0.2rem 0 0', fontWeight: 500 }}>{sublabel}</p>
+        <p style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: accentColor, margin: 0 }}>{label}</p>
+        <p style={{ fontSize: '0.8125rem', color: 'var(--ink-faint)', margin: '0.25rem 0 0', fontWeight: 500 }}>{sublabel}</p>
       </div>
-      <p style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.03em', color: accentColor, margin: 0 }}>{formatCurrency(amount)}</p>
+      <p className="font-mono" style={{ fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.03em', color: accentColor, margin: 0 }}>{formatCurrency(amount)}</p>
     </button>
   );
 }
