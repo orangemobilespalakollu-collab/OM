@@ -244,49 +244,45 @@ export default function DashboardPage() {
   return (
     <>
       <StyleInjector />
-      <div className="font-body" style={{ backgroundColor: 'var(--surface)', minHeight: '100vh', padding: '1.5rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', maxWidth: 1600, margin: '0 auto' }}>
+      <div className="font-body" style={{ backgroundColor: 'var(--surface)', minHeight: '100vh', padding: '1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', maxWidth: 1440, margin: '0 auto' }}>
 
           {/* ══════════ NEBULA HERO HEADER ══════════ */}
           <header className={cn('section-enter')}
             style={{
               background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-              borderRadius: '2.5rem', padding: '3.5rem', position: 'relative', overflow: 'hidden', boxShadow: '0 40px 100px -20px rgba(15,23,42,0.3)'
+              borderRadius: '1.75rem', padding: '1.75rem 2.5rem', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 50px -10px rgba(15,23,42,0.2)'
             }}>
             <div className="mesh-bg" />
             <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-              <div style={{ position: 'absolute', width: '200%', height: '200%', top: '-50%', left: '-50%', background: 'radial-gradient(circle, rgba(249,115,22,0.05) 1px, transparent 1px)', backgroundSize: '60px 60px', animation: 'vfx-star-drift 120s linear infinite' }} />
+              <div style={{ position: 'absolute', width: '200%', height: '200%', top: '-50%', left: '-50%', background: 'radial-gradient(circle, rgba(249,115,22,0.05) 1px, transparent 1px)', backgroundSize: '40px 40px', animation: 'vfx-star-drift 120s linear infinite' }} />
               {/* ORBITING BEAUTY ELEMENTS */}
-              <div style={{ position: 'absolute', right: '10%', top: '20%', width: 140, height: 140, animation: 'vfx-orbit 40s linear infinite', opacity: 0.5 }}>
+              <div style={{ position: 'absolute', right: '5%', top: '15%', width: 100, height: 100, animation: 'vfx-orbit 40s linear infinite', opacity: 0.4 }}>
                 <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: '1px solid rgba(249,115,22,0.1)' }} />
-              </div>
-              <div style={{ position: 'absolute', right: '12%', top: '22%', width: 100, height: 100, animation: 'vfx-orbit 25s linear infinite reverse', opacity: 0.3 }}>
-                <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: '1px dashed rgba(249,115,22,0.15)' }} />
               </div>
             </div>
 
-            <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '3rem' }}>
-              <div style={{ flex: 1, minWidth: 320 }}>
-                <p className="font-mono" style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.4em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: '1.25rem' }}>
-                  System Telemetry Active • {formatDate(now)}
+            <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '2rem' }}>
+              <div style={{ flex: 1, minWidth: 300 }}>
+                <p className="font-mono" style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.3em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: '0.75rem' }}>
+                  System Active • {formatDate(now)}
                 </p>
-                <h1 className="font-display" style={{ fontSize: 'clamp(3rem, 6vw, 4.5rem)', fontWeight: 400, lineHeight: 1.1, color: '#fff', marginBottom: '1.5rem', fontStyle: 'italic' }}>
-                  {greeting}, <span style={{ color: 'var(--accent)', textShadow: '0 0 50px rgba(249,115,22,0.5)' }}>{profile?.name?.split(' ')[0] || 'Operator'}</span>
+                <h1 className="font-display" style={{ fontSize: 'clamp(2rem, 4.5vw, 2.75rem)', fontWeight: 400, lineHeight: 1.1, color: '#fff', marginBottom: '0.75rem', fontStyle: 'italic' }}>
+                  {greeting}, <span style={{ color: 'var(--accent)', textShadow: '0 0 30px rgba(249,115,22,0.4)' }}>{profile?.name?.split(' ')[0] || 'Operator'}</span>
                 </h1>
-                <p style={{ fontSize: '1.125rem', color: 'rgba(255,255,254,0.5)', maxWidth: 550, lineHeight: 1.7 }}>
-                  Operational efficiency is peak. All maintenance modules are synchronized and ready for deployment.
+                <p style={{ fontSize: '0.9375rem', color: 'rgba(255,255,254,0.45)', maxWidth: 450, lineHeight: 1.5 }}>
+                  Operational efficiency is nominal. All telemetry streams are synchronized.
                 </p>
               </div>
 
-              <div className="lux-glass" style={{ borderRadius: '2.5rem', padding: '2rem 3rem', textAlign: 'right' }}>
-                <p className="font-mono" style={{ fontSize: '4rem', fontWeight: 600, letterSpacing: '-0.05em', color: '#fff', lineHeight: 1, margin: 0 }}>
+              <div className="lux-glass" style={{ borderRadius: '1.5rem', padding: '1.25rem 2rem', textAlign: 'right' }}>
+                <p className="font-mono" style={{ fontSize: '2.5rem', fontWeight: 600, letterSpacing: '-0.05em', color: '#fff', lineHeight: 1, margin: 0 }}>
                   {formatTime(now).split(' ')[0]}
                 </p>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.75rem' }}>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 800, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>{formatTime(now).split(' ')[1]}</span>
-                  <div style={{ position: 'relative', width: 10, height: 10 }}>
-                    <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 15px #10b981' }} />
-                    <div style={{ position: 'absolute', inset: -5, borderRadius: '50%', background: '#10b981', opacity: 0.4, animation: 'vfx-live-pulse 2s infinite' }} />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.25rem' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>{formatTime(now).split(' ')[1]}</span>
+                  <div style={{ position: 'relative', width: 8, height: 8 }}>
+                    <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }} />
                   </div>
                 </div>
               </div>
@@ -295,12 +291,12 @@ export default function DashboardPage() {
 
           {/* ══════════ QUICK OPERATIONS ══════════ */}
           <section className="section-enter" style={{ animationDelay: '0.2s' }}>
-            <SectionLabel icon={Zap} label="Quick Operations" />
-            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+            <SectionLabel icon={Zap} label="Operations" />
+            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
               {[
-                { name: 'Service Intake', desc: 'Generate new repair ticket', icon: PlusCircle, href: '/services?action=new', accent: '#3b82f6' },
-                { name: 'Point of Sale', desc: 'Process accessory transaction', icon: ShoppingBag, href: '/sales?action=new', accent: '#a855f7' },
-                { name: 'Repair Hub', desc: 'Manage active work queue', icon: Wrench, href: '/services', accent: '#f97316' },
+                { name: 'Service Intake', desc: 'Initialize repair ticket', icon: PlusCircle, href: '/services?action=new', accent: '#3b82f6' },
+                { name: 'Point of Sale', desc: 'Process accessory sale', icon: ShoppingBag, href: '/sales?action=new', accent: '#a855f7' },
+                { name: 'Repair Hub', desc: 'Active work queue', icon: Wrench, href: '/services', accent: '#f97316' },
               ].map(a => <QuickActionButton key={a.name} action={a} onClick={() => router.push(a.href)} />)}
             </div>
           </section>
@@ -308,7 +304,7 @@ export default function DashboardPage() {
           {/* ══════════ SYSTEM PRIORITY ══════════ */}
           <section className="section-enter" style={{ animationDelay: '0.3s' }}>
             <SectionLabel icon={Activity} label="System Priority" />
-            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
               <PriorityCard title="Received" count={stats.received} statusColor="#3b82f6" onClick={() => router.push('/services?status=Received')} />
               <PriorityCard title="In Progress" count={stats.inProgress} statusColor="#f97316" onClick={() => router.push('/services?status=In Progress')} />
               <PriorityCard title="Waiting for Parts" count={stats.waitingForParts} statusColor="#f59e0b" onClick={() => router.push('/services?status=Waiting for Parts')} />
@@ -318,19 +314,19 @@ export default function DashboardPage() {
 
           {/* ══════════ DAILY ANALYTICS ══════════ */}
           <section className="section-enter" style={{ animationDelay: '0.4s' }}>
-            <SectionLabel icon={Sparkles} label="Daily Analytics" />
-            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
-              <SummaryCard title="Revenue Today" value={formatCurrency(stats.revenueToday)} icon={IndianRupee} dotColor="#f97316" isCurrency large
+            <SectionLabel icon={Sparkles} label="Daily Summary" />
+            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+              <SummaryCard title="Revenue" value={formatCurrency(stats.revenueToday)} icon={IndianRupee} dotColor="#f97316" isCurrency large
                 onClick={() => { if (profile?.role === 'admin' || profile?.role === 'owner') setIsRevenueOpen(true); }} />
-              <SummaryCard title="Registered Today" value={stats.registeredToday} icon={FileEdit} dotColor="#3b82f6" />
-              <SummaryCard title="Completed Today" value={stats.completedToday} icon={CheckCircle2} dotColor="#10b981" />
-              <SummaryCard title="Returned Today" value={stats.returnedToday} icon={PackageCheck} dotColor="#06b6d4" />
-              <SummaryCard title="Sales Today" value={stats.salesToday} icon={ShoppingBag} dotColor="#a855f7" />
+              <SummaryCard title="New Repairs" value={stats.registeredToday} icon={FileEdit} dotColor="#3b82f6" />
+              <SummaryCard title="Completed" value={stats.completedToday} icon={CheckCircle2} dotColor="#10b981" />
+              <SummaryCard title="Dispatched" value={stats.returnedToday} icon={PackageCheck} dotColor="#06b6d4" />
+              <SummaryCard title="Sales" value={stats.salesToday} icon={ShoppingBag} dotColor="#a855f7" />
             </div>
           </section>
 
           {/* ══════════ BOTTOM GRID ══════════ */}
-          <div className="section-enter" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '2rem', animationDelay: '0.5s' }}>
+          <div className="section-enter" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.25rem', animationDelay: '0.5s' }}>
             
             {/* Recent Activity */}
             <section style={S.panel} className="lux-card">
