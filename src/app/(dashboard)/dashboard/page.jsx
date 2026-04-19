@@ -44,13 +44,13 @@ const STYLES = `
   --accent:        #f97316;
   --accent-glow:   #fb923c;
   --accent-dim:    rgba(249,115,22,0.08);
-  --ink:           #020617;
+  --ink:           #0f172a;
   --ink-mid:       #475569;
   --ink-faint:     #94a3b8;
-  --surface:       #f8fafc;
+  --surface:       #f1f5f9;
   --surface-raise: #ffffff;
-  --border:        #f1f5f9;
-  --border-lux:    rgba(255,255,255,0.6);
+  --border:        #e2e8f0;
+  --border-lux:    rgba(255,255,255,0.7);
   --ease-lux:      cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -63,39 +63,33 @@ const STYLES = `
 
 @keyframes vfx-star-drift {
   from { transform: perspective(1000px) rotateX(0deg) translateZ(0); }
-  to   { transform: perspective(1000px) rotateX(2deg) translateZ(200px); }
+  to   { transform: perspective(1000px) rotateX(2deg) translateZ(300px); }
 }
 
 @keyframes vfx-mesh-float {
-  0%, 100% { background-position: 0% 50%; opacity: 0.15; }
-  50% { background-position: 100% 50%; opacity: 0.25; }
+  0%, 100% { background-position: 0% 50%; opacity: 0.1; }
+  50% { background-position: 100% 50%; opacity: 0.2; }
 }
 
-@keyframes vfx-shimmer-text {
-  0% { transform: scaleX(0); transform-origin: left; }
-  50% { transform: scaleX(1); transform-origin: left; }
-  50.1% { transform: scaleX(1); transform-origin: right; }
-  100% { transform: scaleX(0); transform-origin: right; }
+@keyframes vfx-flare {
+  0%   { transform: rotate(0deg) scale(1); opacity: 0.5; }
+  50%  { transform: rotate(180deg) scale(1.2); opacity: 0.8; }
+  100% { transform: rotate(360deg) scale(1); opacity: 0.5; }
+}
+
+@keyframes vfx-floating {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(5deg); }
 }
 
 @keyframes vfx-fade-in-up {
-  from { opacity: 0; transform: translateY(30px); filter: blur(10px); }
-  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
-}
-
-@keyframes vfx-pulse-amber {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(249,115,22,0.4); }
-  50% { box-shadow: 0 0 20px 4px rgba(249,115,22,0.2); }
-}
-
-@keyframes vfx-orbit {
-  from { transform: rotate(0deg) translateX(44px) rotate(0deg); }
-  to   { transform: rotate(360deg) translateX(44px) rotate(-360deg); }
+  from { opacity: 0; transform: translateY(20px); filter: blur(5px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
 
 @keyframes vfx-live-pulse {
-  0%   { transform: scale(1);   opacity: 0.8; }
-  100% { transform: scale(2.6); opacity: 0; }
+  0%   { transform: scale(1);   opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
 }
 
 @keyframes vfx-draw-border {
@@ -106,42 +100,45 @@ const STYLES = `
 /* ────────────────── UTILITIES ────────────────── */
 
 .lux-glass {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(25px) saturate(200%);
   border: 1px solid var(--border-lux);
 }
 
 .lux-card {
-  transition: transform 0.6s var(--ease-lux), box-shadow 0.6s var(--ease-lux), border-color 0.6s var(--ease-lux);
+  transition: all 0.6s var(--ease-lux);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
 }
 .lux-card:hover {
-  transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  border-color: var(--accent-glow);
+  transform: translateY(-6px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  border-color: var(--accent-glow) !important;
+}
+
+.lux-shadow-deep {
+  box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.12);
 }
 
 /* ────────────────── MESH BACKGROUND ────────────────── */
 .mesh-bg {
   position: absolute; inset: 0;
-  background: radial-gradient(at 0% 0%, hsla(25,100%,90%,0.15) 0, transparent 50%),
-              radial-gradient(at 50% 0%, hsla(25,100%,80%,0.12) 0, transparent 50%),
-              radial-gradient(at 100% 0%, hsla(25,100%,90%,0.15) 0, transparent 50%);
+  background: radial-gradient(at 0% 0%, hsla(25,100%,70%,0.2) 0, transparent 50%),
+              radial-gradient(at 50% 0%, hsla(25,100%,80%,0.15) 0, transparent 50%),
+              radial-gradient(at 100% 100%, hsla(25,100%,90%,0.2) 0, transparent 50%);
   background-size: 200% 200%;
-  animation: vfx-mesh-float 15s ease infinite;
+  animation: vfx-mesh-float 20s ease infinite;
   pointer-events: none;
 }
 
 /* ────────────────── STAGGER ENTRANCE ────────────────── */
-.stagger > *:nth-child(1) { animation: vfx-fade-in-up 0.8s var(--ease-lux) 0.05s both; }
-.stagger > *:nth-child(2) { animation: vfx-fade-in-up 0.8s var(--ease-lux) 0.10s both; }
-.stagger > *:nth-child(3) { animation: vfx-fade-in-up 0.8s var(--ease-lux) 0.15s both; }
-.stagger > *:nth-child(4) { animation: vfx-fade-in-up 0.8s var(--ease-lux) 0.20s both; }
-.stagger > *:nth-child(5) { animation: vfx-fade-in-up 0.8s var(--ease-lux) 0.25s both; }
-.stagger > *:nth-child(6) { animation: vfx-fade-in-up 0.8s var(--ease-lux) 0.30s both; }
+.stagger > *:nth-child(1) { animation: vfx-fade-in-up 0.6s var(--ease-lux) 0.05s both; }
+.stagger > *:nth-child(2) { animation: vfx-fade-in-up 0.6s var(--ease-lux) 0.10s both; }
+.stagger > *:nth-child(3) { animation: vfx-fade-in-up 0.6s var(--ease-lux) 0.15s both; }
+.stagger > *:nth-child(4) { animation: vfx-fade-in-up 0.6s var(--ease-lux) 0.20s both; }
+.stagger > *:nth-child(5) { animation: vfx-fade-in-up 0.6s var(--ease-lux) 0.25s both; }
+.stagger > *:nth-child(6) { animation: vfx-fade-in-up 0.6s var(--ease-lux) 0.30s both; }
 
-.section-enter { animation: vfx-fade-in-up 1s var(--ease-lux) both; }
+.section-enter { animation: vfx-fade-in-up 0.8s var(--ease-lux) both; }
 
 /* ────────────────── DIALOG ────────────────── */
 [role="dialog"] {
@@ -322,26 +319,25 @@ export default function DashboardPage() {
   const h = now.getHours();
   const greeting = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 
-  const S = { // inline style helpers
+  const S = { // luxury style helpers
     panel: {
       background: 'var(--surface-raise)',
       border: '1px solid var(--border)',
-      borderRadius: '1.5rem',
-      padding: '1.5rem',
+      borderRadius: '2rem',
+      padding: '2rem',
       position: 'relative',
       overflow: 'hidden',
-      boxShadow: '0 2px 16px rgba(0,0,0,0.04)',
     },
     topAccentBar: {
-      position: 'absolute', top: 0, left: '1.5rem', right: '1.5rem', height: 2,
+      position: 'absolute', top: 0, left: '2rem', right: '2rem', height: 3,
       background: 'linear-gradient(90deg, var(--accent), transparent)',
-      borderRadius: '0 0 3px 3px', opacity: 0.55,
+      opacity: 0.4,
     },
     panelTitle: {
-      display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1.25rem',
+      display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem',
     },
     panelIcon: {
-      width: 32, height: 32, borderRadius: '0.625rem',
+      width: 36, height: 36, borderRadius: '0.875rem',
       background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center',
     },
   };
@@ -349,77 +345,66 @@ export default function DashboardPage() {
   return (
     <>
       <StyleInjector />
-      <div className="font-body" style={{ backgroundColor: 'var(--surface)', minHeight: '100vh', padding: '0.25rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div className="font-body" style={{ backgroundColor: 'var(--surface)', minHeight: '100vh', padding: '0.75rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 1600, margin: '0 auto' }}>
 
-          {/* ══════════ NEBULA HERO HEADER ══════════ */}
+          {/* ══════════ HERO HEADER ══════════ */}
           <header
-            className={cn(mounted && 'section-enter')}
+            className={cn(mounted && 'section-enter', 'lux-shadow-deep')}
             style={{
-              background: 'linear-gradient(135deg, #020617 0%, #0f172a 60%, #020617 100%)',
-              borderRadius: '2rem',
-              padding: '2rem',
+              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+              borderRadius: '2.5rem',
+              padding: '3rem',
               position: 'relative',
               overflow: 'hidden',
-              boxShadow: '0 32px 80px -20px rgba(0,0,0,0.5)',
-              animationDelay: '0s',
             }}
           >
             {/* VFX LAYERS */}
             <div className="mesh-bg" />
-            <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-              <div style={{ position: 'absolute', width: '200%', height: '200%', top: '-50%', left: '-50%', background: 'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px', animation: 'vfx-star-drift 100s linear infinite' }} />
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+              <div style={{ position: 'absolute', width: '200%', height: '200%', top: '-50%', left: '-50%', background: 'radial-gradient(circle, rgba(249,115,22,0.05) 1px, transparent 1px)', backgroundSize: '60px 60px', animation: 'vfx-star-drift 120s linear infinite' }} />
+              {/* FLYERS / PARTICLES */}
+              <div style={{ position: 'absolute', top: '20%', left: '10%', width: 40, height: 40, borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', background: 'linear-gradient(45deg, var(--accent), transparent)', opacity: 0.1, animation: 'vfx-floating 8s ease-in-out infinite' }} />
+              <div style={{ position: 'absolute', bottom: '15%', right: '15%', width: 60, height: 60, borderRadius: '50%', border: '1px solid var(--accent)', opacity: 0.05, animation: 'vfx-floating 12s ease-in-out infinite reverse' }} />
             </div>
 
-            {/* ORBITING ELEMENTS */}
-            <div style={{ position: 'absolute', right: 40, top: 40, width: 120, height: 120, animation: 'vfx-orbit 30s linear infinite', opacity: 0.4, pointerEvents: 'none' }}>
-              <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: '0.5px solid rgba(249,115,22,0.15)' }} />
-            </div>
-            <div style={{ position: 'absolute', right: 60, top: 60, width: 80, height: 80, animation: 'vfx-orbit 15s linear infinite reverse', opacity: 0.3, pointerEvents: 'none' }}>
-              <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: '0.5px dashed rgba(249,115,22,0.1)' }} />
-            </div>
-            <div style={{ position: 'absolute', right: 97, top: 97, pointerEvents: 'none' }}>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', opacity: 0.8, boxShadow: '0 0 15px var(--accent)', animation: 'vfx-orbit 10s linear infinite' }} />
-            </div>
-
-            <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '2rem' }}>
-              <div style={{ flex: 1, minWidth: 280 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                  <div style={{ height: 1, width: 24, background: 'var(--accent)', opacity: 0.5 }} />
-                  <p className="font-mono" style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
-                    System Active • {formatDate(now)}
-                  </p>
-                </div>
-                <h1 className="font-display" style={{ fontSize: 'clamp(2rem, 5vw, 3.25rem)', fontWeight: 400, lineHeight: 1, color: '#fff', marginBottom: '1rem', fontStyle: 'italic', letterSpacing: '-0.02em' }}>
-                  {greeting}, <span style={{ color: 'var(--accent)', textShadow: '0 0 30px rgba(249,115,22,0.3)' }}>{profile?.name?.split(' ')[0] || 'Operator'}</span>
+            <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '2rem' }}>
+              <div style={{ flex: 1, minWidth: 300 }}>
+                <p className="font-mono" style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.4em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+                  System Active • {formatDate(now)}
+                </p>
+                <h1 className="font-display" style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: 400, lineHeight: 1.1, color: '#fff', marginBottom: '1.5rem', fontStyle: 'italic' }}>
+                  {greeting}, <span style={{ color: 'var(--accent)', textShadow: '0 0 40px rgba(249,115,22,0.4)' }}>{profile?.name?.split(' ')[0] || 'Operator'}</span>
                 </h1>
-                <p style={{ fontSize: '0.9375rem', color: 'rgba(255,255,255,0.45)', maxWidth: 400, lineHeight: 1.5 }}>
-                  Operational efficiency is at <span style={{ color: '#fff', fontWeight: 600 }}>98.4%</span>. All repair modules are functioning within optimal parameters.
+                <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.5)', maxWidth: 500, lineHeight: 1.6 }}>
+                  Operational parameters are nominal. System synchronization completed at {formatTime(now)}.
                 </p>
               </div>
 
-              {/* CRYSTAL CLOCK */}
-              <div className="lux-glass" style={{ borderRadius: '1.5rem', padding: '1rem 2rem', textAlign: 'right', minWidth: 160, border: '1px solid rgba(255,255,255,0.1)' }}>
-                <p className="font-mono" style={{ fontSize: '2.5rem', fontWeight: 600, letterSpacing: '-0.05em', color: '#fff', lineHeight: 1, margin: 0 }}>
+              <div className="lux-glass" style={{ borderRadius: '2rem', padding: '1.5rem 2.5rem', textAlign: 'right', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <p className="font-mono" style={{ fontSize: '3rem', fontWeight: 600, letterSpacing: '-0.05em', color: '#fff', lineHeight: 1, margin: 0 }}>
                   {formatTime(now).split(' ')[0]}
                 </p>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
-                    {formatTime(now).split(' ')[1]}
-                  </span>
-                  <div style={{ position: 'relative', width: 8, height: 8 }}>
-                    <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }} />
-                    <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', background: '#10b981', opacity: 0.4, animation: 'vfx-live-pulse 2s infinite' }} />
-                  </div>
-                </div>
+                <p style={{ fontSize: '0.875rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem' }}>
+                  {formatTime(now).split(' ')[1]}
+                </p>
               </div>
             </div>
           </header>
 
-          {/* ══════════ BIONIC QUICK ACTIONS ══════════ */}
+          {/* ══════════ WORK PRIORITY ══════════ */}
           <section className={cn(mounted && 'section-enter')} style={{ animationDelay: '0.15s' }}>
-            <SectionLabel icon={Zap} label="Operational Modules" />
-            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+              <PriorityCard title="Received"               count={stats.received}            statusColor="#3b82f6" onClick={() => router.push('/services?status=Received')} />
+              <PriorityCard title="In Progress"            count={stats.inProgress}           statusColor="#f97316" onClick={() => router.push('/services?status=In Progress')} />
+              <PriorityCard title="Waiting for Parts"      count={stats.waitingForParts}      statusColor="#f59e0b" onClick={() => router.push('/services?status=Waiting for Parts')} />
+              <PriorityCard title="Completed"              count={stats.completedNotReturned} statusColor="#10b981" onClick={() => router.push('/services?status=Completed')} />
+            </div>
+          </section>
+
+          {/* ══════════ QUICK ACTIONS ══════════ */}
+          <section className={cn(mounted && 'section-enter')} style={{ animationDelay: '0.2s' }}>
+            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
               {[
                 { name: 'Service Intake', desc: 'Initialize new repair ticket',  icon: PlusCircle,  href: '/services?action=new', accent: '#3b82f6' },
                 { name: 'Point of Sale',  desc: 'Process product transaction', icon: ShoppingBag, href: '/sales?action=new',   accent: '#a855f7' },
@@ -428,80 +413,49 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          {/* ══════════ WORK PRIORITY ══════════ */}
-          <section className={cn(mounted && 'section-enter')} style={{ animationDelay: '0.22s' }}>
-            <SectionLabel icon={Activity} label="System Priority" />
-            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-              <PriorityCard title="Awaiting Diagnosis" count={stats.received}            statusColor="#3b82f6" onClick={() => router.push('/services?status=Received')} />
-              <PriorityCard title="Active Maintenance" count={stats.inProgress}           statusColor="#f97316" onClick={() => router.push('/services?status=In Progress')} />
-              <PriorityCard title="Pending Components" count={stats.waitingForParts}      statusColor="#f59e0b" onClick={() => router.push('/services?status=Waiting for Parts')} />
-              <PriorityCard title="Ready for Dispatch" count={stats.completedNotReturned} statusColor="#10b981" onClick={() => router.push('/services?status=Completed')} />
-            </div>
-          </section>
-
-          {/* ══════════ BENTO METRIC GRID ══════════ */}
-          <section className={cn(mounted && 'section-enter')} style={{ animationDelay: '0.30s' }}>
-            <SectionLabel icon={Sparkles} label="Daily Performance" />
-            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridAutoRows: 'minmax(120px, auto)', gap: '1rem' }}>
-              
-              {/* Primary Metric: Revenue */}
-              <div style={{ gridColumn: 'span 2', gridRow: 'span 2' }}>
-                <SummaryCard title="Gross Daily Revenue" value={formatCurrency(stats.revenueToday)} icon={IndianRupee} dotColor="#f97316" isCurrency large
-                  onClick={() => { if (profile?.role === 'admin' || profile?.role === 'owner') setIsRevenueOpen(true); }} />
-              </div>
-
-              {/* Secondary Metrics */}
-              <div style={{ gridColumn: 'span 2' }}>
-                <MetricDetailsDialog title="Registered Today" dataList={stats.registeredTodayList}>
-                  <SummaryCard title="New Registrations" value={stats.registeredToday} icon={FileEdit} dotColor="#3b82f6" horizontal />
-                </MetricDetailsDialog>
-              </div>
-
-              <SummaryCard title="Closed Jobs" value={stats.completedToday} icon={CheckCircle2} dotColor="#10b981" onClick={() => router.push('/services?filter=completedToday')} />
-              <SummaryCard title="Non Repair"  value={stats.notRepairableToday} icon={XOctagon} dotColor="#ef4444" onClick={() => router.push('/services?filter=notRepairableToday')} />
-
-              <div style={{ gridColumn: 'span 2' }}>
-                <SummaryCard title="Total Dispatches" value={stats.returnedToday} icon={PackageCheck} dotColor="#06b6d4" horizontal onClick={() => router.push('/history?tab=services&today=returned')} />
-              </div>
-              <div style={{ gridColumn: 'span 2' }}>
-                <SummaryCard title="Accessory Sales" value={stats.salesToday} icon={ShoppingBag} dotColor="#a855f7" horizontal onClick={() => router.push('/sales?today=true')} />
-              </div>
-
+          {/* ══════════ TODAY SUMMARY ══════════ */}
+          <section className={cn(mounted && 'section-enter')} style={{ animationDelay: '0.25s' }}>
+            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+              <SummaryCard title="Today's Revenue" value={formatCurrency(stats.revenueToday)} icon={IndianRupee} dotColor="#f97316" isCurrency large
+                onClick={() => { if (profile?.role === 'admin' || profile?.role === 'owner') setIsRevenueOpen(true); }} />
+              <SummaryCard title="Registered Today" value={stats.registeredToday} icon={FileEdit} dotColor="#3b82f6" />
+              <SummaryCard title="Completed Today" value={stats.completedToday} icon={CheckCircle2} dotColor="#10b981" />
+              <SummaryCard title="Returned Today" value={stats.returnedToday} icon={PackageCheck} dotColor="#06b6d4" />
+              <SummaryCard title="Sales Today" value={stats.salesToday} icon={ShoppingBag} dotColor="#a855f7" />
             </div>
           </section>
 
           {/* ══════════ BOTTOM GRID ══════════ */}
-          <div className={cn(mounted && 'section-enter')} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '1.5rem', animationDelay: '0.38s' }}>
+          <div className={cn(mounted && 'section-enter')} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', animationDelay: '0.3s' }}>
 
             {/* Recent Activity */}
-            <section style={S.panel}>
+            <section style={S.panel} className="lux-shadow-deep">
               <div style={S.topAccentBar} />
               <div style={S.panelTitle}>
-                <div style={S.panelIcon}><Clock style={{ width: 16, height: 16, color: 'var(--accent)' }} /></div>
-                <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--ink)' }}>Live Activity Stream</span>
+                <div style={S.panelIcon}><Clock style={{ width: 18, height: 18, color: 'var(--accent)' }} /></div>
+                <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--ink)' }}>Recent Activity</span>
                 <span style={{
                   marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem',
-                  fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase',
-                  color: '#059669', background: '#ecfdf5', border: '1px solid #d1fae5',
-                  borderRadius: 100, padding: '0.3rem 0.8rem',
+                  fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', color: '#10b981', background: '#f0fdf4',
+                  borderRadius: 100, padding: '0.4rem 0.8rem', border: '1px solid #bbf7d0',
                 }}>
                   <span style={{ position: 'relative', display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#10b981' }}>
                     <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#10b981', animation: 'vfx-live-pulse 2s infinite' }} />
                   </span>
-                  Synched
+                  Live
                 </span>
               </div>
 
               {activityLoading ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {[...Array(5)].map((_, i) => (
-                    <div key={i} style={{ height: 80, borderRadius: '1.25rem', background: '#f1f5f9', animation: `vfx-fade-in-up 0.4s var(--ease-lux) ${i * 0.05}s both` }} />
+                    <div key={i} style={{ height: 84, borderRadius: '1.25rem', background: '#f1f5f9', animation: `vfx-fade-in-up 0.4s var(--ease-lux) ${i * 0.05}s both` }} />
                   ))}
                 </div>
               ) : recentActivity.length === 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, borderRadius: '1.5rem', border: '2px dashed var(--border)', background: 'var(--surface)', gap: '0.75rem' }}>
-                  <Activity style={{ width: 32, height: 32, color: 'var(--ink-faint)', opacity: 0.3 }} />
-                  <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--ink-faint)' }}>Grid is currently quiet</p>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 240, borderRadius: '1.5rem', border: '2px dashed var(--border)', background: 'var(--surface)', gap: '1rem' }}>
+                  <Activity style={{ width: 40, height: 40, color: 'var(--ink-faint)', opacity: 0.2 }} />
+                  <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--ink-faint)' }}>Queue is empty today</p>
                 </div>
               ) : (
                 <>
@@ -518,10 +472,10 @@ export default function DashboardPage() {
                     ))}
                   </div>
                   {totalPages > 1 && (
-                    <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <PaginationBtn label="← Previous" disabled={currentPage === 1}          onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} />
-                      <p className="font-mono" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ink-faint)' }}>
-                        <span style={{ color: 'var(--ink)' }}>{currentPage.toString().padStart(2, '0')}</span> / {totalPages.toString().padStart(2, '0')}
+                    <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <PaginationBtn label="← Previous" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} />
+                      <p className="font-mono" style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--ink-faint)' }}>
+                        <span style={{ color: 'var(--ink)' }}>{currentPage}</span> / {totalPages}
                       </p>
                       <PaginationBtn label="Next →" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} />
                     </div>
@@ -531,32 +485,32 @@ export default function DashboardPage() {
             </section>
 
             {/* Smart Alerts */}
-            <section style={S.panel}>
+            <section style={S.panel} className="lux-shadow-deep">
               <div style={S.topAccentBar} />
               <div style={S.panelTitle}>
-                <div style={S.panelIcon}><Bell style={{ width: 16, height: 16, color: 'var(--accent)' }} /></div>
-                <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--ink)' }}>Intelligent Alerts</span>
+                <div style={S.panelIcon}><Bell style={{ width: 18, height: 18, color: 'var(--accent)' }} /></div>
+                <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--ink)' }}>Smart Alerts</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
                 {stats.alerts ? (
                   <>
                     {stats.alerts.oldInProgress > 0 && (
-                      <AlertItem message={`${stats.alerts.oldInProgress} service tickets have been active for > 3 days.`} type="warning" index={0} />
+                      <AlertItem message={`${stats.alerts.oldInProgress} services have been in progress for more than 3 days.`} type="warning" index={0} />
                     )}
                     {stats.alerts.oldWaitingForParts > 0 && (
-                      <AlertItem message={`Critical: ${stats.alerts.oldWaitingForParts} devices are stagnant awaiting components.`} type="danger" index={1} />
+                      <AlertItem message={`Action Required: ${stats.alerts.oldWaitingForParts} items stuck in parts queue.`} type="danger" index={1} />
                     )}
                     {stats.alerts.oldCompletedNotReturned > 0 && (
-                      <AlertItem message={`${stats.alerts.oldCompletedNotReturned} units are ready but pending customer collection.`} type="warning" index={2} />
+                      <AlertItem message={`${stats.alerts.oldCompletedNotReturned} items ready for weeks, pending customer collection.`} type="warning" index={2} />
                     )}
                     {stats.alerts.oldInProgress === 0 && stats.alerts.oldWaitingForParts === 0 && stats.alerts.oldCompletedNotReturned === 0 && (
-                      <AlertItem message="All systems clear — no pending bottlenecks 🎉" type="success" index={0} />
+                      <AlertItem message="All operations are running smooth! No bottlenecks detected." type="success" index={0} />
                     )}
                   </>
                 ) : (
                   <>
-                    <div style={{ height: 56, borderRadius: '0.75rem', background: '#f3f4f6', animation: 'fade-up 0.3s ease both' }} />
-                    <div style={{ height: 56, borderRadius: '0.75rem', background: '#f3f4f6', animation: 'fade-up 0.3s ease 0.06s both' }} />
+                    <div style={{ height: 64, borderRadius: '1.25rem', background: '#f1f5f9', animation: 'vfx-fade-in-up 0.4s var(--ease-lux) both' }} />
+                    <div style={{ height: 64, borderRadius: '1.25rem', background: '#f1f5f9', animation: 'vfx-fade-in-up 0.4s var(--ease-lux) 0.08s both' }} />
                   </>
                 )}
               </div>
