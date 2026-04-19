@@ -1,19 +1,21 @@
 'use client';
+
+import { useEffect } from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import Layout from '@/components/Layout';
 
 export default function DashboardLayout({ children }) {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+const { user, loading } = useAuth();
+const router = useRouter();
   const [dots, setDots] = useState(0);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.replace('/login');
-    }
-  }, [user, loading, router]);
+useEffect(() => {
+if (!loading && !user) {
+router.replace('/login');
+}
+}, [user, loading, router]);
 
   /* Animate the loading dot count */
   useEffect(() => {
@@ -22,8 +24,11 @@ export default function DashboardLayout({ children }) {
     return () => clearInterval(id);
   }, [loading]);
 
-  if (loading) {
-    return (
+if (loading) {
+return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
+      </div>
       <>
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;600;700&display=swap');
@@ -153,9 +158,10 @@ export default function DashboardLayout({ children }) {
           </div>
         </div>
       </>
-    );
-  }
+);
+}
 
-  if (!user) return null;
-  return <Layout>{children}</Layout>;
+if (!user) return null;
+
+return <Layout>{children}</Layout>;
 }
