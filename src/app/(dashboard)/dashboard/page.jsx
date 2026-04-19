@@ -8,7 +8,7 @@ import {
   ShoppingBag, Wrench, FileEdit, ChevronRight, 
   ArrowUpRight, Sparkles, Zap, TriangleAlert, AlertCircle, CircleCheck
 } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/components/AuthProvider';
 import { dashboardService } from '@/services/dashboardService';
 import { cn, formatCurrency, formatDate, formatTime, formatNumber } from '@/lib/utils';
 import { MetricDetailsDialog } from '@/components/MetricDetailsDialog';
