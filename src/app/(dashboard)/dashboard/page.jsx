@@ -57,8 +57,7 @@ const STYLES = `
 .font-display { font-family: 'Instrument Serif', Georgia, serif; }
 .font-body    { font-family: 'Geist', system-ui, sans-serif; }
 
-/* ────────────────── KEYFRAMES ────────────────── */
-
+/* ── ORIGINAL KEYFRAMES ── */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(22px); filter: blur(4px); }
   to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
@@ -118,17 +117,161 @@ const STYLES = `
   to   { transform: scaleX(1); transform-origin: left; }
 }
 
-/* ────────────────── STAGGER GRID ────────────────── */
-.stagger > *:nth-child(1) { animation: card-in 0.55s var(--ease-expo) 0.04s both; }
-.stagger > *:nth-child(2) { animation: card-in 0.55s var(--ease-expo) 0.10s both; }
-.stagger > *:nth-child(3) { animation: card-in 0.55s var(--ease-expo) 0.16s both; }
-.stagger > *:nth-child(4) { animation: card-in 0.55s var(--ease-expo) 0.22s both; }
-.stagger > *:nth-child(5) { animation: card-in 0.55s var(--ease-expo) 0.28s both; }
-.stagger > *:nth-child(6) { animation: card-in 0.55s var(--ease-expo) 0.34s both; }
+/* ── NEW ENHANCED KEYFRAMES ── */
 
-.section-enter { animation: fade-up 0.65s var(--ease-expo) both; }
+/* Greeting text shimmer */
+@keyframes text-shimmer {
+  0%   { background-position: -300% center; }
+  100% { background-position:  300% center; }
+}
 
-/* ────────────────── SHINE SWEEP ────────────────── */
+/* Floating particle */
+@keyframes particle-float {
+  0%   { transform: translateY(0)   translateX(0)   scale(1);   opacity: 0.8; }
+  50%  { transform: translateY(-32px) translateX(8px)  scale(1.2); opacity: 0.4; }
+  100% { transform: translateY(-64px) translateX(-4px) scale(0.6); opacity: 0; }
+}
+
+/* Number slot-machine roll */
+@keyframes slot-roll {
+  0%   { transform: translateY(100%); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translateY(0);    opacity: 1; }
+}
+
+/* Ink drop reveal — card enters with ink spreading from center */
+@keyframes ink-spread {
+  from { clip-path: circle(0% at 50% 50%); opacity: 0; }
+  to   { clip-path: circle(150% at 50% 50%); opacity: 1; }
+}
+
+/* Border trace — accent border draws around card on hover */
+@keyframes border-trace {
+  0%   { stroke-dashoffset: 800; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* Magnetic pull — icon snaps toward cursor */
+@keyframes magnetic-snap {
+  0%   { transform: scale(1) rotate(0deg); }
+  50%  { transform: scale(1.15) rotate(-6deg); }
+  100% { transform: scale(1.1) rotate(3deg); }
+}
+
+/* Stagger entrance with spring overshoot */
+@keyframes spring-in {
+  0%   { opacity: 0; transform: translateY(24px) scale(0.94); filter: blur(4px); }
+  60%  { opacity: 1; transform: translateY(-4px) scale(1.01); filter: blur(0); }
+  80%  { transform: translateY(2px) scale(0.995); }
+  100% { transform: translateY(0)   scale(1); }
+}
+
+/* Clock pulse aura */
+@keyframes clock-aura {
+  0%   { box-shadow: 0 0 0 0px rgba(249,115,22,0.0), 0 0 0 0px rgba(249,115,22,0.0); }
+  50%  { box-shadow: 0 0 0 8px rgba(249,115,22,0.06), 0 0 0 16px rgba(249,115,22,0.03); }
+  100% { box-shadow: 0 0 0 0px rgba(249,115,22,0.0), 0 0 0 0px rgba(249,115,22,0.0); }
+}
+
+/* Section label line draw */
+@keyframes line-draw {
+  from { width: 0; opacity: 0; }
+  to   { width: 100%; opacity: 1; }
+}
+
+/* Alert enter — left wipe */
+@keyframes alert-enter {
+  from { opacity: 0; transform: translateX(-20px) scaleX(0.95); }
+  to   { opacity: 1; transform: translateX(0)      scaleX(1); }
+}
+
+/* Activity row — alternating sides */
+@keyframes row-from-left {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes row-from-right {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Stat digit count flip */
+@keyframes digit-flip {
+  0%   { transform: rotateX(-90deg); opacity: 0; }
+  60%  { transform: rotateX(10deg);  opacity: 1; }
+  100% { transform: rotateX(0deg);   opacity: 1; }
+}
+
+/* Background noise grain */
+@keyframes noise-pan {
+  0%   { transform: translate(0, 0); }
+  10%  { transform: translate(-2%, -3%); }
+  20%  { transform: translate(3%, 1%); }
+  30%  { transform: translate(-1%, 4%); }
+  40%  { transform: translate(4%, -2%); }
+  50%  { transform: translate(-3%, 2%); }
+  60%  { transform: translate(1%, -4%); }
+  70%  { transform: translate(-4%, 1%); }
+  80%  { transform: translate(2%, 3%); }
+  90%  { transform: translate(-1%, -2%); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Orb drift */
+@keyframes orb-drift {
+  0%,100% { transform: translate(0, 0)    scale(1); }
+  33%      { transform: translate(12px, -16px) scale(1.05); }
+  66%      { transform: translate(-8px, 8px)   scale(0.97); }
+}
+
+/* Summary card icon bounce */
+@keyframes icon-spring {
+  0%   { transform: scale(1)    rotate(0deg); }
+  30%  { transform: scale(1.25) rotate(-8deg); }
+  60%  { transform: scale(0.9)  rotate(4deg); }
+  80%  { transform: scale(1.05) rotate(-2deg); }
+  100% { transform: scale(1)    rotate(0deg); }
+}
+
+/* Gradient sweep on dark header */
+@keyframes header-sweep {
+  0%,100% { opacity: 0.5; }
+  50%      { opacity: 0.9; }
+}
+
+/* Section enter — spring physics */
+@keyframes section-spring {
+  0%   { opacity: 0; transform: translateY(28px); filter: blur(6px); }
+  55%  { opacity: 1; transform: translateY(-5px); filter: blur(0); }
+  75%  { transform: translateY(2px); }
+  90%  { transform: translateY(-1px); }
+  100% { transform: translateY(0); }
+}
+
+/* Priority card count — rolling digits */
+@keyframes count-roll {
+  0%   { opacity: 0; transform: translateY(20px) scale(0.85); }
+  50%  { opacity: 1; transform: translateY(-2px) scale(1.02); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* Hover glow ring that expands outward */
+@keyframes expand-ring {
+  0%   { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* ── STAGGER ── */
+.stagger > *:nth-child(1) { animation: spring-in 0.65s var(--ease-expo) 0.04s both; }
+.stagger > *:nth-child(2) { animation: spring-in 0.65s var(--ease-expo) 0.10s both; }
+.stagger > *:nth-child(3) { animation: spring-in 0.65s var(--ease-expo) 0.16s both; }
+.stagger > *:nth-child(4) { animation: spring-in 0.65s var(--ease-expo) 0.22s both; }
+.stagger > *:nth-child(5) { animation: spring-in 0.65s var(--ease-expo) 0.28s both; }
+.stagger > *:nth-child(6) { animation: spring-in 0.65s var(--ease-expo) 0.34s both; }
+
+.section-enter { animation: section-spring 0.75s var(--ease-expo) both; }
+
+/* ── SHINE SWEEP ── */
 .shine-host { position: relative; overflow: hidden; }
 .shine-host::before {
   content: '';
@@ -141,7 +284,7 @@ const STYLES = `
 }
 .shine-host:hover::before { animation: shine 0.5s ease forwards; }
 
-/* ────────────────── RIPPLE ────────────────── */
+/* ── RIPPLE ── */
 .ripple-host { position: relative; overflow: hidden; }
 .ripple-circle {
   position: absolute; border-radius: 50%;
@@ -151,23 +294,55 @@ const STYLES = `
   pointer-events: none;
 }
 
-/* ────────────────── BLOB ────────────────── */
+/* ── BLOB ── */
 .blob {
   border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-  animation: blob-morph 10s ease-in-out infinite;
+  animation: blob-morph 10s ease-in-out infinite, orb-drift 8s ease-in-out infinite;
   position: absolute; pointer-events: none;
 }
 
-/* ────────────────── ACCENT LINE ────────────────── */
+/* ── ACCENT LINE ── */
 .accent-line {
   display: block; height: 2px; background: var(--accent);
   animation: underline-grow 0.8s var(--ease-expo) 0.3s both;
 }
 
-/* ────────────────── GLOW BREATHE ────────────────── */
+/* ── GLOW BREATHE ── */
 .accent-glow { animation: glow-breathe 3s ease-in-out infinite; }
 
-/* ────────────────── DIALOG OVERRIDES ────────────────── */
+/* ── SHIMMER TEXT ── */
+.shimmer-greeting {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.94) 0%,
+    var(--accent) 30%,
+    rgba(255,255,255,0.94) 50%,
+    var(--accent) 70%,
+    rgba(255,255,255,0.94) 100%
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-shimmer 5s linear infinite;
+}
+
+/* ── NOISE OVERLAY ── */
+.noise-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: noise-pan 0.4s steps(2) infinite;
+  mix-blend-mode: overlay;
+  border-radius: inherit;
+}
+
+/* ── CLOCK AURA ── */
+.clock-aura { animation: clock-aura 3s ease-in-out infinite; }
+
+/* ── DIALOG OVERRIDES (unchanged) ── */
 [role="dialog"] {
   border-radius: 1.5rem !important;
   border: 1px solid var(--border) !important;
@@ -194,6 +369,25 @@ const STYLES = `
 }
 [role="dialog"] tbody td:first-child { border-radius: 10px 0 0 10px; }
 [role="dialog"] tbody td:last-child  { border-radius: 0 10px 10px 0; }
+
+/* ── PRIORITY CARD RING ── */
+.priority-ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.priority-ring-active { opacity: 1; }
+
+/* ── FLOATING PARTICLE ── */
+.dash-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: particle-float 1.4s ease-out forwards;
+}
 `;
 
 /* ─── Style Injector ─── */
@@ -226,45 +420,121 @@ function useRipple() {
   }, []);
 }
 
-/* ─── 3D Tilt hook ─── */
+/* ─── 3D Tilt hook — ENHANCED with velocity tracking ─── */
 function useTilt(strength = 6) {
   const ref = useRef(null);
+  const velRef = useRef({ x: 0, y: 0, lastX: 0, lastY: 0 });
+
   const onMove = useCallback((e) => {
     const el = ref.current; if (!el) return;
     const rect = el.getBoundingClientRect();
     const dx = (e.clientX - rect.left - rect.width  / 2) / (rect.width  / 2);
     const dy = (e.clientY - rect.top  - rect.height / 2) / (rect.height / 2);
-    el.style.transform = `perspective(700px) rotateY(${dx * strength}deg) rotateX(${-dy * strength}deg) translateY(-3px) scale(1.018)`;
-    el.style.boxShadow = `${-dx * 6}px ${dy * 6}px 28px rgba(0,0,0,0.09), 0 0 0 1.5px rgba(249,115,22,0.22)`;
+
+    /* velocity-based dynamic strength */
+    const vx = e.clientX - velRef.current.lastX;
+    const vy = e.clientY - velRef.current.lastY;
+    velRef.current = { x: vx, y: vy, lastX: e.clientX, lastY: e.clientY };
+    const speed = Math.sqrt(vx * vx + vy * vy);
+    const dynStrength = strength + Math.min(speed * 0.15, 4);
+
+    el.style.transform = `perspective(700px) rotateY(${dx * dynStrength}deg) rotateX(${-dy * dynStrength}deg) translateY(-3px) scale(1.018)`;
+    el.style.boxShadow = `${-dx * 8}px ${dy * 8}px 32px rgba(0,0,0,0.12), 0 0 0 1.5px rgba(249,115,22,0.22)`;
+    el.style.transition = 'transform 0.08s linear, box-shadow 0.08s linear';
   }, [strength]);
+
   const onLeave = useCallback(() => {
     const el = ref.current; if (!el) return;
+    el.style.transition = 'transform 0.5s var(--ease-spring), box-shadow 0.5s ease';
     el.style.transform = '';
     el.style.boxShadow = '';
   }, []);
+
   return { ref, onMouseMove: onMove, onMouseLeave: onLeave };
 }
 
-/* ─── Count-up hook ─── */
+/* ─── Count-up hook — ENHANCED with slot-machine effect ─── */
 function useCountUp(target, duration = 1000, delay = 0) {
   const [value, setValue] = useState(0);
+  const [isRolling, setIsRolling] = useState(false);
+
   useEffect(() => {
     if (typeof target !== 'number') { setValue(target); return; }
     let start = null;
     const t = setTimeout(() => {
+      setIsRolling(true);
       const step = (ts) => {
         if (!start) start = ts;
         const p = Math.min((ts - start) / duration, 1);
         const ease = 1 - Math.pow(1 - p, 4);
         setValue(Math.floor(ease * target));
         if (p < 1) requestAnimationFrame(step);
-        else setValue(target);
+        else { setValue(target); setTimeout(() => setIsRolling(false), 100); }
       };
       requestAnimationFrame(step);
     }, delay);
     return () => clearTimeout(t);
   }, [target, duration, delay]);
-  return value;
+
+  return { value, isRolling };
+}
+
+/* ─── Particle emitter — fires on hover ─── */
+function useParticleEmitter(color = 'var(--accent)') {
+  const [particles, setParticles] = useState([]);
+
+  const emit = useCallback((e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    const id = Math.random().toString(36).slice(2);
+    setParticles(p => [...p.slice(-8), { id, x, y, size: 4 + Math.random() * 5 }]);
+    setTimeout(() => setParticles(p => p.filter(pt => pt.id !== id)), 1500);
+  }, []);
+
+  const ParticleLayer = () => (
+    <>
+      {particles.map(pt => (
+        <span key={pt.id} className="dash-particle" style={{
+          left: `${pt.x}%`, top: `${pt.y}%`,
+          width: pt.size, height: pt.size,
+          background: color, opacity: 0.65,
+          animationDuration: `${1.1 + Math.random() * 0.5}s`,
+        }} />
+      ))}
+    </>
+  );
+
+  return { emit, ParticleLayer };
+}
+
+/* ─── Parallax hook — ties element movement to scroll/mouse ─── */
+function useParallax(factor = 0.04) {
+  const ref = useRef(null);
+  const rafRef = useRef(null);
+
+  useEffect(() => {
+    const handleMouse = (e) => {
+      if (!ref.current) return;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        const dx = (e.clientX - cx) * factor;
+        const dy = (e.clientY - cy) * factor;
+        if (ref.current) {
+          ref.current.style.transform = `translate(${dx}px, ${dy}px)`;
+        }
+      });
+    };
+    window.addEventListener('mousemove', handleMouse, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMouse);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [factor]);
+
+  return ref;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -286,6 +556,14 @@ export default function DashboardPage() {
   const [isRevenueOpen, setIsRevenueOpen] = useState(false);
   const [now, setNow] = useState(new Date());
   const [mounted, setMounted] = useState(false);
+
+  /* NEW — header mouse parallax */
+  const headerRef = useRef(null);
+  const blob1Ref  = useParallax(0.025);
+  const blob2Ref  = useParallax(0.04);
+
+  /* Header section cursor glow */
+  const [headerCursor, setHeaderCursor] = useState({ x: 50, y: 50, active: false });
 
   const PER_PAGE = 5;
   const MAX_ACT  = 50;
@@ -341,13 +619,22 @@ export default function DashboardPage() {
     }
   }
 
+  /* Header cursor tracking for radial highlight */
+  const handleHeaderMouseMove = useCallback((e) => {
+    const rect = headerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top)  / rect.height) * 100;
+    setHeaderCursor({ x, y, active: true });
+  }, []);
+
   if (loading) return <DashboardSkeleton />;
 
   const totalPages = Math.ceil(Math.min(totalActivities, MAX_ACT) / PER_PAGE);
   const h = now.getHours();
   const greeting = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 
-  const S = { // inline style helpers
+  const S = {
     panel: {
       background: 'var(--surface-raise)',
       border: '1px solid var(--border)',
@@ -379,7 +666,10 @@ export default function DashboardPage() {
 
           {/* ══════════ HERO HEADER ══════════ */}
           <header
-            className={cn(mounted && 'section-enter')}
+            ref={headerRef}
+            className={cn(mounted && 'section-enter', 'noise-overlay')}
+            onMouseMove={handleHeaderMouseMove}
+            onMouseLeave={() => setHeaderCursor(c => ({ ...c, active: false }))}
             style={{
               background: 'linear-gradient(135deg, #0d0d0d 0%, #181818 60%, #0d0d0d 100%)',
               borderRadius: '1.75rem',
@@ -390,9 +680,27 @@ export default function DashboardPage() {
               animationDelay: '0s',
             }}
           >
-            {/* Morphing blobs — accent orange, very low opacity */}
-            <div className="blob" style={{ width: 280, height: 280, background: 'var(--accent)', opacity: 0.06, top: -70, right: -50 }} />
-            <div className="blob" style={{ width: 180, height: 180, background: 'var(--accent)', opacity: 0.04, bottom: -50, left: '25%', animationDelay: '4s' }} />
+            {/* Cursor-following radial highlight */}
+            <div style={{
+              position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1,
+              borderRadius: 'inherit',
+              background: headerCursor.active
+                ? `radial-gradient(circle 180px at ${headerCursor.x}% ${headerCursor.y}%, rgba(249,115,22,0.10) 0%, transparent 70%)`
+                : 'none',
+              transition: 'background 0.1s ease',
+            }} />
+
+            {/* Morphing blobs — now with parallax via refs */}
+            <div ref={blob1Ref} className="blob" style={{ width: 280, height: 280, background: 'var(--accent)', opacity: 0.07, top: -70, right: -50, transition: 'transform 0.6s ease-out' }} />
+            <div ref={blob2Ref} className="blob" style={{ width: 180, height: 180, background: 'var(--accent)', opacity: 0.05, bottom: -50, left: '25%', animationDelay: '4s', transition: 'transform 0.9s ease-out' }} />
+
+            {/* Third small accent blob — slow pulse */}
+            <div style={{
+              position: 'absolute', width: 100, height: 100, left: '8%', top: '20%',
+              borderRadius: '50%', background: 'var(--accent)', opacity: 0.04, filter: 'blur(24px)',
+              animation: 'blob-morph 14s ease-in-out 2s infinite',
+              pointerEvents: 'none',
+            }} />
 
             {/* Spinning orbit rings */}
             <div style={{ position: 'absolute', right: 28, top: 28, width: 88, height: 88, animation: 'spin-slow 20s linear infinite', pointerEvents: 'none' }}>
@@ -401,22 +709,32 @@ export default function DashboardPage() {
             <div style={{ position: 'absolute', right: 36, top: 36, width: 56, height: 56, animation: 'spin-slow 9s linear infinite reverse', pointerEvents: 'none' }}>
               <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: '1px solid rgba(249,115,22,0.1)' }} />
             </div>
+            {/* NEW — third ring, counter-rotate */}
+            <div style={{ position: 'absolute', right: 20, top: 20, width: 110, height: 110, animation: 'spin-slow 35s linear infinite', pointerEvents: 'none', opacity: 0.6 }}>
+              <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: '1px dotted rgba(249,115,22,0.08)' }} />
+            </div>
             {/* Orbiting dot */}
             <div style={{ position: 'absolute', right: 50, top: 50, pointerEvents: 'none' }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', opacity: 0.65, animation: 'orbit 9s linear infinite' }} />
             </div>
+            {/* NEW — second orbiting dot, opposite phase */}
+            <div style={{ position: 'absolute', right: 50, top: 50, pointerEvents: 'none' }}>
+              <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,255,255,0.3)', animation: 'orbit 14s linear 4.5s infinite reverse' }} />
+            </div>
 
             {/* Corner accent line */}
             <div style={{ position: 'absolute', top: 0, left: '8%', width: 100, height: 2, background: 'linear-gradient(90deg, var(--accent), transparent)', opacity: 0.55 }} />
+            {/* NEW — bottom edge accent line */}
+            <div style={{ position: 'absolute', bottom: 0, right: '12%', width: 60, height: 1, background: 'linear-gradient(90deg, transparent, rgba(249,115,22,0.3))', animation: 'header-sweep 4s ease-in-out infinite' }} />
 
-            <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1.25rem' }}>
+            <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1.25rem' }}>
               <div>
                 <p style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)', marginBottom: '0.5rem' }}>
                   {formatDate(now)}
                 </p>
-                <h1 className="font-display" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 400, lineHeight: 1.1, color: 'rgba(255,255,255,0.94)', marginBottom: '0.5rem', fontStyle: 'italic' }}>
-                  {greeting},{' '}
-                  <span style={{ color: 'var(--accent)' }}>{profile?.name?.split(' ')[0] || 'there'}</span>
+                {/* ENHANCED — shimmer greeting */}
+                <h1 className="font-display shimmer-greeting" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 400, lineHeight: 1.1, marginBottom: '0.5rem', fontStyle: 'italic' }}>
+                  {greeting}, {profile?.name?.split(' ')[0] || 'there'}
                 </h1>
                 <span className="accent-line" style={{ width: 56 }} />
                 <p style={{ marginTop: '0.7rem', fontSize: '0.8125rem', color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>
@@ -424,9 +742,14 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              {/* Clock */}
-              <div style={{ background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '1.125rem', padding: '0.85rem 1.4rem', textAlign: 'right', minWidth: 128 }}>
-                <p style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.03em', color: '#fff', lineHeight: 1, margin: 0 }}>
+              {/* Clock — ENHANCED with aura */}
+              <div
+                className="clock-aura"
+                style={{ background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '1.125rem', padding: '0.85rem 1.4rem', textAlign: 'right', minWidth: 128, position: 'relative', overflow: 'hidden' }}
+              >
+                {/* Clock internal shimmer sweep */}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, transparent, rgba(249,115,22,0.04), transparent)', backgroundSize: '200% 100%', animation: 'shine 3s ease infinite', pointerEvents: 'none', borderRadius: 'inherit' }} />
+                <p style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.03em', color: '#fff', lineHeight: 1, margin: 0, position: 'relative' }}>
                   {formatTime(now)}
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem', marginTop: '0.4rem' }}>
@@ -586,7 +909,7 @@ export default function DashboardPage() {
   );
 }
 
-/* ─── SectionLabel ─── */
+/* ─── SectionLabel — ENHANCED with animated line ─── */
 function SectionLabel({ icon: Icon, label }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.875rem' }}>
@@ -594,23 +917,29 @@ function SectionLabel({ icon: Icon, label }) {
         <Icon style={{ width: 12, height: 12, color: 'var(--accent)' }} strokeWidth={2.5} />
       </div>
       <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--ink-mid)', letterSpacing: '0.01em' }}>{label}</span>
-      <div style={{ flex: 1, height: 1, background: 'var(--border)', borderRadius: 2 }} />
+      {/* Enhanced: two-layer line — static base + animated accent */}
+      <div style={{ flex: 1, position: 'relative', height: 1 }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'var(--border)', borderRadius: 2 }} />
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '40%', background: 'linear-gradient(90deg, rgba(249,115,22,0.35), transparent)', borderRadius: 2, animation: 'underline-grow 0.9s var(--ease-expo) 0.2s both' }} />
+      </div>
     </div>
   );
 }
 
-/* ─── QuickActionButton ─── */
+/* ─── QuickActionButton — ENHANCED with particle emitter ─── */
 function QuickActionButton({ action: a, onClick }) {
   const ripple = useRipple();
   const { ref, onMouseMove, onMouseLeave } = useTilt(4);
   const [hovered, setHovered] = useState(false);
+  const { emit, ParticleLayer } = useParticleEmitter('var(--accent)');
+
   return (
     <button
       ref={ref}
       onClick={(e) => { ripple(e); onClick(); }}
-      onMouseMove={onMouseMove}
+      onMouseMove={(e) => { onMouseMove(e); }}
       onMouseLeave={() => { onMouseLeave(); setHovered(false); }}
-      onMouseEnter={() => setHovered(true)}
+      onMouseEnter={(e) => { setHovered(true); emit(e); }}
       className="ripple-host shine-host"
       style={{
         position: 'relative', display: 'flex', alignItems: 'center', gap: '1rem',
@@ -620,6 +949,7 @@ function QuickActionButton({ action: a, onClick }) {
         transition: 'background 0.25s, border-color 0.25s', willChange: 'transform',
       }}
     >
+      <ParticleLayer />
       {/* Accent stripe */}
       <div style={{
         position: 'absolute', left: 0, top: '20%', bottom: '20%', width: 3,
@@ -634,6 +964,7 @@ function QuickActionButton({ action: a, onClick }) {
         border: `1px solid ${hovered ? 'rgba(249,115,22,0.35)' : 'var(--border)'}`,
         transition: 'background 0.25s, border-color 0.25s, transform 0.3s var(--ease-spring)',
         transform: hovered ? 'scale(1.1) rotate(4deg)' : 'scale(1)',
+        animation: hovered ? 'icon-spring 0.5s var(--ease-spring)' : 'none',
       }}>
         <a.icon style={{ width: 18, height: 18, color: hovered ? 'var(--accent)' : 'var(--ink-mid)', transition: 'color 0.2s' }} strokeWidth={2.5} />
       </div>
@@ -646,17 +977,19 @@ function QuickActionButton({ action: a, onClick }) {
   );
 }
 
-/* ─── PriorityCard ─── */
+/* ─── PriorityCard — ENHANCED with ring expand on hover ─── */
 function PriorityCard({ title, count, statusColor, onClick }) {
-  const animated = useCountUp(count, 950, 280);
+  const { value: animated, isRolling } = useCountUp(count, 950, 280);
   const { ref, onMouseMove, onMouseLeave } = useTilt(5);
   const [hovered, setHovered] = useState(false);
+  const [ringActive, setRingActive] = useState(false);
+
   return (
     <button
       ref={ref} onClick={onClick}
       onMouseMove={onMouseMove}
-      onMouseLeave={() => { onMouseLeave(); setHovered(false); }}
-      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { onMouseLeave(); setHovered(false); setRingActive(false); }}
+      onMouseEnter={() => { setHovered(true); setRingActive(true); setTimeout(() => setRingActive(false), 600); }}
       className="ripple-host shine-host"
       style={{
         textAlign: 'left', cursor: 'pointer',
@@ -673,11 +1006,27 @@ function PriorityCard({ title, count, statusColor, onClick }) {
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: statusColor, transform: hovered ? 'scaleX(1)' : 'scaleX(0)', transformOrigin: 'left', transition: 'transform 0.35s var(--ease-expo)' }} />
       {/* Ambient glow spot */}
       <div style={{ position: 'absolute', right: -20, bottom: -20, width: 80, height: 80, borderRadius: '50%', background: statusColor, opacity: hovered ? 0.09 : 0.04, transition: 'opacity 0.3s', filter: 'blur(20px)' }} />
+
+      {/* NEW — expand ring on hover entry */}
+      {ringActive && (
+        <div style={{
+          position: 'absolute', inset: 0, borderRadius: 'inherit',
+          border: `1.5px solid ${statusColor}`,
+          animation: 'expand-ring 0.6s ease-out forwards',
+          pointerEvents: 'none',
+        }} />
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem' }}>
         <span style={{ width: 8, height: 8, borderRadius: '50%', background: statusColor, display: 'inline-block', boxShadow: `0 0 0 3px ${statusColor}22` }} />
         <TrendingUp style={{ width: 13, height: 13, color: hovered ? statusColor : 'var(--border-strong)', transition: 'color 0.2s' }} />
       </div>
-      <p style={{ fontSize: '2.625rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1, color: 'var(--ink)', margin: 0, animation: 'num-rise 0.5s var(--ease-spring) both' }}>
+      <p style={{
+        fontSize: '2.625rem', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1,
+        color: 'var(--ink)', margin: 0,
+        animation: isRolling ? 'count-roll 0.4s var(--ease-spring) both' : 'num-rise 0.5s var(--ease-spring) both',
+        display: 'inline-block',
+      }}>
         {animated}
       </p>
       <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', fontWeight: 500, color: 'var(--ink-faint)', lineHeight: 1.3 }}>{title}</p>
@@ -685,14 +1034,17 @@ function PriorityCard({ title, count, statusColor, onClick }) {
   );
 }
 
-/* ─── SummaryCard ─── */
+/* ─── SummaryCard — ENHANCED with icon spring on hover ─── */
 function SummaryCard({ title, value, isCurrency, onClick, icon: Icon, dotColor }) {
-  const animated = typeof value === 'number' ? useCountUp(value, 800, 380) : value;
+  const { value: animated } = useCountUp(typeof value === 'number' ? value : 0, 800, 380);
+  const displayValue = isCurrency ? value : (typeof value === 'number' ? animated : value);
   const [hovered, setHovered] = useState(false);
+  const [iconSprung, setIconSprung] = useState(false);
+
   return (
     <button
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
+      onMouseEnter={() => { setHovered(true); setIconSprung(true); setTimeout(() => setIconSprung(false), 500); }}
       onMouseLeave={() => setHovered(false)}
       className="ripple-host shine-host"
       style={{
@@ -707,18 +1059,27 @@ function SummaryCard({ title, value, isCurrency, onClick, icon: Icon, dotColor }
       }}
     >
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: dotColor, transform: hovered ? 'scaleX(1)' : 'scaleX(0)', transformOrigin: 'left', transition: 'transform 0.3s var(--ease-expo)' }} />
-      <div style={{ width: 32, height: 32, borderRadius: '0.625rem', display: 'flex', alignItems: 'center', justifyContent: 'center', background: dotColor + '15', border: `1px solid ${dotColor}28`, marginBottom: '0.625rem', transform: hovered ? 'scale(1.1) rotate(-4deg)' : 'scale(1)', transition: 'transform 0.3s var(--ease-spring)' }}>
+
+      {/* Ambient corner glow */}
+      <div style={{ position: 'absolute', right: -10, bottom: -10, width: 48, height: 48, borderRadius: '50%', background: dotColor, opacity: hovered ? 0.12 : 0.04, filter: 'blur(12px)', transition: 'opacity 0.3s' }} />
+
+      <div style={{
+        width: 32, height: 32, borderRadius: '0.625rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: dotColor + '15', border: `1px solid ${dotColor}28`, marginBottom: '0.625rem',
+        transition: 'transform 0.3s var(--ease-spring)',
+        animation: iconSprung ? 'icon-spring 0.5s var(--ease-spring)' : 'none',
+      }}>
         <Icon style={{ width: 15, height: 15, color: dotColor }} strokeWidth={2} />
       </div>
       <p style={{ fontSize: isCurrency ? '1.0625rem' : '1.625rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1, color: 'var(--ink)', margin: 0, animation: 'num-rise 0.5s var(--ease-spring) both' }}>
-        {isCurrency ? value : animated}
+        {displayValue}
       </p>
       <p style={{ marginTop: '0.375rem', fontSize: '0.6875rem', fontWeight: 600, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{title}</p>
     </button>
   );
 }
 
-/* ─── AlertItem ─── */
+/* ─── AlertItem — ENHANCED with staggered enter + left wipe ─── */
 function AlertItem({ message, type, index = 0 }) {
   const cfg = {
     warning: { bg: '#fffbeb', border: '#fde68a', text: '#92400e', icon: TriangleAlert, iconColor: '#f59e0b', accent: '#f59e0b' },
@@ -727,18 +1088,30 @@ function AlertItem({ message, type, index = 0 }) {
   }[type];
   const Ic = cfg.icon;
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', borderRadius: '0.875rem', padding: '0.875rem 1rem', background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.text, fontSize: '0.8125rem', fontWeight: 500, lineHeight: 1.4, position: 'relative', overflow: 'hidden', animation: `slide-right 0.4s var(--ease-expo) ${index * 0.08}s both` }}>
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
+      borderRadius: '0.875rem', padding: '0.875rem 1rem',
+      background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.text,
+      fontSize: '0.8125rem', fontWeight: 500, lineHeight: 1.4,
+      position: 'relative', overflow: 'hidden',
+      animation: `alert-enter 0.45s var(--ease-expo) ${index * 0.1}s both`,
+    }}>
       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: cfg.accent, borderRadius: '0.875rem 0 0 0.875rem' }} />
-      <Ic style={{ width: 17, height: 17, color: cfg.iconColor, flexShrink: 0, marginTop: 1 }} />
-      <span>{message}</span>
+      {/* Animated fill from left */}
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '100%', background: cfg.accent, opacity: 0.04, transformOrigin: 'left', animation: `underline-grow 0.6s var(--ease-expo) ${index * 0.1}s both`, pointerEvents: 'none' }} />
+      <Ic style={{ width: 17, height: 17, color: cfg.iconColor, flexShrink: 0, marginTop: 1, position: 'relative' }} />
+      <span style={{ position: 'relative' }}>{message}</span>
     </div>
   );
 }
 
-/* ─── ActivityRow ─── */
+/* ─── ActivityRow — ENHANCED with alternating slide directions ─── */
 function ActivityRow({ activity, isMine, ss, index, onClickHandler }) {
   const ripple = useRipple();
   const [hovered, setHovered] = useState(false);
+  /* Alternate: even rows from left, odd from right */
+  const fromLeft = index % 2 === 0;
+
   return (
     <button
       onClick={(e) => { ripple(e); onClickHandler(activity); }}
@@ -754,10 +1127,13 @@ function ActivityRow({ activity, isMine, ss, index, onClickHandler }) {
         position: 'relative', overflow: 'hidden',
         transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s',
         boxShadow: hovered ? '0 4px 16px rgba(0,0,0,0.07)' : 'none',
-        animation: `card-in 0.45s var(--ease-expo) ${index * 0.06}s both`,
+        animation: `${fromLeft ? 'row-from-left' : 'row-from-right'} 0.45s var(--ease-expo) ${index * 0.07}s both`,
       }}
     >
       {isMine && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: 'var(--accent)', borderRadius: '0.875rem 0 0 0.875rem' }} />}
+      {/* Hover shimmer tint */}
+      {hovered && <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(249,115,22,0.02), transparent)', pointerEvents: 'none', borderRadius: 'inherit' }} />}
+
       {/* Status dot with pulse */}
       <div style={{ position: 'relative', flexShrink: 0 }}>
         <span style={{ display: 'block', width: 10, height: 10, borderRadius: '50%', background: ss.dotColor }} />
@@ -788,7 +1164,7 @@ function ActivityRow({ activity, isMine, ss, index, onClickHandler }) {
   );
 }
 
-/* ─── PaginationBtn ─── */
+/* ─── PaginationBtn (unchanged) ─── */
 function PaginationBtn({ label, disabled, onClick }) {
   const ripple = useRipple();
   return (
@@ -801,7 +1177,7 @@ function PaginationBtn({ label, disabled, onClick }) {
   );
 }
 
-/* ─── RevenueBreakdownModal ─── */
+/* ─── RevenueBreakdownModal (unchanged) ─── */
 function RevenueBreakdownModal({ onClose, serviceRevenue, salesRevenue, router }) {
   const ripple = useRipple();
   const total = (serviceRevenue || 0) + (salesRevenue || 0);
@@ -844,7 +1220,7 @@ function RevenueRow({ label, sublabel, amount, onClick, accentColor }) {
   );
 }
 
-/* ─── DashboardSkeleton ─── */
+/* ─── DashboardSkeleton (unchanged) ─── */
 function DashboardSkeleton() {
   return (
     <div className="font-body" style={{ backgroundColor: 'var(--surface)', minHeight: '100vh', padding: '0.25rem' }}>
@@ -865,7 +1241,7 @@ function DashboardSkeleton() {
   );
 }
 
-/* ─── Status styles helper ─── */
+/* ─── Status styles helper (unchanged) ─── */
 function getStatusStyles(status = '') {
   const s = status.toLowerCase();
   const c = (color) => ({ dotColor: color });
